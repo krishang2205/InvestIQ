@@ -1,0 +1,36 @@
+.section {
+    padding: 3rem 1.5rem;
+    background-color: var(--color-bg);
+}
+
+.container {
+    max-width: 1000px;
+    margin: 0 auto;
+    text-align: center;
+}
+
+.badges {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+}
+
+.badge {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--color-secondary);
+    font-size: 0.9375rem;
+    /* 15px */
+    font-weight: 500;
+    background-color: rgba(90, 107, 123, 0.05);
+    /* Very light slate */
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+}
+
+.check {
+    color: var(--color-risk-low);
+    font-weight: bold;
+}
