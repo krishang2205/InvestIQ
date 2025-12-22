@@ -3,6 +3,8 @@ import Header from '../../components/layout/Header';
 import Footer from '../../components/layout/Footer';
 import AuthModal from '../../components/auth/AuthModal';
 import Hero from './sections/Hero';
+import Philosophy from './sections/Philosophy';
+import Founders from './sections/Founders';
 
 const AboutPage = () => {
     const [authModal, setAuthModal] = React.useState({ isOpen: false, type: 'login' });
@@ -21,6 +23,8 @@ const AboutPage = () => {
 
             <main>
                 <Hero />
+                <Philosophy />
+                <Founders />
             </main>
 
             <Footer />
