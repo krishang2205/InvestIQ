@@ -1,0 +1,78 @@
+.section {
+    padding: 2rem 0;
+    /* Remove horizontal padding to let marquee touch edges */
+    background-color: var(--color-accent);
+    /* Gold Background */
+    margin-top: 4rem;
+    overflow: hidden;
+    position: relative;
+}
+
+.container {
+    width: 100%;
+    max-width: 100%;
+}
+
+.marqueeWrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.marqueeRow {
+    display: flex;
+    width: 100%;
+    overflow: hidden;
+}
+
+.marqueeContent {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    padding-left: 1rem;
+    white-space: nowrap;
+    /* Decide direction in JSX or via separate classes */
+    animation: scroll 40s linear infinite;
+}
+
+.reverse .marqueeContent {
+    animation-direction: reverse;
+}
+
+.badge {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: white;
+    font-size: 0.8rem;
+    font-weight: 500;
+    background-color: #000000;
+    /* Black Pill */
+    padding: 0.5rem 1rem;
+    border-radius: 9999px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s;
+    flex-shrink: 0;
+}
+
+.badge:hover {
+    transform: scale(1.05);
+    border-color: white;
+}
+
+.icon {
+    color: var(--color-accent);
+    /* Gold Icon */
+    font-size: 0.875rem;
+}
+
+@keyframes scroll {
+    0% {
+        transform: translateX(0);
+    }
+
+    100% {
+        transform: translateX(-50%);
+    }
+}
