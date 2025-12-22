@@ -1,0 +1,59 @@
+.hero {
+    padding: 8rem 0 4rem;
+    position: relative;
+    overflow: hidden;
+}
+
+.container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 0 1.5rem;
+}
+
+.title {
+    font-size: 3.5rem;
+    font-weight: 700;
+    line-height: 1.1;
+    margin-bottom: 2rem;
+    background: linear-gradient(to right, #FFFFFF, #9CA3AF);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    letter-spacing: -0.02em;
+}
+
+.introText {
+    font-size: 1.25rem;
+    line-height: 1.7;
+    color: var(--color-secondary);
+    margin-bottom: 4rem;
+}
+
+.gold {
+    color: var(--color-accent);
+}
+
+.problemSection {
+    margin-top: 6rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    padding-top: 4rem;
+}
+
+.subTitle {
+    font-size: 2rem;
+    font-weight: 600;
+    color: white;
+    margin-bottom: 1.5rem;
+    display: inline-block;
+}
+
+.text {
+    font-size: 1.125rem;
+    line-height: 1.7;
+    color: var(--color-secondary);
+    margin-bottom: 1.5rem;
+}
+
+.highlight {
+    color: white;
+    font-weight: 500;
+}
