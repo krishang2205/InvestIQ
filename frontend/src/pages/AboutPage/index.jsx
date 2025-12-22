@@ -3,8 +3,9 @@ import Header from '../../components/layout/Header';
 import Footer from '../../components/layout/Footer';
 import AuthModal from '../../components/auth/AuthModal';
 import Hero from './sections/Hero';
+import Mission from './sections/Mission';
 import Philosophy from './sections/Philosophy';
-import Founders from './sections/Founders';
+import Vision from './sections/Vision';
 import Values from './sections/Values';
 import CTA from './sections/CTA';
 
@@ -24,9 +25,10 @@ const AboutPage = () => {
             <Header onAuth={openAuth} />
 
             <main>
+                <Mission />
                 <Hero />
                 <Philosophy />
-                <Founders />
+                <Vision />
                 <Values />
                 <CTA />
             </main>
