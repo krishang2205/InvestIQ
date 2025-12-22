@@ -1,6 +1,8 @@
 .section {
     padding: 3rem 1.5rem;
-    background-color: var(--color-bg);
+    background-color: var(--color-accent);
+    /* Gold Background */
+    margin-top: 4rem;
 }
 
 .container {
@@ -20,17 +22,19 @@
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    color: var(--color-secondary);
+    color: black;
+    /* Black Text on Gold */
     font-size: 0.9375rem;
     /* 15px */
-    font-weight: 500;
-    background-color: rgba(90, 107, 123, 0.05);
-    /* Very light slate */
+    font-weight: 600;
+    background-color: rgba(255, 255, 255, 0.2);
+    /* White tint */
     padding: 0.5rem 1rem;
     border-radius: 20px;
+    border: 1px solid rgba(0, 0, 0, 0.1);
 }
 
 .check {
-    color: var(--color-risk-low);
+    color: black;
     font-weight: bold;
 }

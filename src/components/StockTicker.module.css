@@ -3,7 +3,7 @@
     background: transparent;
     /* Fully Transparent */
     border-bottom: none;
-    overflow: hidden;
+    /* overflow: hidden;  <-- Moved to mask */
     position: absolute;
     /* Move with scroll */
     top: 96px;
@@ -17,24 +17,37 @@
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
     gap: 1rem;
-    padding-left: 0;
+    padding-left: 1rem;
 }
 
 .labelContainer {
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    padding: 0.5rem 1.5rem;
+    padding-right: 1.5rem;
     border-right: 1px solid rgba(255, 255, 255, 0.1);
     flex-shrink: 0;
     position: relative;
     z-index: 10;
-    background: #000000;
-    /* Solid black to cover scrolling text */
+    background: rgba(0, 0, 0, 0.4);
+    /* Semi-transparent background for label */
+    backdrop-filter: blur(4px);
     border-radius: 0 24px 24px 0;
-    /* Nice pill shape on one side */
-    box-shadow: 10px 0 20px -5px rgba(0, 0, 0, 0.8);
-    /* Shadow for depth */
+    /* Rounded right edge for style */
+    padding: 0 1.5rem 0 0.5rem;
+    height: 100%;
+}
+
+.scrollMask {
+    flex: 1;
+    overflow: hidden;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    position: relative;
+    mask-image: linear-gradient(to right, transparent, black 20px, black 95%, transparent);
+    /* Fade edges */
+    -webkit-mask-image: linear-gradient(to right, transparent, black 20px, black 95%, transparent);
 }
 
 .labelText {

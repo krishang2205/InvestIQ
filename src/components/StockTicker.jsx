@@ -26,16 +26,18 @@ const StockTicker = () => {
                 <span className={styles.pulseDot}></span>
                 <span className={styles.labelText}>Market Pulse</span>
             </div>
-            <div className={styles.tickerTrack}>
-                {tickerItems.map((stock, index) => (
-                    <div key={index} className={styles.tickerItem}>
-                        <span className={styles.symbol}>{stock.symbol}</span>
-                        <span className={styles.price}>₹{stock.price}</span>
-                        <span className={`${styles.change} ${stock.isUp ? styles.up : styles.down}`}>
-                            {stock.change} {stock.isUp ? '▲' : '▼'}
-                        </span>
-                    </div>
-                ))}
+            <div className={styles.scrollMask}>
+                <div className={styles.tickerTrack}>
+                    {tickerItems.map((stock, index) => (
+                        <div key={index} className={styles.tickerItem}>
+                            <span className={styles.symbol}>{stock.symbol}</span>
+                            <span className={styles.price}>₹{stock.price}</span>
+                            <span className={`${styles.change} ${stock.isUp ? styles.up : styles.down}`}>
+                                {stock.change} {stock.isUp ? '▲' : '▼'}
+                            </span>
+                        </div>
+                    ))}
+                </div>
             </div>
         </div>
     );
