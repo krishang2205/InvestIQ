@@ -5,6 +5,7 @@ import AuthModal from '../../components/auth/AuthModal';
 import Hero from './sections/Hero';
 import Philosophy from './sections/Philosophy';
 import Founders from './sections/Founders';
+import Values from './sections/Values';
 
 const AboutPage = () => {
     const [authModal, setAuthModal] = React.useState({ isOpen: false, type: 'login' });
@@ -25,6 +26,7 @@ const AboutPage = () => {
                 <Hero />
                 <Philosophy />
                 <Founders />
+                <Values />
             </main>
 
             <Footer />
