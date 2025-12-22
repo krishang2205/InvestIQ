@@ -27,6 +27,7 @@ const Header = ({ onAuth }) => {
                 </div>
 
                 <nav className={styles.nav}>
+                    <Link to="/about" className={styles.link}>About Us</Link>
                     <a href="#features" className={styles.link} onClick={(e) => { e.preventDefault(); document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' }); }}>Features</a>
                     <a href="#testimonials" className={styles.link} onClick={(e) => { e.preventDefault(); document.getElementById('testimonials')?.scrollIntoView({ behavior: 'smooth' }); }}>Reviews</a>
                     <a href="#pricing" className={styles.link} onClick={(e) => { e.preventDefault(); document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' }); }}>Pricing</a>

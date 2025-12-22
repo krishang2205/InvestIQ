@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { TrendingUp } from 'lucide-react';
 import styles from './Footer.module.css';
 
@@ -34,7 +35,7 @@ const Footer = () => {
                     <div className={styles.column}>
                         <h4 className={styles.heading}>Company</h4>
                         <ul className={styles.list}>
-                            <li><a href="#" className={styles.link}>About Us</a></li>
+                            <li><Link to="/about" className={styles.link}>About Us</Link></li>
                             <li><a href="#" className={styles.link}>Contact</a></li>
                             <li><a href="#" className={styles.link}>Careers</a></li>
                         </ul>
