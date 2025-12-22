@@ -6,6 +6,7 @@ import Hero from './sections/Hero';
 import Philosophy from './sections/Philosophy';
 import Founders from './sections/Founders';
 import Values from './sections/Values';
+import CTA from './sections/CTA';
 
 const AboutPage = () => {
     const [authModal, setAuthModal] = React.useState({ isOpen: false, type: 'login' });
@@ -27,6 +28,7 @@ const AboutPage = () => {
                 <Philosophy />
                 <Founders />
                 <Values />
+                <CTA />
             </main>
 
             <Footer />
