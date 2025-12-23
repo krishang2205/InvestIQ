@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
 import styles from './Header.module.css';
 
-const Header = ({ onAuth }) => {
+const Header = () => {
+    const { openAuthModal } = useAuth();
     const [scrolled, setScrolled] = useState(false);
 
     useEffect(() => {
@@ -31,8 +33,8 @@ const Header = ({ onAuth }) => {
                     <a href="#features" className={styles.link} onClick={(e) => { e.preventDefault(); document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' }); }}>Features</a>
                     <a href="#testimonials" className={styles.link} onClick={(e) => { e.preventDefault(); document.getElementById('testimonials')?.scrollIntoView({ behavior: 'smooth' }); }}>Reviews</a>
                     <a href="#pricing" className={styles.link} onClick={(e) => { e.preventDefault(); document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' }); }}>Pricing</a>
-                    <button className={styles.signInButton} onClick={() => onAuth('login')}>Sign In</button>
-                    <button className={styles.signUpButton} onClick={() => onAuth('signup')}>Sign Up</button>
+                    <button className={styles.signInButton} onClick={() => openAuthModal('login')}>Sign In</button>
+                    <button className={styles.signUpButton} onClick={() => openAuthModal('signup')}>Sign Up</button>
                 </nav>
             </div>
         </header>

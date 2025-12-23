@@ -9,6 +9,8 @@ export const useAuth = () => useContext(AuthContext);
 export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+    const [authMode, setAuthMode] = useState('login'); // 'login' or 'signup'
 
     useEffect(() => {
         // Check active session
@@ -20,11 +22,24 @@ export const AuthProvider = ({ children }) => {
         // Listen for changes
         const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
             setUser(session?.user ?? null);
+            if (session?.user) {
+                // Close modal on successful auth
+                setIsAuthModalOpen(false);
+            }
             setLoading(false);
         });
 
         return () => subscription.unsubscribe();
     }, []);
+
+    const openAuthModal = (mode = 'login') => {
+        setAuthMode(mode);
+        setIsAuthModalOpen(true);
+    };
+
+    const closeAuthModal = () => {
+        setIsAuthModalOpen(false);
+    };
 
     const signInWithGoogle = async () => {
         const { error } = await supabase.auth.signInWithOAuth({
@@ -50,7 +65,12 @@ export const AuthProvider = ({ children }) => {
         signInWithGoogle,
         signInWithMagicLink,
         signOut,
-        loading
+        loading,
+        isAuthModalOpen,
+        authMode,
+        setAuthMode,
+        openAuthModal,
+        closeAuthModal
     };
 
     return (
