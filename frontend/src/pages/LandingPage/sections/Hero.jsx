@@ -1,8 +1,11 @@
+import { useAuth } from '../../../context/AuthContext';
 import SmartSearch from '../../../components/ui/SmartSearch';
 import Stats from './Stats';
 import styles from './Hero.module.css';
 
-const Hero = ({ onAuth }) => {
+const Hero = () => {
+  const { openAuthModal } = useAuth();
+
   return (
     <section className={styles.hero}>
       <div className={styles.container}>
@@ -27,7 +30,7 @@ const Hero = ({ onAuth }) => {
             </div>
 
             <div className={styles.ctaGroup}>
-              <button className={`${styles.button} ${styles.primaryButton}`} onClick={() => onAuth('signup')}>
+              <button className={`${styles.button} ${styles.primaryButton}`} onClick={() => openAuthModal('signup')}>
                 Get Started Free
               </button>
             </div>

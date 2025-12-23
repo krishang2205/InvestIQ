@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import Header from '../../components/layout/Header';
 import Footer from '../../components/layout/Footer';
-import AuthModal from '../../components/auth/AuthModal';
+// import AuthModal from '../../components/auth/AuthModal'; // Removed, global in App
 import ScrollReveal from '../../components/ui/ScrollReveal';
 import StockTicker from '../../components/ui/StockTicker';
 
@@ -15,17 +16,25 @@ import TargetAudience from './sections/TargetAudience';
 import Compliance from './sections/Compliance';
 
 const LandingPage = () => {
-    const [authModal, setAuthModal] = React.useState({ isOpen: false, type: 'login' });
+    const location = useLocation();
 
-    const openAuth = (type) => {
-        setAuthModal({ isOpen: true, type });
-    };
+    useEffect(() => {
+        if (location.state?.scrollTo) {
+            const element = document.getElementById(location.state.scrollTo);
+            if (element) {
+                // Short timeout to ensure DOM is ready/rendered
+                setTimeout(() => {
+                    element.scrollIntoView({ behavior: 'smooth' });
+                }, 100);
+            }
+        }
+    }, [location]);
 
     return (
         <div className="LandingPage">
-            <Header onAuth={openAuth} />
+            <Header />
             <StockTicker />
-            <Hero onAuth={openAuth} />
+            <Hero />
             <ScrollReveal><TrustStrip /></ScrollReveal>
             <ScrollReveal><FeatureSwitcher /></ScrollReveal>
             <ScrollReveal><Testimonials /></ScrollReveal>
@@ -34,11 +43,6 @@ const LandingPage = () => {
             <ScrollReveal><TargetAudience /></ScrollReveal>
             <ScrollReveal><Compliance /></ScrollReveal>
             <Footer />
-            <AuthModal
-                isOpen={authModal.isOpen}
-                type={authModal.type}
-                onClose={() => setAuthModal({ ...authModal, isOpen: false })}
-            />
         </div>
     );
 };

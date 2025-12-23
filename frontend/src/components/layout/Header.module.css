@@ -11,7 +11,6 @@
 
 .scrolled {
     background-color: rgba(0, 0, 0, 0.85);
-    /* Black Glass */
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
     padding: 1rem 0;
@@ -23,10 +22,17 @@
     width: 100%;
     max-width: 100%;
     margin: 0;
-    padding: 0 1rem;
+    padding: 0 2rem;
     display: flex;
     justify-content: space-between;
     align-items: center;
+}
+
+.leftSection {
+    display: flex;
+    align-items: center;
+    gap: 4rem;
+    /* Space between Logo and Links */
 }
 
 .logoWrapper {
@@ -47,65 +53,45 @@
     color: var(--color-accent);
 }
 
-.nav {
+.navLinks {
     display: flex;
     align-items: center;
-    gap: 2rem;
+    gap: 2.5rem;
 }
 
 .link {
-    font-size: 0.9375rem;
-    font-weight: 500;
+    font-size: 1.125rem;
+    font-weight: 700;
     color: var(--color-secondary);
     transition: color 0.2s;
+    text-decoration: none;
 }
 
 .link:hover {
     color: white;
 }
 
-.signInButton {
-    background: none;
-    color: white;
-    font-weight: 600;
-    font-size: 0.9375rem;
-    padding: 0.5rem 1.5rem;
-    transition: color 0.2s;
-    text-decoration: none;
-    cursor: pointer;
-}
-
-.signInButton:hover {
-    color: var(--color-accent);
-    background: none;
-    transform: none;
-}
-
-.signUpButton {
+.authButton {
     padding: 0.75rem 2rem;
     border-radius: 9999px;
-    /* Pill Shape */
     background-color: white;
-    /* White Pill */
     color: black;
-    /* Black Text */
     font-weight: 700;
     font-size: 0.9375rem;
     transition: all 0.2s;
     box-shadow: 0 0 15px rgba(255, 255, 255, 0.1);
-    text-decoration: none;
-    display: inline-block;
+    border: none;
+    cursor: pointer;
 }
 
-.signUpButton:hover {
+.authButton:hover {
     background-color: #f0f0f0;
     transform: translateY(-1px);
     box-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
 }
 
-@media (max-width: 768px) {
-    .nav {
+@media (max-width: 1024px) {
+    .navLinks {
         display: none;
-        /* simple mobile hide for now */
     }
 }
