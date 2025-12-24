@@ -9,7 +9,8 @@ const AuthModal = () => {
         closeAuthModal,
         authMode,
         signInWithGoogle,
-        signInWithMagicLink,
+        loginWithMagicLink,
+        signupWithMagicLink,
         setAuthMode
     } = useAuth();
 
@@ -29,6 +30,11 @@ const AuthModal = () => {
 
     if (!isAuthModalOpen) return null;
 
+    const validateEmail = (email) => {
+        const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        return re.test(String(email).toLowerCase());
+    };
+
     const handleGoogleLogin = async () => {
         try {
             setLoading(true);
@@ -42,14 +48,30 @@ const AuthModal = () => {
 
     const handleEmailLogin = async (e) => {
         e.preventDefault();
+
+        if (!validateEmail(email)) {
+            setError('Please enter a valid email address.');
+            return;
+        }
+
         try {
             setLoading(true);
             setError(null);
             setSuccessMessage(null);
-            await signInWithMagicLink(email);
-            setSuccessMessage('Check your email for the login link!');
+
+            if (authMode === 'login') {
+                await loginWithMagicLink(email);
+                setSuccessMessage('Check your email for the login link!');
+            } else {
+                await signupWithMagicLink(email);
+                setSuccessMessage('Check your email to confirm your account!');
+            }
         } catch (err) {
-            setError(err.message);
+            if (err.message.includes("Signups not allowed")) {
+                setError("Account not found. Please Sign Up first.");
+            } else {
+                setError(err.message);
+            }
         } finally {
             setLoading(false);
         }
