@@ -12,6 +12,7 @@ export const AuthProvider = ({ children }) => {
     const [loading, setLoading] = useState(true);
     const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
     const [authMode, setAuthMode] = useState('login'); // 'login' or 'signup'
+    const [isLoggingOut, setIsLoggingOut] = useState(false);
 
     const navigate = useNavigate();
 
@@ -79,9 +80,18 @@ export const AuthProvider = ({ children }) => {
     };
 
     const signOut = async () => {
-        const { error } = await supabase.auth.signOut();
-        if (error) throw error;
-        navigate('/');
+        // Show logout message first
+        setIsLoggingOut(true);
+
+        // Wait 5 seconds
+        setTimeout(async () => {
+            const { error } = await supabase.auth.signOut();
+            setIsLoggingOut(false);
+            if (error) {
+                console.error("Error signing out:", error);
+            }
+            navigate('/');
+        }, 5000);
     };
 
     const value = {
@@ -95,7 +105,8 @@ export const AuthProvider = ({ children }) => {
         authMode,
         setAuthMode,
         openAuthModal,
-        closeAuthModal
+        closeAuthModal,
+        isLoggingOut // Export state
     };
 
     return (

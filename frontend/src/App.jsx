@@ -6,11 +6,16 @@ import AboutPage from './pages/AboutPage';
 import Dashboard from './pages/Dashboard';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import AuthModal from './components/auth/AuthModal';
+import { useAuth } from './context/AuthContext';
+import LogoutNotification from './components/auth/LogoutNotification';
 import './App.css';
 
 function App() {
+  const { isLoggingOut } = useAuth();
+
   return (
     <div className="App">
+      {isLoggingOut && <LogoutNotification />}
       <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route path="/about" element={<AboutPage />} />
