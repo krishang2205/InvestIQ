@@ -56,6 +56,39 @@ const StockSearch = ({ onSelect }) => {
                 />
             </div>
 
+            {/* Trending Suggestions - Only show when input is empty */}
+            {!query && (
+                <div style={{ marginTop: '1rem', display: 'flex', gap: '0.5rem', flexWrap: 'wrap', justifyContent: 'center' }}>
+                    <span style={{ fontSize: '0.875rem', color: 'var(--color-secondary)', display: 'flex', alignItems: 'center' }}>Trending:</span>
+                    {MOCK_STOCKS.slice(0, 4).map(stock => (
+                        <button
+                            key={stock.symbol}
+                            onClick={() => handleSelect(stock)}
+                            style={{
+                                background: 'rgba(255, 255, 255, 0.05)',
+                                border: '1px solid var(--glass-border)',
+                                borderRadius: '20px',
+                                padding: '0.25rem 0.75rem',
+                                color: 'var(--color-secondary)',
+                                fontSize: '0.75rem',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s'
+                            }}
+                            onMouseEnter={(e) => {
+                                e.currentTarget.style.borderColor = 'var(--color-accent)';
+                                e.currentTarget.style.color = 'var(--color-accent)';
+                            }}
+                            onMouseLeave={(e) => {
+                                e.currentTarget.style.borderColor = 'var(--glass-border)';
+                                e.currentTarget.style.color = 'var(--color-secondary)';
+                            }}
+                        >
+                            {stock.symbol}
+                        </button>
+                    ))}
+                </div>
+            )}
+
             {isOpen && query && (
                 <div className="glass-panel" style={{
                     position: 'absolute',
