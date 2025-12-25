@@ -1,9 +1,21 @@
 import React, { useState } from 'react';
-import { FileText, Sparkles, Download } from 'lucide-react';
+import { FileText, Sparkles, Download, Loader2 } from 'lucide-react';
 import StockSearch from './components/StockSearch';
+import ReportScope from './components/ReportScope';
 
 const IntelligenceReportPage = () => {
     const [selectedStock, setSelectedStock] = useState(null);
+    const [isGenerating, setIsGenerating] = useState(false);
+
+    const handleGenerate = () => {
+        setIsGenerating(true);
+        // Simulate API call
+        setTimeout(() => {
+            setIsGenerating(false);
+            console.log('Report generated!');
+            // Here we would typically navigate to the report view or show a success message
+        }, 3000);
+    };
 
     return (
         <>
@@ -47,35 +59,40 @@ const IntelligenceReportPage = () => {
                 </h2>
                 <p style={{ color: 'var(--color-secondary)', maxWidth: '400px', marginBottom: '2rem' }}>
                     {selectedStock
-                        ? 'Ready to generate report. This may take a few moments.'
+                        ? 'Review the scope below before generating your report.'
                         : 'Search for a stock to begin the analysis.'}
                 </p>
 
                 {!selectedStock && <StockSearch onSelect={setSelectedStock} />}
 
+                {selectedStock && <ReportScope />}
+
                 {selectedStock && (
                     <button style={{
                         padding: '0.875rem 2rem',
-                        backgroundColor: 'var(--color-accent)',
-                        color: 'var(--color-bg)',
+                        backgroundColor: isGenerating ? 'var(--color-surface-hover)' : 'var(--color-accent)',
+                        color: isGenerating ? 'var(--color-secondary)' : 'var(--color-bg)',
                         fontWeight: 600,
                         fontSize: '1rem',
                         borderRadius: '12px',
                         display: 'flex',
                         alignItems: 'center',
                         gap: '0.5rem',
-                        transition: 'transform 0.2s',
-                        cursor: 'pointer',
-                        marginTop: '1rem'
+                        transition: 'all 0.2s',
+                        cursor: isGenerating ? 'not-allowed' : 'pointer',
+                        marginTop: '1rem',
+                        minWidth: '200px',
+                        justifyContent: 'center'
                     }}
-                        onClick={() => console.log('Generating report for', selectedStock)}
+                        onClick={handleGenerate}
+                        disabled={isGenerating}
                     >
-                        <FileText size={20} />
-                        Generate Report
+                        {isGenerating ? <Loader2 className="animate-spin" size={20} /> : <FileText size={20} />}
+                        {isGenerating ? 'Analyzing...' : 'Generate Report'}
                     </button>
                 )}
 
-                {selectedStock && (
+                {selectedStock && !isGenerating && (
                     <button
                         onClick={() => setSelectedStock(null)}
                         style={{
