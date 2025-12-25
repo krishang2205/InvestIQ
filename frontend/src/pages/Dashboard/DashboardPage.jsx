@@ -1,12 +1,11 @@
 import React from 'react';
-import DashboardLayout from './components/DashboardLayout';
 import StatCard from './components/StatCard';
 import RecentActivity from './components/RecentActivity';
 import { DollarSign, TrendingUp, Wallet, BarChart2 } from 'lucide-react';
 
 const DashboardPage = () => {
     return (
-        <DashboardLayout>
+        <>
             {/* Welcome Section */}
             <div style={{ marginBottom: '2rem' }}>
                 <h1 style={{ fontSize: '2rem', fontWeight: 700, marginBottom: '0.5rem' }}>
@@ -122,7 +121,7 @@ const DashboardPage = () => {
                 {/* Recent Activity */}
                 <RecentActivity />
             </div>
-        </DashboardLayout>
+        </>
     );
 };
 

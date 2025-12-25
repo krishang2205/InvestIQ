@@ -1,8 +1,9 @@
 import React from 'react';
+import { Outlet } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import Header from './Header';
 
-const DashboardLayout = ({ children }) => {
+const DashboardLayout = () => {
     return (
         <div style={{
             display: 'flex',
@@ -24,7 +25,7 @@ const DashboardLayout = ({ children }) => {
                     padding: '2rem',
                     marginTop: 'var(--header-height)'
                 }}>
-                    {children}
+                    <Outlet />
                 </main>
             </div>
         </div>

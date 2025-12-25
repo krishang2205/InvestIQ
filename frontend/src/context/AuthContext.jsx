@@ -24,10 +24,10 @@ export const AuthProvider = ({ children }) => {
         });
 
         // Listen for changes
-        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
             setUser(session?.user ?? null);
-            if (session?.user) {
-                // Close modal and redirect to dashboard on successful auth
+            if (event === 'SIGNED_IN' && session?.user) {
+                // Close modal and redirect to dashboard only on explicit sign in
                 setIsAuthModalOpen(false);
                 navigate('/dashboard');
             }
