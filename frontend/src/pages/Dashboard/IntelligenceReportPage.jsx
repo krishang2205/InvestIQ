@@ -2,14 +2,26 @@ import React, { useState } from 'react';
 import { FileText, Sparkles, Download, Loader2 } from 'lucide-react';
 import StockSearch from './components/StockSearch';
 import ReportScope from './components/ReportScope';
+import AnalysisPreferences from './components/AnalysisPreferences';
 
 const IntelligenceReportPage = () => {
     const [selectedStock, setSelectedStock] = useState(null);
     const [isGenerating, setIsGenerating] = useState(false);
+    const [preferences, setPreferences] = useState({
+        fundamental: true,
+        technical: true,
+        sentiment: true,
+        macro: false
+    });
+
+    const togglePreference = (id) => {
+        setPreferences(prev => ({ ...prev, [id]: !prev[id] }));
+    };
 
     const handleGenerate = () => {
         setIsGenerating(true);
-        // Simulate API call
+        // Simulate API call with preferences
+        console.log('Generating with:', preferences);
         setTimeout(() => {
             setIsGenerating(false);
             console.log('Report generated!');
@@ -59,13 +71,18 @@ const IntelligenceReportPage = () => {
                 </h2>
                 <p style={{ color: 'var(--color-secondary)', maxWidth: '400px', marginBottom: '2rem' }}>
                     {selectedStock
-                        ? 'Review the scope below before generating your report.'
+                        ? 'Customize your analysis preferences below.'
                         : 'Search for a stock to begin the analysis.'}
                 </p>
 
                 {!selectedStock && <StockSearch onSelect={setSelectedStock} />}
 
-                {selectedStock && <ReportScope />}
+                {selectedStock && (
+                    <>
+                        <AnalysisPreferences preferences={preferences} onToggle={togglePreference} />
+                        <ReportScope />
+                    </>
+                )}
 
                 {selectedStock && (
                     <button style={{
