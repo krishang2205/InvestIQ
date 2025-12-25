@@ -13,8 +13,17 @@ const ReportScope = () => {
                 Report Scope
             </h3>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                <div className="glass-panel" style={{ padding: '1.25rem', borderRadius: '12px' }}>
+            <div style={{
+                display: 'flex',
+                flexWrap: 'wrap',
+                gap: '1rem',
+                justifyContent: 'center'
+            }}>
+                <div className="glass-panel" style={{
+                    flex: '1 1 250px', // Min width 250px, grow and shrink
+                    padding: '1.25rem',
+                    borderRadius: '12px'
+                }}>
                     <div style={{
                         fontSize: '0.875rem',
                         color: 'var(--color-risk-low)',
@@ -34,7 +43,12 @@ const ReportScope = () => {
                     </ul>
                 </div>
 
-                <div className="glass-panel" style={{ padding: '1.25rem', borderRadius: '12px', border: '1px solid rgba(239, 68, 68, 0.2)' }}>
+                <div className="glass-panel" style={{
+                    flex: '1 1 250px',
+                    padding: '1.25rem',
+                    borderRadius: '12px',
+                    border: '1px solid rgba(239, 68, 68, 0.2)'
+                }}>
                     <div style={{
                         fontSize: '0.875rem',
                         color: 'var(--color-risk-high)',
