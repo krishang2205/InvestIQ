@@ -1,7 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { FileText, Sparkles, Download } from 'lucide-react';
+import StockSearch from './components/StockSearch';
 
 const IntelligenceReportPage = () => {
+    const [selectedStock, setSelectedStock] = useState(null);
+
     return (
         <>
             <div style={{ marginBottom: '2rem' }}>
@@ -39,26 +42,55 @@ const IntelligenceReportPage = () => {
                     <Sparkles size={40} />
                 </div>
 
-                <h2 style={{ fontSize: '1.5rem', fontWeight: 600, marginBottom: '1rem' }}>Generate New Report</h2>
+                <h2 style={{ fontSize: '1.5rem', fontWeight: 600, marginBottom: '1rem' }}>
+                    {selectedStock ? `Analyze ${selectedStock.name}` : 'Generate New Report'}
+                </h2>
                 <p style={{ color: 'var(--color-secondary)', maxWidth: '400px', marginBottom: '2rem' }}>
-                    Our AI analyzes market trends and your portfolio performance to provide actionable intelligence.
+                    {selectedStock
+                        ? 'Ready to generate report. This may take a few moments.'
+                        : 'Search for a stock to begin the analysis.'}
                 </p>
 
-                <button style={{
-                    padding: '0.875rem 2rem',
-                    backgroundColor: 'var(--color-accent)',
-                    color: 'var(--color-bg)',
-                    fontWeight: 600,
-                    fontSize: '1rem',
-                    borderRadius: '12px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.5rem',
-                    transition: 'transform 0.2s'
-                }}>
-                    <FileText size={20} />
-                    Generate Report
-                </button>
+                {!selectedStock && <StockSearch onSelect={setSelectedStock} />}
+
+                {selectedStock && (
+                    <button style={{
+                        padding: '0.875rem 2rem',
+                        backgroundColor: 'var(--color-accent)',
+                        color: 'var(--color-bg)',
+                        fontWeight: 600,
+                        fontSize: '1rem',
+                        borderRadius: '12px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.5rem',
+                        transition: 'transform 0.2s',
+                        cursor: 'pointer',
+                        marginTop: '1rem'
+                    }}
+                        onClick={() => console.log('Generating report for', selectedStock)}
+                    >
+                        <FileText size={20} />
+                        Generate Report
+                    </button>
+                )}
+
+                {selectedStock && (
+                    <button
+                        onClick={() => setSelectedStock(null)}
+                        style={{
+                            background: 'transparent',
+                            border: 'none',
+                            color: 'var(--color-secondary)',
+                            marginTop: '1rem',
+                            textDecoration: 'underline',
+                            fontSize: '0.875rem',
+                            cursor: 'pointer'
+                        }}
+                    >
+                        Select different stock
+                    </button>
+                )}
             </div>
 
             <div style={{ marginTop: '3rem' }}>
