@@ -2,13 +2,17 @@ import React, { useState } from 'react';
 import { Search, Check } from 'lucide-react';
 
 const MOCK_STOCKS = [
-    { symbol: 'AAPL', name: 'Apple Inc.', sector: 'Technology' },
-    { symbol: 'MSFT', name: 'Microsoft Corp.', sector: 'Technology' },
-    { symbol: 'GOOGL', name: 'Alphabet Inc.', sector: 'Communication' },
-    { symbol: 'AMZN', name: 'Amazon.com Inc.', sector: 'Consumer Discretionary' },
-    { symbol: 'TSLA', name: 'Tesla Inc.', sector: 'Automotive' },
-    { symbol: 'NVDA', name: 'Nvidia Corp.', sector: 'Semiconductors' },
-    { symbol: 'JPM', name: 'JPMorgan Chase', sector: 'Financials' },
+    { symbol: 'RELIANCE', name: 'Reliance Industries Ltd', sector: 'Energy' },
+    { symbol: 'TCS', name: 'Tata Consultancy Services', sector: 'Technology' },
+    { symbol: 'HDFCBANK', name: 'HDFC Bank Ltd', sector: 'Financials' },
+    { symbol: 'INFY', name: 'Infosys Ltd', sector: 'Technology' },
+    { symbol: 'ICICIBANK', name: 'ICICI Bank Ltd', sector: 'Financials' },
+    { symbol: 'HINDUNILVR', name: 'Hindustan Unilever Ltd', sector: 'Consumer Goods' },
+    { symbol: 'ITC', name: 'ITC Ltd', sector: 'Consumer Goods' },
+    { symbol: 'SBIN', name: 'State Bank of India', sector: 'Financials' },
+    { symbol: 'BHARTIARTL', name: 'Bharti Airtel Ltd', sector: 'Telecommunication' },
+    { symbol: 'LICI', name: 'Life Insurance Corp of India', sector: 'Financials' },
+    { symbol: 'TATAMOTORS', name: 'Tata Motors Ltd', sector: 'Automotive' },
 ];
 
 const StockSearch = ({ onSelect }) => {
@@ -34,7 +38,7 @@ const StockSearch = ({ onSelect }) => {
                 <Search className="text-gray-400" size={20} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', zIndex: 10 }} />
                 <input
                     type="text"
-                    placeholder="Search stock (e.g., AAPL)..."
+                    placeholder="Search stock (e.g., RELIANCE)..."
                     value={query}
                     onChange={(e) => { setQuery(e.target.value); setIsOpen(true); }}
                     onFocus={() => setIsOpen(true)}
