@@ -3,10 +3,13 @@ import { FileText, Sparkles, Download, Loader2 } from 'lucide-react';
 import StockSearch from './components/StockSearch';
 import ReportScope from './components/ReportScope';
 import AnalysisPreferences from './components/AnalysisPreferences';
+import ReportView from './components/ReportView';
+import { MOCK_REPORT_DATA } from './data/mockReportData';
 
 const IntelligenceReportPage = () => {
     const [selectedStock, setSelectedStock] = useState(null);
     const [isGenerating, setIsGenerating] = useState(false);
+    const [reportData, setReportData] = useState(null);
     const [credits, setCredits] = useState(3);
     const [preferences, setPreferences] = useState({
         fundamental: true,
@@ -28,10 +31,22 @@ const IntelligenceReportPage = () => {
         setTimeout(() => {
             setIsGenerating(false);
             setCredits(prev => prev - 1);
+            // In a real app, we would fetch data here. 
+            // For now, we use the mock data mirroring the user's template
+            setReportData(MOCK_REPORT_DATA);
             console.log('Report generated!');
-            // Here we would typically navigate to the report view or show a success message
         }, 3000);
     };
+
+    const handleBack = () => {
+        setReportData(null);
+        setSelectedStock(null);
+    };
+
+    // If report is generated, show the Report View
+    if (reportData) {
+        return <ReportView data={reportData} onBack={handleBack} />;
+    }
 
     return (
         <>
