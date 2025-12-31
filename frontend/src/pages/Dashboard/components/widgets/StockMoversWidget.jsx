@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { ArrowUpRight, ArrowDownRight, MoreHorizontal, ChevronDown } from 'lucide-react';
+import { ArrowUpRight, ArrowDownRight, MoreHorizontal, ChevronDown, ArrowUpCircle, ArrowDownCircle, Flame, TrendingUp, TrendingDown } from 'lucide-react';
 
 const StockRow = ({ stock, index, activeTab, logo }) => {
     const isGain = stock.change >= 0;
@@ -238,28 +238,45 @@ const StockMoversWidget = () => {
                     </div>
                 </div>
 
-                <div className="custom-scrollbar" style={{ display: 'flex', gap: '0.5rem', overflowX: 'auto', paddingBottom: '0.25rem' }}>
-                    {tabs.map(tab => (
-                        <button
-                            key={tab}
-                            onClick={() => setActiveTab(tab)}
-                            style={{
-                                padding: '0.4rem 1rem', // Balanced button size
-                                borderRadius: '20px',
-                                border: '1px solid',
-                                borderColor: activeTab === tab ? 'var(--color-accent)' : 'rgba(255,255,255,0.1)',
-                                backgroundColor: activeTab === tab ? 'var(--color-accent)' : 'transparent',
-                                color: activeTab === tab ? '#000' : 'var(--color-text-secondary)',
-                                cursor: 'pointer',
-                                fontSize: '0.8rem',
-                                whiteSpace: 'nowrap',
-                                fontWeight: activeTab === tab ? '600' : '500',
-                                transition: 'all 0.2s ease',
-                            }}
-                        >
-                            {tab}
-                        </button>
-                    ))}
+                <div className="custom-scrollbar" style={{ display: 'flex', gap: '0.6rem', overflowX: 'auto', paddingBottom: '0.25rem' }}>
+                    {tabs.map(tab => {
+                        let Icon = null;
+                        let iconColor = 'inherit';
+
+                        if (tab === 'Gainers') { Icon = ArrowUpCircle; iconColor = '#00C853'; }
+                        else if (tab === 'Losers') { Icon = ArrowDownCircle; iconColor = '#FF4D4D'; }
+                        else if (tab === 'Most Active') { Icon = Flame; iconColor = '#FFA726'; }
+                        else if (tab === '52W High') { Icon = TrendingUp; iconColor = '#00C853'; }
+                        else if (tab === '52W Low') { Icon = TrendingDown; iconColor = '#FF4D4D'; }
+
+                        const isActive = activeTab === tab;
+
+                        return (
+                            <button
+                                key={tab}
+                                onClick={() => setActiveTab(tab)}
+                                style={{
+                                    padding: '0.4rem 0.85rem', // Balanced button size
+                                    borderRadius: '20px',
+                                    border: '1px solid',
+                                    borderColor: isActive ? 'var(--color-accent)' : 'rgba(255,255,255,0.1)',
+                                    backgroundColor: isActive ? 'var(--color-accent)' : 'transparent',
+                                    color: isActive ? '#000' : 'var(--color-text-secondary)',
+                                    cursor: 'pointer',
+                                    fontSize: '0.8rem', // Small aesthetic font
+                                    whiteSpace: 'nowrap',
+                                    fontWeight: isActive ? '600' : '500',
+                                    transition: 'all 0.2s ease',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '6px'
+                                }}
+                            >
+                                {Icon && <Icon size={14} color={isActive ? '#000' : iconColor} fill={isActive && tab === 'Most Active' ? '#000' : (tab === 'Most Active' ? iconColor : 'none')} />}
+                                {tab}
+                            </button>
+                        );
+                    })}
                 </div>
             </div>
 
