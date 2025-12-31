@@ -24,9 +24,7 @@ const DashboardPage = () => {
 
             {/* Main Content Area */}
             <div style={{
-                maxWidth: '1280px',
                 width: '100%',
-                margin: '0 auto',
                 padding: '2rem',
                 flex: 1
             }}>

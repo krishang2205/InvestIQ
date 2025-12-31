@@ -1,8 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowUpRight, ArrowDownRight, MoreHorizontal } from 'lucide-react';
+import { ArrowUpRight, ArrowDownRight, MoreHorizontal, ChevronDown } from 'lucide-react';
 
 const StockRow = ({ stock, index, activeTab }) => {
-    const isGain = activeTab === 'gainers';
+    // Determine if positive based on tab concept or explicit change value
+    // For 'Losers' and '52W Low', trends are negative (Red)
+    // For 'Gainers', 'Most Active', '52W High', trends depend on value (usually Green)
+
+    // Simplistic logic: if change is >= 0, Green. Else Red.
+    const isGain = stock.change >= 0;
     const color = isGain ? '#00C853' : '#FF4D4D';
 
     return (
@@ -82,33 +87,58 @@ const LoadingSkeleton = () => (
 );
 
 const StockMoversWidget = () => {
-    const [activeTab, setActiveTab] = useState('gainers');
+    const tabs = ['Gainers', 'Losers', 'Most Active', '52W High', '52W Low'];
+    const [activeTab, setActiveTab] = useState('Gainers');
+    const [activeCap, setActiveCap] = useState('Large Cap');
     const [isLoading, setIsLoading] = useState(false);
     const [displayData, setDisplayData] = useState([]);
 
-    const gainers = [
-        { symbol: 'ADANIENT', name: 'Adani Enterprises', price: 2890.45, change: 5.4, volume: '2.4M' },
-        { symbol: 'TATASTEEL', name: 'Tata Steel', price: 156.70, change: 3.2, volume: '12M' },
-        { symbol: 'INFY', name: 'Infosys', price: 1670.30, change: 2.1, volume: '4.5M' },
-        { symbol: 'RELIANCE', name: 'Reliance Ind', price: 2750.00, change: 1.8, volume: '3.1M' },
-        { symbol: 'HDFCBANK', name: 'HDFC Bank', price: 1680.50, change: 1.5, volume: '8.2M' },
-    ];
-
-    const losers = [
-        { symbol: 'WIPRO', name: 'Wipro Ltd', price: 450.20, change: -4.2, volume: '3.4M' },
-        { symbol: 'TECHM', name: 'Tech Mahindra', price: 1240.50, change: -3.1, volume: '1.2M' },
-        { symbol: 'SBIN', name: 'SBI', price: 630.15, change: -1.9, volume: '15M' },
-        { symbol: 'LT', name: 'Larsen & Toubro', price: 3450.00, change: -1.2, volume: '900K' },
-        { symbol: 'BAJFIN', name: 'Bajaj Finance', price: 7200.00, change: -0.8, volume: '500K' },
-    ];
+    // Mock Data Sets
+    const mockData = {
+        'Gainers': [
+            { symbol: 'ADANIENT', name: 'Adani Enterprises', price: 2890.45, change: 5.4 },
+            { symbol: 'TATASTEEL', name: 'Tata Steel', price: 156.70, change: 3.2 },
+            { symbol: 'INFY', name: 'Infosys', price: 1670.30, change: 2.1 },
+            { symbol: 'RELIANCE', name: 'Reliance Ind', price: 2750.00, change: 1.8 },
+            { symbol: 'HDFCBANK', name: 'HDFC Bank', price: 1680.50, change: 1.5 },
+        ],
+        'Losers': [
+            { symbol: 'WIPRO', name: 'Wipro Ltd', price: 450.20, change: -4.2 },
+            { symbol: 'TECHM', name: 'Tech Mahindra', price: 1240.50, change: -3.1 },
+            { symbol: 'SBIN', name: 'SBI', price: 630.15, change: -1.9 },
+            { symbol: 'LT', name: 'Larsen & Toubro', price: 3450.00, change: -1.2 },
+            { symbol: 'BAJFIN', name: 'Bajaj Finance', price: 7200.00, change: -0.8 },
+        ],
+        'Most Active': [
+            { symbol: 'HDFCBANK', name: 'HDFC Bank', price: 1680.50, change: 1.5 },
+            { symbol: 'RELIANCE', name: 'Reliance Ind', price: 2750.00, change: 1.8 },
+            { symbol: 'ICICIBANK', name: 'ICICI Bank', price: 990.00, change: 0.5 },
+            { symbol: 'SBIN', name: 'SBI', price: 630.15, change: -1.9 },
+            { symbol: 'TATAMOTORS', name: 'Tata Motors', price: 810.20, change: 1.2 },
+        ],
+        '52W High': [
+            { symbol: 'COALINDIA', name: 'Coal India', price: 380.00, change: 2.5 },
+            { symbol: 'NTPC', name: 'NTPC Ltd', price: 310.00, change: 1.1 },
+            { symbol: 'POWERGRID', name: 'Power Grid Corp', price: 240.00, change: 0.9 },
+            { symbol: 'ONGC', name: 'ONGC', price: 220.00, change: 1.8 },
+            { symbol: 'HAL', name: 'Hindustan Aeronautics', price: 2900.00, change: 3.5 },
+        ],
+        '52W Low': [
+            { symbol: 'HUL', name: 'Hindustan Unilever', price: 2400.00, change: -0.5 },
+            { symbol: 'ASIANPAINT', name: 'Asian Paints', price: 2900.00, change: -1.1 },
+            { symbol: 'UPL', name: 'UPL Ltd', price: 550.00, change: -2.3 },
+            { symbol: 'AUBANK', name: 'AU Small Finance', price: 680.00, change: -1.5 },
+            { symbol: 'BANDHANBNK', name: 'Bandhan Bank', price: 210.00, change: -0.9 },
+        ]
+    };
 
     // Simulate data fetch on tab change
     useEffect(() => {
         setIsLoading(true);
         const timer = setTimeout(() => {
-            setDisplayData(activeTab === 'gainers' ? gainers : losers);
+            setDisplayData(mockData[activeTab] || []);
             setIsLoading(false);
-        }, 600); // 600ms load time
+        }, 500); // 500ms load time
         return () => clearTimeout(timer);
     }, [activeTab]);
 
@@ -121,45 +151,59 @@ const StockMoversWidget = () => {
             flexDirection: 'column',
             borderTop: '1px solid rgba(255,255,255,0.1)'
         }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-                <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+            {/* Header Row: Title & Tabs & Cap Selector */}
+            <div style={{ marginBottom: '1.5rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
                     <h3 style={{ fontSize: '1.1rem', fontWeight: '600', color: 'var(--color-text-primary)' }}>Stock Movers</h3>
 
-                    {/* Pill Tabs */}
+                    {/* Cap Selector Dropdown - Simple Text Button for now */}
                     <div style={{
                         display: 'flex',
-                        backgroundColor: 'rgba(255,255,255,0.05)',
-                        borderRadius: '20px', // Fully rounded
-                        padding: '3px'
+                        alignItems: 'center',
+                        gap: '0.25rem',
+                        color: 'var(--color-accent)',
+                        fontSize: '0.9rem',
+                        fontWeight: '600',
+                        cursor: 'pointer'
                     }}>
-                        {['gainers', 'losers'].map(tab => (
-                            <button
-                                key={tab}
-                                onClick={() => setActiveTab(tab)}
-                                style={{
-                                    padding: '0.35rem 1rem',
-                                    borderRadius: '16px',
-                                    border: 'none',
-                                    backgroundColor: activeTab === tab ? 'var(--color-accent)' : 'transparent',
-                                    color: activeTab === tab ? '#000' : 'var(--color-text-secondary)',
-                                    cursor: 'pointer',
-                                    fontSize: '0.8rem',
-                                    textTransform: 'capitalize',
-                                    fontWeight: activeTab === tab ? '600' : '500',
-                                    transition: 'all 0.2s ease',
-                                    boxShadow: activeTab === tab ? '0 2px 4px rgba(0,0,0,0.1)' : 'none'
-                                }}
-                            >
-                                {tab}
-                            </button>
-                        ))}
+                        {activeCap} <ChevronDown size={16} />
                     </div>
                 </div>
-                <MoreHorizontal size={20} color="var(--color-text-secondary)" style={{ cursor: 'pointer' }} />
+
+                {/* Pill Tabs Container - Scrollable if needed */}
+                <div className="custom-scrollbar" style={{
+                    display: 'flex',
+                    gap: '0.5rem',
+                    overflowX: 'auto',
+                    paddingBottom: '0.5rem'
+                }}>
+                    {tabs.map(tab => (
+                        <button
+                            key={tab}
+                            onClick={() => setActiveTab(tab)}
+                            style={{
+                                padding: '0.4rem 1rem',
+                                borderRadius: '20px',
+                                border: '1px solid',
+                                borderColor: activeTab === tab ? 'var(--color-accent)' : 'rgba(255,255,255,0.1)',
+                                backgroundColor: activeTab === tab ? 'var(--color-accent)' : 'transparent',
+                                color: activeTab === tab ? '#000' : 'var(--color-text-secondary)',
+                                cursor: 'pointer',
+                                fontSize: '0.8rem',
+                                whiteSpace: 'nowrap',
+                                fontWeight: activeTab === tab ? '600' : '500',
+                                transition: 'all 0.2s ease',
+                            }}
+                        >
+                            {/* Icons could be added here similar to reference */}
+                            {tab}
+                        </button>
+                    ))}
+                </div>
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: '300px' }}>
-                {/* Header Row */}
+                {/* Table Header Row */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0 1rem 0.5rem 1rem', fontSize: '0.75rem', color: 'var(--color-text-secondary)' }}>
                     <span>Company</span>
                     <span>Price / Change</span>
