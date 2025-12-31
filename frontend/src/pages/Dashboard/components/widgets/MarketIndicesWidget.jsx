@@ -1,168 +1,133 @@
-import React from 'react';
-import { AreaChart, Area, ResponsiveContainer, Tooltip } from 'recharts';
+import React, { useState, useRef, useEffect } from 'react';
+import { AreaChart, Area, ResponsiveContainer } from 'recharts';
+import { MoreHorizontal } from 'lucide-react';
+import IndexDetailCard from './IndexDetailCard';
 
-const IndexCard = ({ name, value, change, data }) => {
-    const isPositive = change >= 0;
-    const color = isPositive ? '#00C853' : '#FF4D4D';
-
-    return (
-        <div className="shadow-soft-lift" style={{
-            backgroundColor: 'rgba(255, 255, 255, 0.05)',
-            borderRadius: '12px',
-            padding: '1.25rem',
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'space-between',
-            minWidth: '0',
-            cursor: 'pointer',
-            border: '1px solid rgba(255, 255, 255, 0.05)'
-        }}>
-            <div style={{ marginBottom: '0.5rem' }}>
-                <div style={{
-                    fontSize: '0.9rem',
-                    color: 'var(--color-text-secondary)',
-                    whiteSpace: 'nowrap',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    fontWeight: '500' // Medium weight like Tickertape
-                }}>
-                    {name}
-                </div>
-                <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem', marginTop: '0.25rem' }}>
-                    <div style={{ fontSize: '1.4rem', fontWeight: '700', letterSpacing: '-0.02em' }}>
-                        {value.toLocaleString()}
-                    </div>
-                    <div style={{
-                        import React, { useState, useRef, useEffect} from 'react';
-                    import {AreaChart, Area, ResponsiveContainer} from 'recharts';
-                    import {MoreHorizontal} from 'lucide-react';
-                    import IndexDetailCard from './IndexDetailCard';
-
-                    const Sparkline = ({color}) => {
-    const data = Array.from({length: 20 }, (_, i) => ({
-                        name: i,
-                    value: Math.random() * 100
+const Sparkline = ({ color }) => {
+    const data = Array.from({ length: 20 }, (_, i) => ({
+        name: i,
+        value: Math.random() * 100
     }));
 
-                    return (
-                    <div style={{ width: '60px', height: '30px' }}>
-                        <ResponsiveContainer width="100%" height="100%">
-                            <AreaChart data={data}>
-                                <defs>
-                                    <linearGradient id={`gradient-${color}`} x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="5%" stopColor={color} stopOpacity={0.3} />
-                                        <stop offset="95%" stopColor={color} stopOpacity={0} />
-                                    </linearGradient>
-                                </defs>
-                                <Area type="monotone" dataKey="value" stroke={color} fill={`url(#gradient-${color})`} strokeWidth={2} />
-                            </AreaChart>
-                        </ResponsiveContainer>
-                    </div>
-                    );
+    return (
+        <div style={{ width: '60px', height: '30px' }}>
+            <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={data}>
+                    <defs>
+                        <linearGradient id={`gradient-${color}`} x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor={color} stopOpacity={0.3} />
+                            <stop offset="95%" stopColor={color} stopOpacity={0} />
+                        </linearGradient>
+                    </defs>
+                    <Area type="monotone" dataKey="value" stroke={color} fill={`url(#gradient-${color})`} strokeWidth={2} />
+                </AreaChart>
+            </ResponsiveContainer>
+        </div>
+    );
 };
 
 const MarketIndicesWidget = () => {
     const [activeIndex, setActiveIndex] = useState(null);
-                    const containerRef = useRef(null);
+    const containerRef = useRef(null);
 
-                    const indices = [
-                    {id: 'nifty50', name: 'NIFTY 50', price: 21731.40, change: 0.85, symbol: 'NIFTY 50', constituents: 50 },
-                    {id: 'sensex', name: 'SENSEX', price: 72038.43, change: 0.78, symbol: 'SENSEX', constituents: 30 },
-                    {id: 'banknifty', name: 'BANK NIFTY', price: 46058.20, change: -0.21, symbol: 'BANK NIFTY', constituents: 12 },
-                    {id: 'nifty100', name: 'NIFTY 100', price: 26689.30, change: 0.63, symbol: 'NIFTY 100', constituents: 100 },
-                    {id: 'midcap', name: 'NIFTY MIDCAP', price: 47820.10, change: 1.25, symbol: 'NIFTY MIDCAP 100', constituents: 100 },
-                    {id: 'smallcap', name: 'NIFTY SMALL', price: 15400.50, change: 2.10, symbol: 'NIFTY SMALLCAP 100', constituents: 100 },
-                    ];
+    const indices = [
+        { id: 'nifty50', name: 'NIFTY 50', price: 21731.40, change: 0.85, symbol: 'NIFTY 50', constituents: 50 },
+        { id: 'sensex', name: 'SENSEX', price: 72038.43, change: 0.78, symbol: 'SENSEX', constituents: 30 },
+        { id: 'banknifty', name: 'BANK NIFTY', price: 46058.20, change: -0.21, symbol: 'BANK NIFTY', constituents: 12 },
+        { id: 'nifty100', name: 'NIFTY 100', price: 26689.30, change: 0.63, symbol: 'NIFTY 100', constituents: 100 },
+        { id: 'midcap', name: 'NIFTY MIDCAP', price: 47820.10, change: 1.25, symbol: 'NIFTY MIDCAP 100', constituents: 100 },
+        { id: 'smallcap', name: 'NIFTY SMALL', price: 15400.50, change: 2.10, symbol: 'NIFTY SMALLCAP 100', constituents: 100 },
+    ];
 
     // Close card on outside click
     useEffect(() => {
         const handleClickOutside = (event) => {
             if (containerRef.current && !containerRef.current.contains(event.target)) {
-                        setActiveIndex(null);
+                setActiveIndex(null);
             }
         };
-                    document.addEventListener('mousedown', handleClickOutside);
+        document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
-                    return (
+    return (
+        <div
+            ref={containerRef}
+            className="glass-panel shadow-soft-lift"
+            style={{
+                padding: '1.5rem',
+                borderRadius: '16px',
+                height: '100%',
+                display: 'flex',
+                flexDirection: 'column',
+                position: 'relative' // For absolute positioning of card
+            }}
+        >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+                <h3 style={{ fontSize: '1.1rem', fontWeight: '600', color: 'var(--color-text-primary)' }}>Indian Indices</h3>
+                <MoreHorizontal size={20} color="var(--color-text-secondary)" style={{ cursor: 'pointer' }} />
+            </div>
+
+            <div className="custom-scrollbar" style={{ flex: 1, overflowY: 'auto', paddingRight: '0.5rem' }}>
+                {indices.map((index, i) => (
                     <div
-                        ref={containerRef}
-                        className="glass-panel shadow-soft-lift"
+                        key={index.id}
+                        onClick={() => setActiveIndex(index.id === activeIndex ? null : index.id)}
                         style={{
-                            padding: '1.5rem',
-                            borderRadius: '16px',
-                            height: '100%',
                             display: 'flex',
-                            flexDirection: 'column',
-                            position: 'relative' // For absolute positioning of card
-                        }}
-                    >
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
-                            <h3 style={{ fontSize: '1.1rem', fontWeight: '600', color: 'var(--color-text-primary)' }}>Indian Indices</h3>
-                            <MoreHorizontal size={20} color="var(--color-text-secondary)" style={{ cursor: 'pointer' }} />
-                        </div>
-
-                        <div className="custom-scrollbar" style={{ flex: 1, overflowY: 'auto', paddingRight: '0.5rem' }}>
-                            {indices.map((index, i) => (
-                                <div
-                                    key={index.id}
-                                    onClick={() => setActiveIndex(index.id === activeIndex ? null : index.id)}
-                                    style={{
-                                        display: 'flex',
-                                        justifyContent: 'space-between',
-                                        alignItems: 'center',
-                                        padding: '0.85rem',
-                                        borderRadius: '12px',
-                                        backgroundColor: activeIndex === index.id ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.02)',
-                                        marginBottom: '0.5rem',
-                                        cursor: 'pointer',
-                                        transition: 'all 0.2s ease',
-                                        border: activeIndex === index.id ? '1px solid rgba(255,255,255,0.1)' : '1px solid transparent',
-                                        position: 'relative'
-                                    }}
-                                    className="index-row-hover"
-                                >
-                                    {/* Detail Card Overlay - Only render if active */}
-                                    {activeIndex === index.id && (
-                                        <IndexDetailCard indexData={index} onClose={() => setActiveIndex(null)} />
-                                    )}
-
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                                        <span style={{ fontWeight: '600', fontSize: '0.9rem', color: 'var(--color-text-primary)' }}>{index.name}</span>
-                                        <span style={{
-                                            fontSize: '0.8rem',
-                                            color: index.change >= 0 ? '#00C853' : '#FF4D4D',
-                                            fontWeight: '500'
-                                        }}>
-                                            {index.change >= 0 ? '+' : ''}{index.change}%
-                                        </span>
-                                    </div>
-
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                                        <Sparkline color={index.change >= 0 ? '#00C853' : '#FF4D4D'} />
-                                        <div style={{ textAlign: 'right', minWidth: '70px' }}>
-                                            <div style={{ fontWeight: '600', fontSize: '0.9rem' }}>{index.price.toLocaleString()}</div>
-                                        </div>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-
-                        <div style={{
-                            marginTop: '1rem',
-                            textAlign: 'center',
-                            fontSize: '0.85rem',
-                            color: 'var(--color-primary)',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            padding: '0.85rem',
+                            borderRadius: '12px',
+                            backgroundColor: activeIndex === index.id ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.02)',
+                            marginBottom: '0.5rem',
                             cursor: 'pointer',
-                            fontWeight: '600',
-                            paddingTop: '0.75rem',
-                            borderTop: '1px solid rgba(255,255,255,0.05)'
-                        }}>
-                            View all indices
+                            transition: 'all 0.2s ease',
+                            border: activeIndex === index.id ? '1px solid rgba(255,255,255,0.1)' : '1px solid transparent',
+                            position: 'relative'
+                        }}
+                        className="index-row-hover"
+                    >
+                        {/* Detail Card Overlay - Only render if active */}
+                        {activeIndex === index.id && (
+                            <IndexDetailCard indexData={index} onClose={() => setActiveIndex(null)} />
+                        )}
+
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                            <span style={{ fontWeight: '600', fontSize: '0.9rem', color: 'var(--color-text-primary)' }}>{index.name}</span>
+                            <span style={{
+                                fontSize: '0.8rem',
+                                color: index.change >= 0 ? '#00C853' : '#FF4D4D',
+                                fontWeight: '500'
+                            }}>
+                                {index.change >= 0 ? '+' : ''}{index.change}%
+                            </span>
+                        </div>
+
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                            <Sparkline color={index.change >= 0 ? '#00C853' : '#FF4D4D'} />
+                            <div style={{ textAlign: 'right', minWidth: '70px' }}>
+                                <div style={{ fontWeight: '600', fontSize: '0.9rem' }}>{index.price.toLocaleString()}</div>
+                            </div>
                         </div>
                     </div>
-                    );
+                ))}
+            </div>
+
+            <div style={{
+                marginTop: '1rem',
+                textAlign: 'center',
+                fontSize: '0.85rem',
+                color: 'var(--color-primary)',
+                cursor: 'pointer',
+                fontWeight: '600',
+                paddingTop: '0.75rem',
+                borderTop: '1px solid rgba(255,255,255,0.05)'
+            }}>
+                View all indices
+            </div>
+        </div>
+    );
 };
 
-                    export default MarketIndicesWidget;
+export default MarketIndicesWidget;
