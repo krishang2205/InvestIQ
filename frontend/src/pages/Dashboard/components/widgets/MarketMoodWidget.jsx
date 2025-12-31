@@ -72,7 +72,7 @@ const MarketMoodWidget = () => {
     return (
         <div
             className="glass-panel shadow-soft-lift"
-            onClick={() => navigate('/market-mood-index')}
+            onClick={() => navigate('/dashboard/market-mood-index')}
             style={{
                 padding: '1.25rem 1.5rem',
                 borderRadius: '16px',
@@ -81,12 +81,13 @@ const MarketMoodWidget = () => {
                 alignItems: 'center',
                 justifyContent: 'space-between',
                 cursor: 'pointer',
-                borderTop: '1px solid rgba(255,255,255,0.1)'
+                borderTop: '1px solid rgba(255,255,255,0.1)',
+                minWidth: '0' // Prevent flex overflow
             }}
         >
             {/* Left Section: Current Status */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                <div style={{ width: '50px', height: '50px', position: 'relative' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', flex: 1 }}>
+                <div style={{ width: '60px', height: '60px', position: 'relative', flexShrink: 0 }}>
                     {/* Semi Circle Gauge for Main Display */}
                     <ResponsiveContainer width="100%" height="100%">
                         <PieChart>
@@ -96,28 +97,28 @@ const MarketMoodWidget = () => {
                                 cy="50%"
                                 startAngle={180}
                                 endAngle={0}
-                                innerRadius={18}
-                                outerRadius={25}
+                                innerRadius={22}
+                                outerRadius={30}
                                 dataKey="value"
                                 stroke="none"
                             >
                                 <Cell fill="#00C853" /> {/* Extreme Fear Color */}
-                                <Cell fill="rgba(255,255,255,0.1)" />
+                                <Cell fill="rgba(255,255,255,0.05)" />
                             </Pie>
                         </PieChart>
                     </ResponsiveContainer>
                     {/* Needle Placeholder (CSS) */}
                     <div style={{
-                        position: 'absolute', bottom: '25px', left: '24px',
-                        width: '2px', height: '22px', background: '#fff',
+                        position: 'absolute', bottom: '30px', left: '29px',
+                        width: '2px', height: '26px', background: '#fff',
                         transform: 'rotate(-45deg)', transformOrigin: 'bottom center'
                     }} />
                 </div>
-                <div>
-                    <div style={{ fontSize: '0.9rem', color: 'var(--color-text-primary)', fontWeight: '500' }}>
+                <div style={{ whiteSpace: 'nowrap' }}>
+                    <div style={{ fontSize: '0.95rem', color: 'var(--color-text-primary)', fontWeight: '500', marginBottom: '2px' }}>
                         The market is in
                     </div>
-                    <div style={{ fontSize: '1.1rem', fontWeight: '700', color: '#00C853' }}>
+                    <div style={{ fontSize: '1.25rem', fontWeight: '800', color: '#00C853', lineHeight: '1' }}>
                         Fear zone
                     </div>
                 </div>
@@ -125,16 +126,18 @@ const MarketMoodWidget = () => {
 
             {/* Right Section: Historical Dots */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
-                {history.map((item, idx) => (
-                    <HistoricalDot key={idx} {...item} />
-                ))}
+                <div style={{ display: 'flex', gap: '1.25rem' }}>
+                    {history.map((item, idx) => (
+                        <HistoricalDot key={idx} {...item} />
+                    ))}
+                </div>
                 <div style={{
                     height: '40px',
                     width: '1px',
                     backgroundColor: 'rgba(255,255,255,0.1)',
                     margin: '0 0.5rem'
                 }} />
-                <ChevronRight size={20} color="var(--color-text-secondary)" />
+                <ChevronRight size={24} color="var(--color-text-secondary)" />
             </div>
         </div>
     );
