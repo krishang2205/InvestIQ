@@ -64,7 +64,8 @@ const DashboardPage = () => {
                     gridTemplateColumns: 'minmax(0, 1.2fr) minmax(0, 0.8fr)', // Slight bias to stock table
                     gap: '1.25rem',
                     marginBottom: '1.5rem',
-                    height: '450px' // Slightly reduced height constraint
+                    minHeight: '450px', // Changed from height to minHeight
+                    alignItems: 'start' // Ensure widgets align at top
                 }}>
                     <StockMoversWidget />
                     <NewsWidget />

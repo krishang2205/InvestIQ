@@ -130,17 +130,20 @@ const StockMoversWidget = () => {
     }, [activeTab]);
 
     return (
-        <div className="glass-panel shadow-soft-lift" style={{
-            padding: '1.5rem',
-            borderRadius: '16px',
-            height: '100%',
-            display: 'flex',
-            flexDirection: 'column',
-            borderTop: '1px solid rgba(255,255,255,0.1)'
-        }}>
-            <div style={{ marginBottom: '1.5rem' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                    <h3 style={{ fontSize: '1.1rem', fontWeight: '600', color: 'var(--color-text-primary)' }}>Stock Movers</h3>
+        <div
+            className="glass-panel shadow-soft-lift"
+            style={{
+                padding: '1.25rem', // Reduced padding
+                borderRadius: '16px',
+                height: '100%',
+                display: 'flex',
+                flexDirection: 'column',
+                borderTop: '1px solid rgba(255,255,255,0.1)'
+            }}
+        >
+            <div style={{ marginBottom: '1rem' }}> {/* Reduced marginBottom */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+                    <h3 style={{ fontSize: '1rem', fontWeight: '600', color: 'var(--color-text-primary)' }}>Stock Movers</h3>
 
                     {/* Functional Dropdown */}
                     <div style={{ position: 'relative' }} ref={dropdownRef}>
@@ -151,7 +154,7 @@ const StockMoversWidget = () => {
                                 alignItems: 'center',
                                 gap: '0.25rem',
                                 color: 'var(--color-accent)',
-                                fontSize: '0.9rem',
+                                fontSize: '0.85rem',
                                 fontWeight: '600',
                                 cursor: 'pointer',
                                 padding: '4px 8px',
@@ -159,7 +162,7 @@ const StockMoversWidget = () => {
                                 backgroundColor: isDropdownOpen ? 'rgba(255,255,255,0.05)' : 'transparent'
                             }}
                         >
-                            {activeCap} <ChevronDown size={16} style={{ transform: isDropdownOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }} />
+                            {activeCap} <ChevronDown size={14} style={{ transform: isDropdownOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }} />
                         </div>
 
                         {/* Dropdown Menu */}
@@ -169,7 +172,7 @@ const StockMoversWidget = () => {
                                 top: '100%',
                                 right: 0,
                                 marginTop: '0.5rem',
-                                backgroundColor: '#1E1E1E', // Solid bg for dropdown
+                                backgroundColor: '#1E1E1E',
                                 border: '1px solid rgba(255,255,255,0.1)',
                                 borderRadius: '8px',
                                 padding: '0.5rem',
@@ -185,7 +188,7 @@ const StockMoversWidget = () => {
                                         onClick={() => { setActiveCap(cap); setIsDropdownOpen(false); }}
                                         style={{
                                             padding: '0.5rem 0.75rem',
-                                            fontSize: '0.85rem',
+                                            fontSize: '0.8rem', // Smaller text
                                             color: activeCap === cap ? 'var(--color-accent)' : 'var(--color-text-secondary)',
                                             backgroundColor: activeCap === cap ? 'rgba(255,255,255,0.05)' : 'transparent',
                                             borderRadius: '6px',
@@ -203,20 +206,20 @@ const StockMoversWidget = () => {
                     </div>
                 </div>
 
-                <div className="custom-scrollbar" style={{ display: 'flex', gap: '0.5rem', overflowX: 'auto', paddingBottom: '0.5rem' }}>
+                <div className="custom-scrollbar" style={{ display: 'flex', gap: '0.5rem', overflowX: 'auto', paddingBottom: '0.25rem' }}>
                     {tabs.map(tab => (
                         <button
                             key={tab}
                             onClick={() => setActiveTab(tab)}
                             style={{
-                                padding: '0.4rem 1rem',
+                                padding: '0.3rem 0.8rem', // Smaller padding
                                 borderRadius: '20px',
                                 border: '1px solid',
                                 borderColor: activeTab === tab ? 'var(--color-accent)' : 'rgba(255,255,255,0.1)',
                                 backgroundColor: activeTab === tab ? 'var(--color-accent)' : 'transparent',
                                 color: activeTab === tab ? '#000' : 'var(--color-text-secondary)',
                                 cursor: 'pointer',
-                                fontSize: '0.8rem',
+                                fontSize: '0.75rem', // Smaller font
                                 whiteSpace: 'nowrap',
                                 fontWeight: activeTab === tab ? '600' : '500',
                                 transition: 'all 0.2s ease',
@@ -228,13 +231,13 @@ const StockMoversWidget = () => {
                 </div>
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: '300px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0 1rem 0.5rem 1rem', fontSize: '0.75rem', color: 'var(--color-text-secondary)' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: '0' }}> {/* minHeight 0 allows flex shrink */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0 0.5rem 0.5rem 0.5rem', fontSize: '0.7rem', color: 'var(--color-text-secondary)', fontWeight: '600' }}>
                     <span>Company</span>
                     <span>Price / Change</span>
                 </div>
                 {isLoading ? <LoadingSkeleton /> : (
-                    <div className="custom-scrollbar" style={{ overflowY: 'auto', flex: 1 }}>
+                    <div className="custom-scrollbar" style={{ overflowY: 'auto', flex: 1, paddingRight: '2px' }}>
                         {displayData.map((stock, idx) => (
                             <StockRow key={stock.symbol} stock={stock} index={idx} activeTab={activeTab} />
                         ))}
@@ -242,7 +245,7 @@ const StockMoversWidget = () => {
                 )}
             </div>
 
-            <div style={{ marginTop: '1rem', textAlign: 'center', fontSize: '0.85rem', color: 'var(--color-primary)', cursor: 'pointer', fontWeight: '600', padding: '0.5rem', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+            <div style={{ marginTop: '0.5rem', textAlign: 'center', fontSize: '0.8rem', color: 'var(--color-primary)', cursor: 'pointer', fontWeight: '600', paddingTop: '0.5rem', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
                 View all market movers
             </div>
         </div>
