@@ -66,7 +66,7 @@ const MarketIndicesWidget = () => {
             ref={containerRef}
             className="glass-panel shadow-soft-lift"
             style={{
-                padding: '1.25rem', // Reduced padding
+                padding: '1.25rem', // Aesthetic Padding
                 borderRadius: '16px',
                 height: '100%',
                 display: 'flex',
@@ -75,18 +75,19 @@ const MarketIndicesWidget = () => {
             }}
         >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                <h3 style={{ fontSize: '1rem', fontWeight: '600', color: 'var(--color-text-primary)' }}>Indian Indices</h3>
+                <h3 style={{ fontSize: '1.05rem', fontWeight: '600', color: 'var(--color-text-primary)' }}>Indian Indices</h3>
                 <MoreHorizontal size={18} color="var(--color-text-secondary)" style={{ cursor: 'pointer' }} />
             </div>
 
             <div className="custom-scrollbar" style={{
                 flex: 1,
-                overflowY: 'auto',
-                paddingRight: '0.25rem', // Reduced scroll padding
+                paddingRight: '0.25rem',
                 display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', // Smaller min width
-                gap: '0.75rem', // Tighter gap
-                alignContent: 'start'
+                gridTemplateColumns: 'repeat(6, 1fr)', // Force single row for 6 items
+                gap: '0.75rem',
+                alignContent: 'start',
+                minWidth: '800px', // Ensure it doesn't squish too much, allow container scroll if needed
+                overflowX: 'auto'
             }}>
                 {indices.map((index, i) => (
                     <div
@@ -96,7 +97,7 @@ const MarketIndicesWidget = () => {
                             display: 'flex',
                             flexDirection: 'column',
                             justifyContent: 'space-between',
-                            padding: '0.85rem', // Tighter card padding
+                            padding: '0.85rem', // Compact Card
                             borderRadius: '10px',
                             backgroundColor: activeIndex === index.id ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.02)',
                             cursor: 'pointer',

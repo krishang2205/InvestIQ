@@ -77,8 +77,8 @@ const MarketMoodWidget = () => {
             className="glass-panel shadow-soft-lift"
             onClick={() => navigate('/dashboard/market-mood-index')}
             style={{
-                padding: '1.25rem', // Reduced padding
-                borderRadius: '16px', // Slightly smaller radius
+                padding: '1.25rem', // Aesthetic padding
+                borderRadius: '16px',
                 height: '100%',
                 display: 'flex',
                 flexDirection: 'column',
@@ -92,23 +92,23 @@ const MarketMoodWidget = () => {
         >
             {/* Header */}
             <div style={{
-                fontSize: '0.85rem', // Smaller header
+                fontSize: '0.9rem',
                 color: 'var(--color-text-secondary)',
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'center',
-                marginBottom: '0.75rem'
+                marginBottom: '1rem'
             }}>
-                <span style={{ fontWeight: '600', letterSpacing: '0.3px' }}>Market Mood Index</span>
-                <ChevronRight size={16} color="rgba(255,255,255,0.3)" />
+                <span style={{ fontWeight: '600', letterSpacing: '0.4px' }}>Market Mood Index</span>
+                <ChevronRight size={18} color="rgba(255,255,255,0.3)" />
             </div>
 
             {/* Main Center Section */}
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', marginBottom: '0.75rem' }}>
 
-                {/* Big Gauge */}
+                {/* Gauge - Medium Size */}
                 <div style={{
-                    width: '130px', height: '80px', position: 'relative', // Smaller Gauge
+                    width: '140px', height: '80px', position: 'relative',
                     filter: `drop-shadow(0 0 20px ${activeColor}25)`,
                     marginBottom: '0.25rem'
                 }}>
@@ -117,11 +117,11 @@ const MarketMoodWidget = () => {
                             <Pie
                                 data={[{ value: score }, { value: 100 - score }]}
                                 cx="50%"
-                                cy="80%"
+                                cy="90%"
                                 startAngle={180}
                                 endAngle={0}
-                                innerRadius={45} // Reduced radii
-                                outerRadius={60}
+                                innerRadius={50}
+                                outerRadius={70}
                                 dataKey="value"
                                 stroke="none"
                             >
@@ -132,26 +132,26 @@ const MarketMoodWidget = () => {
                     </ResponsiveContainer>
                     {/* Needle */}
                     <div style={{
-                        position: 'absolute', bottom: '16px', left: '64px', // Adjusted for new center
-                        width: '2px', height: '45px', background: '#fff',
+                        position: 'absolute', bottom: '10px', left: '69px', // Centered
+                        width: '2px', height: '50px', background: '#fff',
                         transform: 'rotate(-45deg)', transformOrigin: 'bottom center',
                         borderRadius: '2px',
                         boxShadow: '0 0 10px rgba(0,0,0,0.5)'
                     }} />
                     {/* Score Text in Center */}
                     <div style={{
-                        position: 'absolute', bottom: '-8px', width: '100%', textAlign: 'center',
-                        fontSize: '1.5rem', fontWeight: '800', color: activeColor // Smaller score
+                        position: 'absolute', bottom: '-15px', width: '100%', textAlign: 'center',
+                        fontSize: '1.75rem', fontWeight: '800', color: activeColor
                     }}>
                         {Math.round(score)}
                     </div>
                 </div>
 
                 {/* Zone Text */}
-                <div style={{ textAlign: 'center', marginTop: '0.5rem' }}>
-                    <div style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)', marginBottom: '0px' }}>Current Zone</div>
+                <div style={{ textAlign: 'center', marginTop: '1rem' }}>
+                    <div style={{ fontSize: '0.8rem', color: 'var(--color-text-secondary)', marginBottom: '0px' }}>Current Zone</div>
                     <div style={{
-                        fontSize: '1.5rem', // Smaller Zone Text
+                        fontSize: '1.75rem',
                         fontWeight: '700',
                         color: activeColor,
                         lineHeight: '1.2',

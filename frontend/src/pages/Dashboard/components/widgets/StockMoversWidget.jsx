@@ -12,10 +12,10 @@ const StockRow = ({ stock, index, activeTab, logo }) => {
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'center',
-                padding: '1rem', // Reverted padding
+                padding: '0.85rem', // Aesthetic Padding
                 borderRadius: '12px',
                 backgroundColor: 'rgba(255,255,255,0.02)',
-                marginBottom: '0.75rem',
+                marginBottom: '0.5rem',
                 border: '1px solid transparent',
                 cursor: 'pointer',
                 transition: 'all 0.2s ease',
@@ -32,7 +32,7 @@ const StockRow = ({ stock, index, activeTab, logo }) => {
         >
             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                 <div style={{
-                    width: '44px', height: '44px', borderRadius: '10px',
+                    width: '40px', height: '40px', borderRadius: '10px',
                     backgroundColor: 'rgba(255,255,255,0.03)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     overflow: 'hidden',
@@ -45,23 +45,23 @@ const StockRow = ({ stock, index, activeTab, logo }) => {
                             style={{ width: '100%', height: '100%', objectFit: 'contain' }}
                             onError={(e) => {
                                 e.target.style.display = 'none'; // Hide if fails
-                                e.target.parentElement.innerHTML = isGain ? '<svg...>' : '<svg...>'; // Quick fallback not possible directly here, but simple hide works
+                                e.target.parentElement.innerHTML = isGain ? '<svg...>' : '<svg...>'; // simplified fallback
                             }}
                         />
                     ) : (
                         <div style={{ color: color }}>
-                            {isGain ? <ArrowUpRight size={22} /> : <ArrowDownRight size={22} />}
+                            {isGain ? <ArrowUpRight size={20} /> : <ArrowDownRight size={20} />}
                         </div>
                     )}
                 </div>
                 <div>
-                    <div style={{ fontWeight: '600', fontSize: '1rem', marginBottom: '2px' }}>{stock.symbol}</div>
-                    <div style={{ fontSize: '0.8rem', color: 'var(--color-text-secondary)' }}>{stock.name}</div>
+                    <div style={{ fontWeight: '600', fontSize: '0.9rem', marginBottom: '2px' }}>{stock.symbol}</div>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)' }}>{stock.name}</div>
                 </div>
             </div>
             <div style={{ textAlign: 'right' }}>
-                <div style={{ fontWeight: '600', fontSize: '1rem', color: 'var(--color-text-primary)' }}>₹{stock.price.toFixed(2)}</div>
-                <div style={{ fontSize: '0.85rem', color: color, fontWeight: '600' }}>
+                <div style={{ fontWeight: '600', fontSize: '0.95rem', color: 'var(--color-text-primary)' }}>₹{stock.price.toFixed(2)}</div>
+                <div style={{ fontSize: '0.8rem', color: color, fontWeight: '600' }}>
                     {isGain ? '+' : ''}{stock.change}%
                 </div>
             </div>
@@ -144,28 +144,28 @@ const StockMoversWidget = () => {
         return () => clearTimeout(timer);
     }, [activeTab]);
 
-    // Logo Mapping
+    // Logo Mapping using Google Favicon API for reliability
     const logoMap = {
-        'ADANIENT': '/assets/logos/adani.png',
-        'TATASTEEL': '/assets/logos/tata.png',
-        'INFY': '/assets/logos/infosys.png',
-        'RELIANCE': '/assets/logos/reliance.png',
-        'HDFCBANK': '/assets/logos/hdfc.png',
-        'WIPRO': '/assets/logos/wipro.png',
-        'TECHM': '/assets/logos/techm.png',
-        'COALINDIA': '/assets/logos/coalindia.png',
-        'NTPC': '/assets/logos/ntpc.png',
-        'HUL': '/assets/logos/hul.png',
-        'UPL': '/assets/logos/upl.png',
-        'ICICIBANK': '/assets/logos/icici.png',
-        'KOTAK': '/assets/logos/kotak.png'
+        'ADANIENT': 'https://www.google.com/s2/favicons?domain=adani.com&sz=128',
+        'TATASTEEL': 'https://www.google.com/s2/favicons?domain=tatasteel.com&sz=128',
+        'INFY': 'https://www.google.com/s2/favicons?domain=infosys.com&sz=128',
+        'RELIANCE': 'https://www.google.com/s2/favicons?domain=ril.com&sz=128',
+        'HDFCBANK': 'https://www.google.com/s2/favicons?domain=hdfcbank.com&sz=128',
+        'WIPRO': 'https://www.google.com/s2/favicons?domain=wipro.com&sz=128',
+        'TECHM': 'https://www.google.com/s2/favicons?domain=techmahindra.com&sz=128',
+        'COALINDIA': 'https://www.google.com/s2/favicons?domain=coalindia.in&sz=128',
+        'NTPC': 'https://www.google.com/s2/favicons?domain=ntpc.co.in&sz=128',
+        'HUL': 'https://www.google.com/s2/favicons?domain=hul.co.in&sz=128',
+        'UPL': 'https://www.google.com/s2/favicons?domain=upl-ltd.com&sz=128',
+        'ICICIBANK': 'https://www.google.com/s2/favicons?domain=icicibank.com&sz=128',
+        'KOTAK': 'https://www.google.com/s2/favicons?domain=kotak.com&sz=128'
     };
 
     return (
         <div
             className="glass-panel shadow-soft-lift"
             style={{
-                padding: '1.5rem', // Reverted padding
+                padding: '1.25rem', // Aesthetic Padding
                 borderRadius: '16px',
                 height: '100%',
                 display: 'flex',
@@ -173,9 +173,9 @@ const StockMoversWidget = () => {
                 borderTop: '1px solid rgba(255,255,255,0.1)'
             }}
         >
-            <div style={{ marginBottom: '1.5rem' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                    <h3 style={{ fontSize: '1.1rem', fontWeight: '600', color: 'var(--color-text-primary)' }}>Stock Movers</h3>
+            <div style={{ marginBottom: '1rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+                    <h3 style={{ fontSize: '1.05rem', fontWeight: '600', color: 'var(--color-text-primary)' }}>Stock Movers</h3>
 
                     {/* Functional Dropdown */}
                     <div style={{ position: 'relative' }} ref={dropdownRef}>
@@ -186,15 +186,15 @@ const StockMoversWidget = () => {
                                 alignItems: 'center',
                                 gap: '0.25rem',
                                 color: 'var(--color-accent)',
-                                fontSize: '0.9rem',
+                                fontSize: '0.85rem',
                                 fontWeight: '600',
                                 cursor: 'pointer',
-                                padding: '6px 10px',
-                                borderRadius: '8px',
+                                padding: '4px 8px',
+                                borderRadius: '6px',
                                 backgroundColor: isDropdownOpen ? 'rgba(255,255,255,0.05)' : 'transparent'
                             }}
                         >
-                            {activeCap} <ChevronDown size={16} style={{ transform: isDropdownOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }} />
+                            {activeCap} <ChevronDown size={14} style={{ transform: isDropdownOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }} />
                         </div>
 
                         {/* Dropdown Menu */}
@@ -209,18 +209,18 @@ const StockMoversWidget = () => {
                                 borderRadius: '8px',
                                 padding: '0.5rem',
                                 zIndex: 50,
-                                minWidth: '140px',
+                                minWidth: '120px',
                                 display: 'flex',
                                 flexDirection: 'column',
-                                gap: '4px'
+                                gap: '2px'
                             }}>
                                 {['Large Cap', 'Mid Cap', 'Small Cap'].map(cap => (
                                     <div
                                         key={cap}
                                         onClick={() => { setActiveCap(cap); setIsDropdownOpen(false); }}
                                         style={{
-                                            padding: '0.6rem 1rem',
-                                            fontSize: '0.9rem',
+                                            padding: '0.5rem 0.75rem',
+                                            fontSize: '0.8rem',
                                             color: activeCap === cap ? 'var(--color-accent)' : 'var(--color-text-secondary)',
                                             backgroundColor: activeCap === cap ? 'rgba(255,255,255,0.05)' : 'transparent',
                                             borderRadius: '6px',
@@ -238,20 +238,20 @@ const StockMoversWidget = () => {
                     </div>
                 </div>
 
-                <div className="custom-scrollbar" style={{ display: 'flex', gap: '0.75rem', overflowX: 'auto', paddingBottom: '0.5rem' }}>
+                <div className="custom-scrollbar" style={{ display: 'flex', gap: '0.5rem', overflowX: 'auto', paddingBottom: '0.25rem' }}>
                     {tabs.map(tab => (
                         <button
                             key={tab}
                             onClick={() => setActiveTab(tab)}
                             style={{
-                                padding: '0.5rem 1.25rem', // Reverted button size
-                                borderRadius: '24px',
+                                padding: '0.4rem 1rem', // Balanced button size
+                                borderRadius: '20px',
                                 border: '1px solid',
                                 borderColor: activeTab === tab ? 'var(--color-accent)' : 'rgba(255,255,255,0.1)',
                                 backgroundColor: activeTab === tab ? 'var(--color-accent)' : 'transparent',
                                 color: activeTab === tab ? '#000' : 'var(--color-text-secondary)',
                                 cursor: 'pointer',
-                                fontSize: '0.85rem',
+                                fontSize: '0.8rem',
                                 whiteSpace: 'nowrap',
                                 fontWeight: activeTab === tab ? '600' : '500',
                                 transition: 'all 0.2s ease',
@@ -264,7 +264,7 @@ const StockMoversWidget = () => {
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: '0' }}> {/* minHeight 0 allows flex shrink */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0 1rem 0.5rem 1rem', fontSize: '0.8rem', color: 'var(--color-text-secondary)', fontWeight: '600' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0 0.5rem 0.5rem 0.5rem', fontSize: '0.75rem', color: 'var(--color-text-secondary)', fontWeight: '600' }}>
                     <span>Company</span>
                     <span>Price / Change</span>
                 </div>
@@ -277,7 +277,7 @@ const StockMoversWidget = () => {
                 )}
             </div>
 
-            <div style={{ marginTop: '1rem', textAlign: 'center', fontSize: '0.9rem', color: 'var(--color-primary)', cursor: 'pointer', fontWeight: '600', paddingTop: '1rem', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+            <div style={{ marginTop: '0.75rem', textAlign: 'center', fontSize: '0.85rem', color: 'var(--color-primary)', cursor: 'pointer', fontWeight: '600', paddingTop: '0.75rem', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
                 View all market movers
             </div>
         </div>
