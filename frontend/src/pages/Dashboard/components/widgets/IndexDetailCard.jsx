@@ -19,11 +19,22 @@ const IndexDetailCard = ({ indexData, onClose, anchorEl }) => {
     useEffect(() => {
         if (anchorEl) {
             const rect = anchorEl.getBoundingClientRect();
-            // Position to the right of the anchor, vertically aligned with top
-            setPosition({
-                top: rect.top + window.scrollY,
-                left: rect.right + 10 + window.scrollX
-            });
+            const cardWidth = 380; // Width of the card
+            const gap = 12; // Gap between anchor and card
+
+            let top = rect.top;
+            let left = rect.right + gap;
+
+            // Check if it overflows the right edge of visibility
+            if (left + cardWidth > window.innerWidth) {
+                // Flip to left side
+                left = rect.left - cardWidth - gap;
+            }
+
+            // Check if it overflows bottom (optional, but good for "opening down" prevention)
+            // If top + cardHeight > window.innerHeight, shift up... (omitted for now unless requested)
+
+            setPosition({ top, left });
         }
     }, [anchorEl]);
 
@@ -38,7 +49,8 @@ const IndexDetailCard = ({ indexData, onClose, anchorEl }) => {
             }
         };
         const handleScroll = () => {
-            // Close on scroll to avoid alignment issues for now (simple approach)
+            // Reposition or close on scroll. For fixed elements, we need to track the rect again.
+            // Simplest approach: Close on scroll to avoid detached floating elements
             onClose();
         };
 
