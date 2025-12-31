@@ -28,6 +28,7 @@ const Sparkline = ({ color }) => {
 
 const MarketIndicesWidget = () => {
     const [activeIndex, setActiveIndex] = useState(null);
+    const [anchorEl, setAnchorEl] = useState(null);
     const containerRef = useRef(null);
 
     const indices = [
@@ -39,16 +40,26 @@ const MarketIndicesWidget = () => {
         { id: 'smallcap', name: 'NIFTY SMALL', price: 15400.50, change: 2.10, symbol: 'NIFTY SMALLCAP 100', constituents: 100 },
     ];
 
-    // Close card on outside click
+    // Close card on outside click (handled mostly by IndexDetailCard now, but keep for safety)
     useEffect(() => {
         const handleClickOutside = (event) => {
-            if (containerRef.current && !containerRef.current.contains(event.target)) {
-                setActiveIndex(null);
+            if (containerRef.current && !containerRef.current.contains(event.target) && !document.getElementById('portal-root')?.contains(event.target)) {
+                // Logic moved to card for portal, but clearing state here is fine if needed
             }
         };
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
+        // document.addEventListener('mousedown', handleClickOutside);
+        // return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
+
+    const handleIndexClick = (e, id) => {
+        if (activeIndex === id) {
+            setActiveIndex(null);
+            setAnchorEl(null);
+        } else {
+            setActiveIndex(id);
+            setAnchorEl(e.currentTarget);
+        }
+    };
 
     return (
         <div
@@ -60,7 +71,7 @@ const MarketIndicesWidget = () => {
                 height: '100%',
                 display: 'flex',
                 flexDirection: 'column',
-                position: 'relative' // For absolute positioning of card
+                position: 'relative'
             }}
         >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
@@ -72,7 +83,7 @@ const MarketIndicesWidget = () => {
                 {indices.map((index, i) => (
                     <div
                         key={index.id}
-                        onClick={() => setActiveIndex(index.id === activeIndex ? null : index.id)}
+                        onClick={(e) => handleIndexClick(e, index.id)}
                         style={{
                             display: 'flex',
                             justifyContent: 'space-between',
@@ -90,7 +101,14 @@ const MarketIndicesWidget = () => {
                     >
                         {/* Detail Card Overlay - Only render if active */}
                         {activeIndex === index.id && (
-                            <IndexDetailCard indexData={index} onClose={() => setActiveIndex(null)} />
+                            <IndexDetailCard
+                                indexData={index}
+                                anchorEl={anchorEl}
+                                onClose={() => {
+                                    setActiveIndex(null);
+                                    setAnchorEl(null);
+                                }}
+                            />
                         )}
 
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>

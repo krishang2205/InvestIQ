@@ -1,9 +1,13 @@
-import React from 'react';
-import { AreaChart, Area, XAxis, YAxis, ResponsiveContainer } from 'recharts';
-import { Bookmark, ArrowUpRight, ArrowDownRight, ExternalLink } from 'lucide-react';
+import React, { useEffect, useRef, useState } from 'react';
+import ReactDOM from 'react-dom';
+import { AreaChart, Area, ResponsiveContainer } from 'recharts';
+import { Bookmark, ArrowUpRight, ArrowDownRight } from 'lucide-react';
 
-const IndexDetailCard = ({ indexData, onClose }) => {
-    // Mock Chart Data (Simulating 1YR trend)
+const IndexDetailCard = ({ indexData, onClose, anchorEl }) => {
+    const cardRef = useRef(null);
+    const [position, setPosition] = useState({ top: 0, left: 0 });
+
+    // Mock Chart Data
     const data = Array.from({ length: 50 }, (_, i) => ({
         name: i,
         value: indexData.price * (0.9 + Math.random() * 0.2)
@@ -12,24 +16,60 @@ const IndexDetailCard = ({ indexData, onClose }) => {
     const isPositive = indexData.change >= 0;
     const color = isPositive ? '#00C853' : '#FF4D4D';
 
-    return (
+    useEffect(() => {
+        if (anchorEl) {
+            const rect = anchorEl.getBoundingClientRect();
+            // Position to the right of the anchor, vertically aligned with top
+            setPosition({
+                top: rect.top + window.scrollY,
+                left: rect.right + 10 + window.scrollX
+            });
+        }
+    }, [anchorEl]);
+
+    // Handle clicking outside/escape
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            // If clicking the anchor itself, let the parent handle the toggle
+            if (anchorEl && anchorEl.contains(event.target)) return;
+
+            if (cardRef.current && !cardRef.current.contains(event.target)) {
+                onClose();
+            }
+        };
+        const handleScroll = () => {
+            // Close on scroll to avoid alignment issues for now (simple approach)
+            onClose();
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        window.addEventListener('scroll', handleScroll, true);
+
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+            window.removeEventListener('scroll', handleScroll, true);
+        };
+    }, [onClose, anchorEl]);
+
+    const content = (
         <div
+            ref={cardRef}
             className="animate-in fade-in zoom-in-95 duration-200"
             style={{
-                position: 'absolute',
-                top: '0',
-                left: '105%', // Position to the right of the list item
+                position: 'fixed', // Fixed to ensure it's relative to the window
+                top: position.top,
+                left: position.left,
                 width: '380px',
                 backgroundColor: '#1E1E1E',
                 borderRadius: '8px',
                 border: '1px solid rgba(255,255,255,0.1)',
                 boxShadow: '0 10px 40px rgba(0,0,0,0.5)',
-                zIndex: 100,
+                zIndex: 9999, // Ensure on top of everything
                 padding: '1.25rem',
                 color: '#fff',
                 fontFamily: 'Inter, sans-serif'
             }}
-            onClick={(e) => e.stopPropagation()} // Prevent closing when clicking inside
+            onClick={(e) => e.stopPropagation()}
         >
             {/* Header */}
             <div style={{ marginBottom: '1rem' }}>
@@ -153,6 +193,8 @@ const IndexDetailCard = ({ indexData, onClose }) => {
             </div>
         </div>
     );
+
+    return ReactDOM.createPortal(content, document.body);
 };
 
 export default IndexDetailCard;
