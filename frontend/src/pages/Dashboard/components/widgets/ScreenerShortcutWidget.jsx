@@ -1,7 +1,7 @@
 import React from 'react';
 import { TrendingUp, Zap, ShieldCheck, DollarSign, ChevronRight } from 'lucide-react';
 
-const StrategyCard = ({ icon: Icon, title, description, color, className }) => (
+const StrategyCard = ({ title, description, logo, className }) => (
     <div
         className={`strategy-card ${className} shadow-soft-lift`}
         style={{
@@ -21,11 +21,12 @@ const StrategyCard = ({ icon: Icon, title, description, color, className }) => (
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
             <div style={{
                 width: '40px', height: '40px', borderRadius: '12px',
-                backgroundColor: `${color}15`, color: color,
+                backgroundColor: 'rgba(255,255,255,0.05)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
+                padding: '8px',
                 transition: 'transform 0.3s ease'
             }}>
-                <Icon size={20} />
+                <img src={logo} alt="logo" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
             </div>
             {/* Hover Chevron */}
             <div className="hover-chevron" style={{
@@ -55,10 +56,30 @@ const StrategyCard = ({ icon: Icon, title, description, color, className }) => (
 
 const ScreenerShortcutWidget = () => {
     const strategies = [
-        { icon: TrendingUp, title: 'Near 52W Low', description: 'Good stocks at bargain prices', color: '#00C853', glowClass: 'hover-glow-green' },
-        { icon: Zap, title: 'Momentum Trap', description: 'Stocks gaining strong momentum', color: '#FFCA28', glowClass: 'hover-glow-gold' },
-        { icon: ShieldCheck, title: 'Low Debt', description: 'Companies with zero or low debt', color: '#42A5F5', glowClass: 'hover-glow-blue' }, // Define blue in global if needed, defaulting generic
-        { icon: DollarSign, title: 'High Dividend', description: 'Steady income generating stocks', color: '#AB47BC', glowClass: 'hover-glow-purple' },
+        {
+            title: 'Near 52W Low',
+            description: 'Good stocks at bargain prices',
+            glowClass: 'hover-glow-green',
+            logo: 'https://www.google.com/s2/favicons?domain=screener.in&sz=128'
+        },
+        {
+            title: 'Momentum Trap',
+            description: 'Stocks gaining strong momentum',
+            glowClass: 'hover-glow-gold',
+            logo: 'https://www.google.com/s2/favicons?domain=trendlyne.com&sz=128'
+        },
+        {
+            title: 'Low Debt',
+            description: 'Companies with zero or low debt',
+            glowClass: 'hover-glow-blue',
+            logo: 'https://www.google.com/s2/favicons?domain=ticker.finology.in&sz=128'
+        },
+        {
+            title: 'High Dividend',
+            description: 'Steady income generating stocks',
+            glowClass: 'hover-glow-purple',
+            logo: 'https://www.google.com/s2/favicons?domain=moneycontrol.com&sz=128' // Reliable dividend data source
+        },
     ];
 
     return (
