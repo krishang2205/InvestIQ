@@ -3,7 +3,7 @@ import { ExternalLink } from 'lucide-react';
 
 const NewsItem = ({ title, summary, source, time, type }) => (
     <div style={{
-        padding: '1rem',
+        padding: '0.85rem 1.25rem', // Reduced padding
         borderBottom: '1px solid rgba(255,255,255,0.05)',
         cursor: 'pointer',
         transition: 'background-color 0.2s'
@@ -14,11 +14,11 @@ const NewsItem = ({ title, summary, source, time, type }) => (
         <div style={{
             display: 'flex',
             justifyContent: 'space-between',
-            marginBottom: '0.25rem',
+            marginBottom: '0.2rem',
             alignItems: 'flex-start'
         }}>
             <h4 style={{
-                fontSize: '0.9rem',
+                fontSize: '0.85rem', // Reduced font size
                 fontWeight: '600',
                 color: 'var(--color-text-primary)',
                 lineHeight: '1.4',
@@ -29,9 +29,9 @@ const NewsItem = ({ title, summary, source, time, type }) => (
             </h4>
         </div>
         <p style={{
-            fontSize: '0.8rem',
+            fontSize: '0.75rem', // Reduced font size
             color: 'var(--color-text-secondary)',
-            margin: '0.25rem 0 0.5rem 0',
+            margin: '0.15rem 0 0.4rem 0',
             lineHeight: '1.4',
             display: '-webkit-box',
             WebkitLineClamp: 2,
@@ -40,7 +40,7 @@ const NewsItem = ({ title, summary, source, time, type }) => (
         }}>
             {summary}
         </p>
-        <div style={{ display: 'flex', gap: '0.75rem', fontSize: '0.75rem', color: 'var(--color-text-tertiary)' }}>
+        <div style={{ display: 'flex', gap: '0.75rem', fontSize: '0.7rem', color: 'var(--color-text-tertiary)' }}>
             <span style={{ color: 'var(--color-accent)' }}>{source}</span>
             <span>•</span>
             <span>{time}</span>
@@ -62,6 +62,7 @@ const NewsWidget = () => {
             time: "2 hours ago",
             type: "Equity"
         },
+        // ... (data same)
         {
             title: "TCS Q3 Results Preview: Revenue likely to grow 2.5% YoY",
             summary: "Tata Consultancy Services is expected to report a steady quarter despite global headwinds.",
@@ -96,29 +97,29 @@ const NewsWidget = () => {
             overflow: 'hidden'
         }}>
             <div style={{
-                padding: '1.5rem 1.5rem 0 1.5rem',
+                padding: '1.25rem 1.25rem 0 1.25rem', // Reduced padding
                 borderBottom: '1px solid rgba(255,255,255,0.05)'
             }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                    <h3 style={{ fontSize: '1.1rem', fontWeight: '600', color: 'var(--color-text-primary)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+                    <h3 style={{ fontSize: '1rem', fontWeight: '600', color: 'var(--color-text-primary)' }}>
                         Today's news and events
                     </h3>
-                    <div style={{ fontSize: '0.8rem', color: 'var(--color-primary)', cursor: 'pointer', fontWeight: '600' }}>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--color-primary)', cursor: 'pointer', fontWeight: '600' }}>
                         View all
                     </div>
                 </div>
 
-                <div style={{ display: 'flex', gap: '1.5rem' }}>
+                <div style={{ display: 'flex', gap: '1.25rem' }}>
                     {tabs.map(tab => (
                         <div
                             key={tab}
                             onClick={() => setActiveTab(tab)}
                             style={{
-                                padding: '0 0 0.75rem 0',
+                                padding: '0 0 0.6rem 0',
                                 color: activeTab === tab ? 'var(--color-accent)' : 'var(--color-text-secondary)',
                                 borderBottom: activeTab === tab ? '2px solid var(--color-accent)' : '2px solid transparent',
                                 cursor: 'pointer',
-                                fontSize: '0.9rem',
+                                fontSize: '0.85rem',
                                 fontWeight: activeTab === tab ? '600' : '400',
                                 transition: 'all 0.2s'
                             }}
