@@ -79,25 +79,32 @@ const MarketIndicesWidget = () => {
                 <MoreHorizontal size={20} color="var(--color-text-secondary)" style={{ cursor: 'pointer' }} />
             </div>
 
-            <div className="custom-scrollbar" style={{ flex: 1, overflowY: 'auto', paddingRight: '0.5rem' }}>
+            <div className="custom-scrollbar" style={{
+                flex: 1,
+                overflowY: 'auto',
+                paddingRight: '0.5rem',
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))',
+                gap: '1rem',
+                alignContent: 'start'
+            }}>
                 {indices.map((index, i) => (
                     <div
                         key={index.id}
                         onClick={(e) => handleIndexClick(e, index.id)}
                         style={{
                             display: 'flex',
+                            flexDirection: 'column',
                             justifyContent: 'space-between',
-                            alignItems: 'center',
-                            padding: '0.85rem',
+                            padding: '1rem',
                             borderRadius: '12px',
                             backgroundColor: activeIndex === index.id ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.02)',
-                            marginBottom: '0.5rem',
                             cursor: 'pointer',
                             transition: 'all 0.2s ease',
                             border: activeIndex === index.id ? '1px solid rgba(255,255,255,0.1)' : '1px solid transparent',
                             position: 'relative'
                         }}
-                        className="index-row-hover"
+                        className="index-card-hover"
                     >
                         {/* Detail Card Overlay - Only render if active */}
                         {activeIndex === index.id && (
@@ -111,8 +118,11 @@ const MarketIndicesWidget = () => {
                             />
                         )}
 
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginBottom: '0.5rem' }}>
                             <span style={{ fontWeight: '600', fontSize: '0.9rem', color: 'var(--color-text-primary)' }}>{index.name}</span>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <span style={{ fontWeight: '700', fontSize: '1rem' }}>{index.price.toLocaleString()}</span>
+                            </div>
                             <span style={{
                                 fontSize: '0.8rem',
                                 color: index.change >= 0 ? '#00C853' : '#FF4D4D',
@@ -122,11 +132,8 @@ const MarketIndicesWidget = () => {
                             </span>
                         </div>
 
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                        <div style={{ height: '40px', width: '100%', marginTop: 'auto' }}>
                             <Sparkline color={index.change >= 0 ? '#00C853' : '#FF4D4D'} />
-                            <div style={{ textAlign: 'right', minWidth: '70px' }}>
-                                <div style={{ fontWeight: '600', fontSize: '0.9rem' }}>{index.price.toLocaleString()}</div>
-                            </div>
                         </div>
                     </div>
                 ))}
