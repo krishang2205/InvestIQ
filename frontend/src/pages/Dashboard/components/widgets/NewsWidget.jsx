@@ -1,6 +1,18 @@
 import React, { useState } from 'react';
 import { ExternalLink } from 'lucide-react';
 
+const getSourceDomain = (source) => {
+    const map = {
+        'Economic Times': 'economictimes.indiatimes.com',
+        'Moneycontrol': 'moneycontrol.com',
+        'Bloomberg': 'bloomberg.com',
+        'LiveMint': 'livemint.com',
+        'CNBC-TV18': 'cnbctv18.com',
+        'Business Standard': 'business-standard.com'
+    };
+    return map[source] || 'google.com';
+};
+
 const NewsItem = ({ title, summary, source, time, type }) => (
     <div style={{
         padding: '0.85rem 1.25rem', // Reduced padding
@@ -40,8 +52,15 @@ const NewsItem = ({ title, summary, source, time, type }) => (
         }}>
             {summary}
         </p>
-        <div style={{ display: 'flex', gap: '0.75rem', fontSize: '0.7rem', color: 'var(--color-text-tertiary)' }}>
-            <span style={{ color: 'var(--color-accent)' }}>{source}</span>
+        <div style={{ display: 'flex', gap: '0.75rem', fontSize: '0.7rem', color: 'var(--color-text-tertiary)', alignItems: 'center' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <img
+                    src={`https://www.google.com/s2/favicons?domain=${getSourceDomain(source)}&sz=64`}
+                    alt={source}
+                    style={{ width: '12px', height: '12px', borderRadius: '2px' }}
+                />
+                <span style={{ color: 'var(--color-accent)' }}>{source}</span>
+            </div>
             <span>•</span>
             <span>{time}</span>
             {type && <span>•</span>}

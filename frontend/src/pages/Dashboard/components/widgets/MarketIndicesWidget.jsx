@@ -61,6 +61,13 @@ const MarketIndicesWidget = () => {
         }
     };
 
+    // Logo Helper
+    const getIndexLogo = (name) => {
+        if (name.includes('NIFTY')) return 'https://www.google.com/s2/favicons?domain=nseindia.com&sz=128';
+        if (name.includes('SENSEX')) return 'https://www.google.com/s2/favicons?domain=bseindia.com&sz=128';
+        return 'https://www.google.com/s2/favicons?domain=google.com&sz=128'; // Fallback
+    };
+
     return (
         <div
             ref={containerRef}
@@ -120,7 +127,15 @@ const MarketIndicesWidget = () => {
                         )}
 
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', marginBottom: '0.5rem' }}>
-                            <span style={{ fontWeight: '600', fontSize: '0.85rem', color: 'var(--color-text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{index.name}</span>
+                            {/* Logo & Name Row */}
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                                <img
+                                    src={getIndexLogo(index.name)}
+                                    alt={index.name}
+                                    style={{ width: '18px', height: '18px', borderRadius: '50%', objectFit: 'contain', backgroundColor: 'white', padding: '2px' }}
+                                />
+                                <span style={{ fontWeight: '600', fontSize: '0.85rem', color: 'var(--color-text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{index.name}</span>
+                            </div>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                                 <span style={{ fontWeight: '700', fontSize: '0.95rem' }}>{index.price.toLocaleString()}</span>
                             </div>
