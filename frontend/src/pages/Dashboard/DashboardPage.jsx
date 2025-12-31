@@ -50,9 +50,9 @@ const DashboardPage = () => {
                 <div style={{
                     display: 'grid',
                     gridTemplateColumns: 'minmax(340px, 1fr) 2.5fr', // Wider MMI
-                    gap: '2rem', // Reverted to 2rem
-                    marginBottom: '2rem',
-                    minHeight: '380px' // Larger height
+                    gap: '1.5rem', // Reduced gap slightly
+                    marginBottom: '1.5rem',
+                    minHeight: '280px' // Reduced height to remove empty space
                 }}>
                     <MarketMoodWidget />
                     <MarketIndicesWidget />

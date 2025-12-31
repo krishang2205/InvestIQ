@@ -1,7 +1,7 @@
 import React, { useRef } from 'react';
 import { ChevronRight, ChevronLeft, Briefcase, TrendingUp, Shield } from 'lucide-react';
 
-const MFCard = ({ title, returns, label, icon: Icon, color }) => (
+const MFCard = ({ title, returns, label, color, logo }) => (
     <div className="shadow-soft-lift" style={{
         minWidth: '260px',
         padding: '1.25rem',
@@ -16,11 +16,12 @@ const MFCard = ({ title, returns, label, icon: Icon, color }) => (
     }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
             <div style={{
-                width: '36px', height: '36px', borderRadius: '8px',
-                backgroundColor: `${color}20`, color: color,
-                display: 'flex', alignItems: 'center', justifyContent: 'center'
+                width: '40px', height: '40px', borderRadius: '10px',
+                backgroundColor: 'rgba(255,255,255,0.05)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                padding: '8px'
             }}>
-                <Icon size={18} />
+                <img src={logo} alt="logo" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
             </div>
             <div style={{
                 backgroundColor: 'rgba(255,255,255,0.1)',
@@ -57,12 +58,19 @@ const MutualFundsCarousel = () => {
         }
     };
 
+    const getLogo = (title) => {
+        if (title.includes('Smallcase')) return 'https://www.google.com/s2/favicons?domain=smallcase.com&sz=128';
+        if (title.includes('Nifty')) return 'https://www.google.com/s2/favicons?domain=nseindia.com&sz=128';
+        if (title.includes('Dividend')) return 'https://www.google.com/s2/favicons?domain=itcportal.com&sz=128'; // Example dividend giant or generic
+        return 'https://www.google.com/s2/favicons?domain=tickertape.in&sz=128'; // Default branding
+    };
+
     const portfolios = [
-        { title: 'Top 100 Stocks', returns: '18.4', label: 'Equity • Large Cap', icon: Briefcase, color: '#42A5F5' },
-        { title: 'Momentum Smallcase', returns: '32.1', label: 'Equity • Momentum', icon: TrendingUp, color: '#FFA726' },
-        { title: 'Low Risk Savers', returns: '12.5', label: 'Debt • Low Risk', icon: Shield, color: '#66BB6A' },
-        { title: 'Dividend Aristocrats', returns: '15.8', label: 'Equity • Dividend', icon: Briefcase, color: '#AB47BC' },
-        { title: 'Nifty Next 50', returns: '21.2', label: 'Equity • Index', icon: TrendingUp, color: '#EF5350' },
+        { title: 'Top 100 Stocks', returns: '18.4', label: 'Equity • Large Cap', color: '#42A5F5' },
+        { title: 'Momentum Smallcase', returns: '32.1', label: 'Equity • Momentum', color: '#FFA726' },
+        { title: 'Low Risk Savers', returns: '12.5', label: 'Debt • Low Risk', color: '#66BB6A' },
+        { title: 'Dividend Aristocrats', returns: '15.8', label: 'Equity • Dividend', color: '#AB47BC' },
+        { title: 'Nifty Next 50', returns: '21.2', label: 'Equity • Index', color: '#EF5350' },
     ];
 
     return (
@@ -104,7 +112,7 @@ const MutualFundsCarousel = () => {
                 }}
             >
                 {portfolios.map((pf, idx) => (
-                    <MFCard key={idx} {...pf} />
+                    <MFCard key={idx} {...pf} logo={getLogo(pf.title)} />
                 ))}
             </div>
         </div>
