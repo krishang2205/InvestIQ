@@ -23,11 +23,7 @@ function App() {
         <Route path="/about" element={<AboutPage />} />
 
         {/* Protected Dashboard Routes */}
-        <Route path="/dashboard" element={
-          <ProtectedRoute>
-            <DashboardLayout />
-          </ProtectedRoute>
-        }>
+        <Route path="/dashboard" element={<DashboardLayout />}>
           <Route index element={<DashboardPage />} />
           <Route path="intelligence-reports" element={<IntelligenceReportPage />} />
         </Route>
