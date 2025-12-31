@@ -1,5 +1,6 @@
 import React from 'react';
 import MarketMoodWidget from './components/widgets/MarketMoodWidget';
+import MarketIndicesWidget from './components/widgets/MarketIndicesWidget';
 
 const DashboardPage = () => {
     return (
@@ -8,9 +9,8 @@ const DashboardPage = () => {
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem' }}>
                 <MarketMoodWidget />
-                {/* Placeholders for other widgets */}
-                <div className="glass-panel" style={{ height: '300px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    Indices Widget Placeholder
+                <div style={{ flex: 2, minWidth: '300px' }}>
+                    <MarketIndicesWidget />
                 </div>
             </div>
         </div>
