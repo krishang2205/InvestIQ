@@ -2,6 +2,7 @@ import React from 'react';
 import MarketMoodWidget from './components/widgets/MarketMoodWidget';
 import MarketIndicesWidget from './components/widgets/MarketIndicesWidget';
 import StockMoversWidget from './components/widgets/StockMoversWidget';
+import ScreenerShortcutWidget from './components/widgets/ScreenerShortcutWidget';
 
 const DashboardPage = () => {
     return (
@@ -24,8 +25,8 @@ const DashboardPage = () => {
                     <div style={{ flex: 1 }}>
                         <StockMoversWidget />
                     </div>
-                    <div className="glass-panel" style={{ flex: 1, minHeight: '300px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '16px' }}>
-                        Screener Shortcuts Placeholder
+                    <div style={{ flex: 1 }}>
+                        <ScreenerShortcutWidget />
                     </div>
                 </div>
             </div>
