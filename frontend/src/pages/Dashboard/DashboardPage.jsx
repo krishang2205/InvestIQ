@@ -3,54 +3,86 @@ import MarketMoodWidget from './components/widgets/MarketMoodWidget';
 import MarketIndicesWidget from './components/widgets/MarketIndicesWidget';
 import StockMoversWidget from './components/widgets/StockMoversWidget';
 import ScreenerShortcutWidget from './components/widgets/ScreenerShortcutWidget';
+import NewsWidget from './components/widgets/NewsWidget';
+import MutualFundsCarousel from './components/widgets/MutualFundsCarousel';
+import DashboardFooter from './components/layout/DashboardFooter';
 import Ticker from './components/layout/Ticker';
 
 const DashboardPage = () => {
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
-            {/* Top Ticker - Full Width */}
-            <div style={{ flexShrink: 0, zIndex: 10 }}>
-                <Ticker />
-            </div>
+        <div style={{
+            height: '100%',
+            width: '100%',
+            overflowY: 'auto',
+            display: 'flex',
+            flexDirection: 'column',
+            backgroundColor: 'var(--color-bg)'
+        }}>
 
-            {/* Main Content Area - Scrollable */}
-            <div className="custom-scrollbar" style={{
-                flex: 1,
-                overflowY: 'auto',
-                padding: '1.5rem',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '1.5rem'
+            {/* Top Ticker - Sticky */}
+            <Ticker />
+
+            {/* Main Content Area */}
+            <div style={{
+                maxWidth: '1280px',
+                width: '100%',
+                margin: '0 auto',
+                padding: '2rem',
+                flex: 1
             }}>
-                {/* Hero Section */}
-                <div style={{ marginBottom: '0.5rem' }}>
-                    <h2 style={{ fontSize: '1.75rem', fontWeight: '700', marginBottom: '0.5rem' }}>
-                        Good evening :)
-                    </h2>
-                    <p style={{ color: 'var(--color-text-secondary)', maxWidth: '600px' }}>
-                        EVERYTHING YOU NEED TO INVEST IN ONE PLACE
+
+                {/* Greeting Section */}
+                <div style={{ marginBottom: '2rem' }}>
+                    <h1 style={{
+                        fontSize: '1.75rem',
+                        fontWeight: '700',
+                        color: 'var(--color-text-primary)',
+                        marginBottom: '0.5rem'
+                    }}>
+                        Good evening, Investor :)
+                    </h1>
+                    <p style={{ color: 'var(--color-text-secondary)' }}>
+                        Everything you need to invest in one place.
                     </p>
                 </div>
 
-                {/* Row 1: Market Overview */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem' }}>
-                    <div style={{ flex: 1, maxWidth: '400px' }}>
-                        <MarketMoodWidget />
-                    </div>
-                    <div style={{ flex: 2, minWidth: '350px' }}>
-                        <MarketIndicesWidget />
-                    </div>
+                {/* Section 1: Hero (MMI + Indices) */}
+                <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: '320px 1fr',
+                    gap: '1.5rem',
+                    marginBottom: '2rem',
+                    height: '380px' // Fixed height for alignment
+                }}>
+                    <MarketMoodWidget />
+                    <MarketIndicesWidget />
                 </div>
 
-                {/* Row 2: Detailed Stats */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '1.5rem' }}>
-                    <div style={{ flex: 1 }}>
-                        <StockMoversWidget />
-                    </div>
-                    <div style={{ flex: 1 }}>
-                        <ScreenerShortcutWidget />
-                    </div>
+                {/* Section 2: Stocks & News */}
+                <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: '1fr 1fr',
+                    gap: '1.5rem',
+                    marginBottom: '2rem',
+                    height: '500px'
+                }}>
+                    <StockMoversWidget />
+                    <NewsWidget />
                 </div>
+
+                {/* Section 3: Mutual Funds Carousel */}
+                <div style={{ marginBottom: '2rem' }}>
+                    <MutualFundsCarousel />
+                </div>
+
+                {/* Section 4: Curated Screens Shortcut */}
+                <div style={{ marginBottom: '2rem', height: '350px' }}>
+                    <ScreenerShortcutWidget />
+                </div>
+
+                {/* Footer */}
+                <DashboardFooter />
+
             </div>
         </div>
     );
