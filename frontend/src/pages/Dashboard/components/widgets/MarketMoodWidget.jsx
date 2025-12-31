@@ -1,175 +1,141 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
+import { ChevronRight } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
-const MarketMoodWidget = () => {
-    const score = 72;
-    // Animation state
-    const [animatedScore, setAnimatedScore] = useState(0);
-
-    useEffect(() => {
-        // Animate score on mount
-        const duration = 1500;
-        const startTime = Date.now();
-
-        const animate = () => {
-            const now = Date.now();
-            const progress = Math.min((now - startTime) / duration, 1);
-            // Ease out cubic
-            const ease = 1 - Math.pow(1 - progress, 3);
-
-            setAnimatedScore(Math.round(score * ease));
-
-            if (progress < 1) {
-                requestAnimationFrame(animate);
-            }
-        };
-
-        requestAnimationFrame(animate);
-    }, [score]);
-
+const MiniGauge = ({ score }) => {
     const data = [
-        { name: 'Score', value: score },
-        { name: 'Remaining', value: 100 - score },
+        { value: score, color: score < 30 ? '#00C853' : score < 50 ? '#FFCA28' : score < 70 ? '#FFA726' : '#FF4D4D' }, // Color logic: Fear is Green/Orange usually reversed in MMI? 
+        // Tickertape MMI: Extreme Fear (Green), Fear (Lime), Greed (Orange), Extreme Greed (Red).
+        { value: 100 - score, color: 'rgba(255,255,255,0.1)' }
     ];
 
-    const getColor = (val) => {
-        if (val < 30) return '#FF4D4D';
-        if (val < 50) return '#FFCA28';
-        if (val < 70) return '#66BB6A';
-        return '#00C853';
+    // Tickertape colors approximation
+    const getColor = (s) => {
+        if (s < 30) return '#00C853'; // Extreme Fear (Buying opportunity)
+        if (s < 50) return '#CDDC39'; // Fear
+        if (s < 70) return '#FFB300'; // Greed
+        return '#FF5252'; // Extreme Greed
     };
 
     const activeColor = getColor(score);
-    // Darker inactive part for "premium" feel
-    const COLORS = [activeColor, 'rgba(255,255,255,0.1)'];
-
-    // Needle rotation calculation
-    // -90deg is left (0), 90deg is right (100)
-    // Formula: (value / 100) * 180 - 90
-    const rotation = (animateScore) => (animateScore / 100) * 180 - 90;
 
     return (
-        <div className="glass-panel shadow-soft-lift"
+        <div style={{ width: '24px', height: '24px', position: 'relative' }}>
+            <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                    <Pie
+                        data={[{ value: score }, { value: 100 - score }]}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={8}
+                        outerRadius={12}
+                        startAngle={90}
+                        endAngle={-270}
+                        dataKey="value"
+                        stroke="none"
+                    >
+                        <Cell fill={activeColor} />
+                        <Cell fill="rgba(255,255,255,0.1)" />
+                    </Pie>
+                </PieChart>
+            </ResponsiveContainer>
+        </div>
+    );
+};
+
+const HistoricalDot = ({ day, score, isToday }) => {
+    return (
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
+            <MiniGauge score={score} />
+            <div style={{ fontSize: '0.65rem', color: 'var(--color-text-secondary)', textTransform: 'uppercase' }}>{day}</div>
+            {isToday && (
+                <div style={{ fontSize: '0.6rem', color: 'var(--color-text-tertiary)' }}>2:45pm</div>
+            )}
+        </div>
+    );
+};
+
+const MarketMoodWidget = () => {
+    const navigate = useNavigate();
+    const score = 24.42; // Example "Extreme Fear"
+
+    // Historical Data (Mock)
+    const history = [
+        { day: 'Wed', score: 45 },
+        { day: 'Fri', score: 38 },
+        { day: 'Mon', score: 32 },
+        { day: 'Tue', score: 28 },
+        { day: 'Today', score: 24.42, isToday: true },
+    ];
+
+    return (
+        <div
+            className="glass-panel shadow-soft-lift"
+            onClick={() => navigate('/market-mood-index')}
             style={{
-                padding: '1.5rem',
+                padding: '1.25rem 1.5rem',
                 borderRadius: '16px',
+                height: '100%',
                 display: 'flex',
-                flexDirection: 'column',
                 alignItems: 'center',
-                position: 'relative',
-                overflow: 'hidden'
-            }}>
-
-            {/* Header */}
-            <div style={{ width: '100%', display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', zIndex: 1 }}>
-                <h3 style={{ fontSize: '1rem', fontWeight: '600', color: 'var(--color-text-primary)' }}>
-                    Market Mood Index
-                </h3>
-                <div style={{
-                    fontSize: '0.75rem',
-                    color: activeColor,
-                    backgroundColor: `${activeColor}15`,
-                    padding: '2px 8px',
-                    borderRadius: '12px',
-                    fontWeight: '500'
-                }}>
-                    Live
-                </div>
-            </div>
-
-            {/* Gauge Area */}
-            <div style={{ width: '100%', height: '160px', position: 'relative', marginTop: '10px' }}>
-                <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                        <Pie
-                            data={data}
-                            cx="50%"
-                            cy="100%"
-                            startAngle={180}
-                            endAngle={0}
-                            innerRadius={85}
-                            outerRadius={100}
-                            paddingAngle={0}
-                            dataKey="value"
-                            stroke="none"
-                        >
-                            <Cell key="cell-0" fill={COLORS[0]} style={{ filter: `drop-shadow(0 0 8px ${activeColor}40)` }} />
-                            <Cell key="cell-1" fill={COLORS[1]} />
-                        </Pie>
-                    </PieChart>
-                </ResponsiveContainer>
-
-                {/* Needle */}
-                <div style={{
-                    position: 'absolute',
-                    bottom: '0',
-                    left: '50%',
-                    width: '4px',
-                    height: '90px',
-                    backgroundColor: '#fff',
-                    transformOrigin: 'bottom center',
-                    transform: `translateX(-50%) rotate(${rotation(animatedScore)}deg)`,
-                    zIndex: 2,
-                    borderRadius: '4px 4px 0 0',
-                    boxShadow: '0 0 10px rgba(0,0,0,0.5)'
-                }} />
-
-                {/* Center Hub */}
-                <div style={{
-                    position: 'absolute',
-                    bottom: '-10px',
-                    left: '50%',
-                    transform: 'translateX(-50%)',
-                    width: '20px',
-                    height: '20px',
-                    borderRadius: '50%',
-                    backgroundColor: '#fff',
-                    zIndex: 3,
-                    boxShadow: '0 0 10px rgba(0,0,0,0.5)'
-                }} />
-
-                {/* Score Label inside arch */}
-                <div style={{
-                    position: 'absolute',
-                    bottom: '20px',
-                    width: '100%',
-                    textAlign: 'center',
-                }}>
+                justifyContent: 'space-between',
+                cursor: 'pointer',
+                borderTop: '1px solid rgba(255,255,255,0.1)'
+            }}
+        >
+            {/* Left Section: Current Status */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                <div style={{ width: '50px', height: '50px', position: 'relative' }}>
+                    {/* Semi Circle Gauge for Main Display */}
+                    <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                            <Pie
+                                data={[{ value: score }, { value: 100 - score }]}
+                                cx="50%"
+                                cy="50%"
+                                startAngle={180}
+                                endAngle={0}
+                                innerRadius={18}
+                                outerRadius={25}
+                                dataKey="value"
+                                stroke="none"
+                            >
+                                <Cell fill="#00C853" /> {/* Extreme Fear Color */}
+                                <Cell fill="rgba(255,255,255,0.1)" />
+                            </Pie>
+                        </PieChart>
+                    </ResponsiveContainer>
+                    {/* Needle Placeholder (CSS) */}
                     <div style={{
-                        fontSize: '2.5rem',
-                        fontWeight: '800',
-                        color: activeColor,
-                        lineHeight: '1',
-                        textShadow: `0 0 20px ${activeColor}30`
-                    }}>
-                        {animatedScore}
+                        position: 'absolute', bottom: '25px', left: '24px',
+                        width: '2px', height: '22px', background: '#fff',
+                        transform: 'rotate(-45deg)', transformOrigin: 'bottom center'
+                    }} />
+                </div>
+                <div>
+                    <div style={{ fontSize: '0.9rem', color: 'var(--color-text-primary)', fontWeight: '500' }}>
+                        The market is in
+                    </div>
+                    <div style={{ fontSize: '1.1rem', fontWeight: '700', color: '#00C853' }}>
+                        Fear zone
                     </div>
                 </div>
             </div>
 
-            {/* Status Text */}
-            <div style={{ textAlign: 'center', marginTop: '1.5rem', zIndex: 1 }}>
+            {/* Right Section: Historical Dots */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
+                {history.map((item, idx) => (
+                    <HistoricalDot key={idx} {...item} />
+                ))}
                 <div style={{
-                    color: activeColor,
-                    fontWeight: '700',
-                    fontSize: '1.1rem',
-                    marginBottom: '0.25rem'
-                }}>
-                    Extreme Greed
-                </div>
-                <p style={{ fontSize: '0.8rem', color: 'var(--color-text-secondary)', maxWidth: '200px', margin: '0 auto' }}>
-                    Markets are overbought. Exercise caution.
-                </p>
+                    height: '40px',
+                    width: '1px',
+                    backgroundColor: 'rgba(255,255,255,0.1)',
+                    margin: '0 0.5rem'
+                }} />
+                <ChevronRight size={20} color="var(--color-text-secondary)" />
             </div>
-
-            {/* Background Glow Mesh */}
-            <div style={{
-                position: 'absolute',
-                top: 0, left: 0, right: 0, bottom: 0,
-                background: `radial-gradient(circle at 50% 100%, ${activeColor}10 0%, transparent 60%)`,
-                pointerEvents: 'none',
-                zIndex: 0
-            }} />
         </div>
     );
 };
