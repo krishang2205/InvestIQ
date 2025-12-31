@@ -16,7 +16,6 @@ const FooterSection = ({ title, links }) => (
 
 const DashboardFooter = () => {
     return (
-    return (
         <div style={{
             marginTop: 'auto', // Push to bottom if flex container allows
             paddingTop: '4rem',
