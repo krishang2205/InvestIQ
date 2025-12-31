@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { ArrowUpRight, ArrowDownRight, MoreHorizontal, ChevronDown } from 'lucide-react';
 
-const StockRow = ({ stock, index, activeTab }) => {
+const StockRow = ({ stock, index, activeTab, logo }) => {
     const isGain = stock.change >= 0;
     const color = isGain ? '#00C853' : '#FF4D4D';
 
@@ -12,10 +12,10 @@ const StockRow = ({ stock, index, activeTab }) => {
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'center',
-                padding: '0.75rem 1rem',
+                padding: '1rem', // Reverted padding
                 borderRadius: '12px',
                 backgroundColor: 'rgba(255,255,255,0.02)',
-                marginBottom: '0.5rem',
+                marginBottom: '0.75rem',
                 border: '1px solid transparent',
                 cursor: 'pointer',
                 transition: 'all 0.2s ease',
@@ -32,21 +32,36 @@ const StockRow = ({ stock, index, activeTab }) => {
         >
             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                 <div style={{
-                    width: '40px', height: '40px', borderRadius: '10px',
-                    backgroundColor: isGain ? 'rgba(0, 200, 83, 0.1)' : 'rgba(255, 77, 77, 0.1)',
+                    width: '44px', height: '44px', borderRadius: '10px',
+                    backgroundColor: 'rgba(255,255,255,0.03)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    color: color
+                    overflow: 'hidden',
+                    padding: '6px' // Padding for the logo
                 }}>
-                    {isGain ? <ArrowUpRight size={20} /> : <ArrowDownRight size={20} />}
+                    {logo ? (
+                        <img
+                            src={logo}
+                            alt={stock.symbol}
+                            style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                            onError={(e) => {
+                                e.target.style.display = 'none'; // Hide if fails
+                                e.target.parentElement.innerHTML = isGain ? '<svg...>' : '<svg...>'; // Quick fallback not possible directly here, but simple hide works
+                            }}
+                        />
+                    ) : (
+                        <div style={{ color: color }}>
+                            {isGain ? <ArrowUpRight size={22} /> : <ArrowDownRight size={22} />}
+                        </div>
+                    )}
                 </div>
                 <div>
-                    <div style={{ fontWeight: '600', fontSize: '0.9rem' }}>{stock.symbol}</div>
-                    <div style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)' }}>{stock.name}</div>
+                    <div style={{ fontWeight: '600', fontSize: '1rem', marginBottom: '2px' }}>{stock.symbol}</div>
+                    <div style={{ fontSize: '0.8rem', color: 'var(--color-text-secondary)' }}>{stock.name}</div>
                 </div>
             </div>
             <div style={{ textAlign: 'right' }}>
-                <div style={{ fontWeight: '500', fontSize: '0.9rem' }}>₹{stock.price.toFixed(2)}</div>
-                <div style={{ fontSize: '0.8rem', color: color, fontWeight: '600' }}>
+                <div style={{ fontWeight: '600', fontSize: '1rem', color: 'var(--color-text-primary)' }}>₹{stock.price.toFixed(2)}</div>
+                <div style={{ fontSize: '0.85rem', color: color, fontWeight: '600' }}>
                     {isGain ? '+' : ''}{stock.change}%
                 </div>
             </div>
@@ -129,11 +144,28 @@ const StockMoversWidget = () => {
         return () => clearTimeout(timer);
     }, [activeTab]);
 
+    // Logo Mapping
+    const logoMap = {
+        'ADANIENT': '/assets/logos/adani.png',
+        'TATASTEEL': '/assets/logos/tata.png',
+        'INFY': '/assets/logos/infosys.png',
+        'RELIANCE': '/assets/logos/reliance.png',
+        'HDFCBANK': '/assets/logos/hdfc.png',
+        'WIPRO': '/assets/logos/wipro.png',
+        'TECHM': '/assets/logos/techm.png',
+        'COALINDIA': '/assets/logos/coalindia.png',
+        'NTPC': '/assets/logos/ntpc.png',
+        'HUL': '/assets/logos/hul.png',
+        'UPL': '/assets/logos/upl.png',
+        'ICICIBANK': '/assets/logos/icici.png',
+        'KOTAK': '/assets/logos/kotak.png'
+    };
+
     return (
         <div
             className="glass-panel shadow-soft-lift"
             style={{
-                padding: '1.25rem', // Reduced padding
+                padding: '1.5rem', // Reverted padding
                 borderRadius: '16px',
                 height: '100%',
                 display: 'flex',
@@ -141,9 +173,9 @@ const StockMoversWidget = () => {
                 borderTop: '1px solid rgba(255,255,255,0.1)'
             }}
         >
-            <div style={{ marginBottom: '1rem' }}> {/* Reduced marginBottom */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
-                    <h3 style={{ fontSize: '1rem', fontWeight: '600', color: 'var(--color-text-primary)' }}>Stock Movers</h3>
+            <div style={{ marginBottom: '1.5rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                    <h3 style={{ fontSize: '1.1rem', fontWeight: '600', color: 'var(--color-text-primary)' }}>Stock Movers</h3>
 
                     {/* Functional Dropdown */}
                     <div style={{ position: 'relative' }} ref={dropdownRef}>
@@ -154,15 +186,15 @@ const StockMoversWidget = () => {
                                 alignItems: 'center',
                                 gap: '0.25rem',
                                 color: 'var(--color-accent)',
-                                fontSize: '0.85rem',
+                                fontSize: '0.9rem',
                                 fontWeight: '600',
                                 cursor: 'pointer',
-                                padding: '4px 8px',
-                                borderRadius: '6px',
+                                padding: '6px 10px',
+                                borderRadius: '8px',
                                 backgroundColor: isDropdownOpen ? 'rgba(255,255,255,0.05)' : 'transparent'
                             }}
                         >
-                            {activeCap} <ChevronDown size={14} style={{ transform: isDropdownOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }} />
+                            {activeCap} <ChevronDown size={16} style={{ transform: isDropdownOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }} />
                         </div>
 
                         {/* Dropdown Menu */}
@@ -177,18 +209,18 @@ const StockMoversWidget = () => {
                                 borderRadius: '8px',
                                 padding: '0.5rem',
                                 zIndex: 50,
-                                minWidth: '120px',
+                                minWidth: '140px',
                                 display: 'flex',
                                 flexDirection: 'column',
-                                gap: '2px'
+                                gap: '4px'
                             }}>
                                 {['Large Cap', 'Mid Cap', 'Small Cap'].map(cap => (
                                     <div
                                         key={cap}
                                         onClick={() => { setActiveCap(cap); setIsDropdownOpen(false); }}
                                         style={{
-                                            padding: '0.5rem 0.75rem',
-                                            fontSize: '0.8rem', // Smaller text
+                                            padding: '0.6rem 1rem',
+                                            fontSize: '0.9rem',
                                             color: activeCap === cap ? 'var(--color-accent)' : 'var(--color-text-secondary)',
                                             backgroundColor: activeCap === cap ? 'rgba(255,255,255,0.05)' : 'transparent',
                                             borderRadius: '6px',
@@ -206,20 +238,20 @@ const StockMoversWidget = () => {
                     </div>
                 </div>
 
-                <div className="custom-scrollbar" style={{ display: 'flex', gap: '0.5rem', overflowX: 'auto', paddingBottom: '0.25rem' }}>
+                <div className="custom-scrollbar" style={{ display: 'flex', gap: '0.75rem', overflowX: 'auto', paddingBottom: '0.5rem' }}>
                     {tabs.map(tab => (
                         <button
                             key={tab}
                             onClick={() => setActiveTab(tab)}
                             style={{
-                                padding: '0.3rem 0.8rem', // Smaller padding
-                                borderRadius: '20px',
+                                padding: '0.5rem 1.25rem', // Reverted button size
+                                borderRadius: '24px',
                                 border: '1px solid',
                                 borderColor: activeTab === tab ? 'var(--color-accent)' : 'rgba(255,255,255,0.1)',
                                 backgroundColor: activeTab === tab ? 'var(--color-accent)' : 'transparent',
                                 color: activeTab === tab ? '#000' : 'var(--color-text-secondary)',
                                 cursor: 'pointer',
-                                fontSize: '0.75rem', // Smaller font
+                                fontSize: '0.85rem',
                                 whiteSpace: 'nowrap',
                                 fontWeight: activeTab === tab ? '600' : '500',
                                 transition: 'all 0.2s ease',
@@ -232,20 +264,20 @@ const StockMoversWidget = () => {
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: '0' }}> {/* minHeight 0 allows flex shrink */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0 0.5rem 0.5rem 0.5rem', fontSize: '0.7rem', color: 'var(--color-text-secondary)', fontWeight: '600' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0 1rem 0.5rem 1rem', fontSize: '0.8rem', color: 'var(--color-text-secondary)', fontWeight: '600' }}>
                     <span>Company</span>
                     <span>Price / Change</span>
                 </div>
                 {isLoading ? <LoadingSkeleton /> : (
-                    <div className="custom-scrollbar" style={{ overflowY: 'auto', flex: 1, paddingRight: '2px' }}>
+                    <div className="custom-scrollbar" style={{ overflowY: 'auto', flex: 1, paddingRight: '4px' }}>
                         {displayData.map((stock, idx) => (
-                            <StockRow key={stock.symbol} stock={stock} index={idx} activeTab={activeTab} />
+                            <StockRow key={stock.symbol} stock={stock} index={idx} activeTab={activeTab} logo={logoMap[stock.symbol]} />
                         ))}
                     </div>
                 )}
             </div>
 
-            <div style={{ marginTop: '0.5rem', textAlign: 'center', fontSize: '0.8rem', color: 'var(--color-primary)', cursor: 'pointer', fontWeight: '600', paddingTop: '0.5rem', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+            <div style={{ marginTop: '1rem', textAlign: 'center', fontSize: '0.9rem', color: 'var(--color-primary)', cursor: 'pointer', fontWeight: '600', paddingTop: '1rem', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
                 View all market movers
             </div>
         </div>

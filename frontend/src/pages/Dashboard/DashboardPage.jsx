@@ -25,23 +25,23 @@ const DashboardPage = () => {
             {/* Main Content Area */}
             <div style={{
                 width: '100%',
-                maxWidth: '1600px', // Max width constraint for ultra-wide screens
+                maxWidth: '1600px',
                 margin: '0 auto',
-                padding: '1.5rem', // Reduced from 2rem
+                padding: '2rem', // Reverted to 2rem
                 flex: 1
             }}>
 
                 {/* Greeting Section */}
-                <div style={{ marginBottom: '1.5rem' }}>
+                <div style={{ marginBottom: '2rem' }}> {/* Reverted to 2rem */}
                     <h1 style={{
-                        fontSize: '1.5rem', // Slightly smaller
+                        fontSize: '1.75rem', // Reverted font size
                         fontWeight: '700',
                         color: 'var(--color-text-primary)',
-                        marginBottom: '0.25rem'
+                        marginBottom: '0.5rem'
                     }}>
                         Good evening, Investor :)
                     </h1>
-                    <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.9rem' }}>
+                    <p style={{ color: 'var(--color-text-secondary)', fontSize: '1rem' }}> {/* Reverted font size */}
                         Everything you need to invest in one place.
                     </p>
                 </div>
@@ -49,10 +49,10 @@ const DashboardPage = () => {
                 {/* Section 1: Hero (MMI + Indices) */}
                 <div style={{
                     display: 'grid',
-                    gridTemplateColumns: '280px 1fr', // Tighter fit for MMI
-                    gap: '1.25rem', // Reduced gap from 1.5rem
-                    marginBottom: '1.5rem',
-                    minHeight: '340px' // Use min-height instead of fixed
+                    gridTemplateColumns: 'minmax(340px, 1fr) 2.5fr', // Wider MMI
+                    gap: '2rem', // Reverted to 2rem
+                    marginBottom: '2rem',
+                    minHeight: '380px' // Larger height
                 }}>
                     <MarketMoodWidget />
                     <MarketIndicesWidget />
@@ -61,11 +61,11 @@ const DashboardPage = () => {
                 {/* Section 2: Stocks & News */}
                 <div style={{
                     display: 'grid',
-                    gridTemplateColumns: 'minmax(0, 1.2fr) minmax(0, 0.8fr)', // Slight bias to stock table
-                    gap: '1.25rem',
-                    marginBottom: '1.5rem',
-                    minHeight: '450px', // Changed from height to minHeight
-                    alignItems: 'start' // Ensure widgets align at top
+                    gridTemplateColumns: '1.5fr 1fr', // Wider stock section
+                    gap: '2rem', // Reverted gap
+                    marginBottom: '2rem', // Reverted margin
+                    minHeight: '480px', // More vertical space
+                    alignItems: 'start'
                 }}>
                     <StockMoversWidget />
                     <NewsWidget />
