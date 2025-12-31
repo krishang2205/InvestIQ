@@ -77,11 +77,11 @@ const MarketMoodWidget = () => {
             className="glass-panel shadow-soft-lift"
             onClick={() => navigate('/dashboard/market-mood-index')}
             style={{
-                padding: '1.5rem',
-                borderRadius: '20px',
+                padding: '1.25rem', // Reduced padding
+                borderRadius: '16px', // Slightly smaller radius
                 height: '100%',
                 display: 'flex',
-                flexDirection: 'column', // Vertical Stack
+                flexDirection: 'column',
                 justifyContent: 'space-between',
                 cursor: 'pointer',
                 border: '1px solid rgba(255,255,255,0.08)',
@@ -92,36 +92,36 @@ const MarketMoodWidget = () => {
         >
             {/* Header */}
             <div style={{
-                fontSize: '0.9rem',
+                fontSize: '0.85rem', // Smaller header
                 color: 'var(--color-text-secondary)',
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'center',
-                marginBottom: '1rem'
+                marginBottom: '0.75rem'
             }}>
-                <span style={{ fontWeight: '600', letterSpacing: '0.5px' }}>Market Mood Index</span>
-                <ChevronRight size={18} color="rgba(255,255,255,0.3)" />
+                <span style={{ fontWeight: '600', letterSpacing: '0.3px' }}>Market Mood Index</span>
+                <ChevronRight size={16} color="rgba(255,255,255,0.3)" />
             </div>
 
             {/* Main Center Section */}
-            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', marginBottom: '1rem' }}>
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', marginBottom: '0.75rem' }}>
 
                 {/* Big Gauge */}
                 <div style={{
-                    width: '160px', height: '100px', position: 'relative', // Adjusted height for semi-circle aspect
-                    filter: `drop-shadow(0 0 25px ${activeColor}30)`,
-                    marginBottom: '0.5rem'
+                    width: '130px', height: '80px', position: 'relative', // Smaller Gauge
+                    filter: `drop-shadow(0 0 20px ${activeColor}25)`,
+                    marginBottom: '0.25rem'
                 }}>
                     <ResponsiveContainer width="100%" height="100%">
                         <PieChart>
                             <Pie
                                 data={[{ value: score }, { value: 100 - score }]}
                                 cx="50%"
-                                cy="80%"  // Move center down to use more space for top arc
+                                cy="80%"
                                 startAngle={180}
                                 endAngle={0}
-                                innerRadius={55}
-                                outerRadius={75}
+                                innerRadius={45} // Reduced radii
+                                outerRadius={60}
                                 dataKey="value"
                                 stroke="none"
                             >
@@ -132,31 +132,31 @@ const MarketMoodWidget = () => {
                     </ResponsiveContainer>
                     {/* Needle */}
                     <div style={{
-                        position: 'absolute', bottom: '20px', left: '79px', // Centered relative to width
-                        width: '2px', height: '60px', background: '#fff',
+                        position: 'absolute', bottom: '16px', left: '64px', // Adjusted for new center
+                        width: '2px', height: '45px', background: '#fff',
                         transform: 'rotate(-45deg)', transformOrigin: 'bottom center',
                         borderRadius: '2px',
                         boxShadow: '0 0 10px rgba(0,0,0,0.5)'
                     }} />
                     {/* Score Text in Center */}
                     <div style={{
-                        position: 'absolute', bottom: '-10px', width: '100%', textAlign: 'center',
-                        fontSize: '2rem', fontWeight: '800', color: activeColor
+                        position: 'absolute', bottom: '-8px', width: '100%', textAlign: 'center',
+                        fontSize: '1.5rem', fontWeight: '800', color: activeColor // Smaller score
                     }}>
                         {Math.round(score)}
                     </div>
                 </div>
 
                 {/* Zone Text */}
-                <div style={{ textAlign: 'center', marginTop: '1rem' }}>
-                    <div style={{ fontSize: '0.85rem', color: 'var(--color-text-secondary)', marginBottom: '2px' }}>Current Zone</div>
+                <div style={{ textAlign: 'center', marginTop: '0.5rem' }}>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)', marginBottom: '0px' }}>Current Zone</div>
                     <div style={{
-                        fontSize: '2rem',
-                        fontWeight: '800',
+                        fontSize: '1.5rem', // Smaller Zone Text
+                        fontWeight: '700',
                         color: activeColor,
-                        lineHeight: '1',
-                        letterSpacing: '-0.5px',
-                        textShadow: `0 0 20px ${activeColor}40`
+                        lineHeight: '1.2',
+                        letterSpacing: '-0.3px',
+                        textShadow: `0 0 15px ${activeColor}30`
                     }}>
                         Fear
                     </div>

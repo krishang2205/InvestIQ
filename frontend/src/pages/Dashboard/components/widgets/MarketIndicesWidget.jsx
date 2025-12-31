@@ -66,7 +66,7 @@ const MarketIndicesWidget = () => {
             ref={containerRef}
             className="glass-panel shadow-soft-lift"
             style={{
-                padding: '1.5rem',
+                padding: '1.25rem', // Reduced padding
                 borderRadius: '16px',
                 height: '100%',
                 display: 'flex',
@@ -74,18 +74,18 @@ const MarketIndicesWidget = () => {
                 position: 'relative'
             }}
         >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
-                <h3 style={{ fontSize: '1.1rem', fontWeight: '600', color: 'var(--color-text-primary)' }}>Indian Indices</h3>
-                <MoreHorizontal size={20} color="var(--color-text-secondary)" style={{ cursor: 'pointer' }} />
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                <h3 style={{ fontSize: '1rem', fontWeight: '600', color: 'var(--color-text-primary)' }}>Indian Indices</h3>
+                <MoreHorizontal size={18} color="var(--color-text-secondary)" style={{ cursor: 'pointer' }} />
             </div>
 
             <div className="custom-scrollbar" style={{
                 flex: 1,
                 overflowY: 'auto',
-                paddingRight: '0.5rem',
+                paddingRight: '0.25rem', // Reduced scroll padding
                 display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))',
-                gap: '1rem',
+                gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', // Smaller min width
+                gap: '0.75rem', // Tighter gap
                 alignContent: 'start'
             }}>
                 {indices.map((index, i) => (
@@ -96,8 +96,8 @@ const MarketIndicesWidget = () => {
                             display: 'flex',
                             flexDirection: 'column',
                             justifyContent: 'space-between',
-                            padding: '1rem',
-                            borderRadius: '12px',
+                            padding: '0.85rem', // Tighter card padding
+                            borderRadius: '10px',
                             backgroundColor: activeIndex === index.id ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.02)',
                             cursor: 'pointer',
                             transition: 'all 0.2s ease',
@@ -118,13 +118,13 @@ const MarketIndicesWidget = () => {
                             />
                         )}
 
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginBottom: '0.5rem' }}>
-                            <span style={{ fontWeight: '600', fontSize: '0.9rem', color: 'var(--color-text-primary)' }}>{index.name}</span>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                <span style={{ fontWeight: '700', fontSize: '1rem' }}>{index.price.toLocaleString()}</span>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', marginBottom: '0.5rem' }}>
+                            <span style={{ fontWeight: '600', fontSize: '0.85rem', color: 'var(--color-text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{index.name}</span>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                <span style={{ fontWeight: '700', fontSize: '0.95rem' }}>{index.price.toLocaleString()}</span>
                             </div>
                             <span style={{
-                                fontSize: '0.8rem',
+                                fontSize: '0.75rem',
                                 color: index.change >= 0 ? '#00C853' : '#FF4D4D',
                                 fontWeight: '500'
                             }}>
@@ -132,7 +132,7 @@ const MarketIndicesWidget = () => {
                             </span>
                         </div>
 
-                        <div style={{ height: '40px', width: '100%', marginTop: 'auto' }}>
+                        <div style={{ height: '35px', width: '100%', marginTop: 'auto' }}>
                             <Sparkline color={index.change >= 0 ? '#00C853' : '#FF4D4D'} />
                         </div>
                     </div>
