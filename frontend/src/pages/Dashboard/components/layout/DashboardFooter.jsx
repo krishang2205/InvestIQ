@@ -16,11 +16,14 @@ const FooterSection = ({ title, links }) => (
 
 const DashboardFooter = () => {
     return (
+    return (
         <div style={{
-            marginTop: '3rem',
-            padding: '3rem 0',
+            marginTop: 'auto', // Push to bottom if flex container allows
+            paddingTop: '4rem',
+            paddingBottom: '2rem',
             borderTop: '1px solid rgba(255,255,255,0.05)',
-            color: 'var(--color-text-secondary)'
+            color: 'var(--color-text-secondary)',
+            width: '100%'
         }}>
             {/* Top Grid */}
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '2rem', marginBottom: '3rem' }}>

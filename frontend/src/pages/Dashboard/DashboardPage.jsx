@@ -77,7 +77,7 @@ const DashboardPage = () => {
                 </div>
 
                 {/* Section 4: Curated Screens Shortcut */}
-                <div style={{ marginBottom: '2rem', height: '300px' }}>
+                <div style={{ marginBottom: '3rem', minHeight: 'auto' }}>
                     <ScreenerShortcutWidget />
                 </div>
 
