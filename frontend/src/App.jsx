@@ -11,6 +11,7 @@ import DashboardLayout from './pages/Dashboard/components/DashboardLayout';
 import DashboardPage from './pages/Dashboard/DashboardPage';
 import MarketMoodIndexPage from './pages/Dashboard/MarketMoodIndexPage';
 import IntelligenceReportPage from './pages/Dashboard/IntelligenceReportPage';
+import PortfolioPage from './pages/Dashboard/PortfolioPage';
 import './App.css';
 
 function App() {
@@ -27,7 +28,9 @@ function App() {
         <Route path="/dashboard" element={<DashboardLayout />}>
           <Route index element={<DashboardPage />} />
           <Route path="market-mood-index" element={<MarketMoodIndexPage />} />
+          <Route path="market-mood-index" element={<MarketMoodIndexPage />} />
           <Route path="intelligence-reports" element={<IntelligenceReportPage />} />
+          <Route path="portfolio" element={<PortfolioPage />} />
         </Route>
       </Routes>
       <AuthModal />

@@ -18,8 +18,15 @@ export const AuthProvider = ({ children }) => {
 
     useEffect(() => {
         // Check active session
-        supabase.auth.getSession().then(({ data: { session } }) => {
+        supabase.auth.getSession().then((response) => {
+            if (response.error) {
+                console.error("Supabase Session Error:", response.error);
+            }
+            const session = response.data?.session ?? null;
             setUser(session?.user ?? null);
+        }).catch((error) => {
+            console.error("Supabase Connection Error:", error);
+        }).finally(() => {
             setLoading(false);
         });
 
