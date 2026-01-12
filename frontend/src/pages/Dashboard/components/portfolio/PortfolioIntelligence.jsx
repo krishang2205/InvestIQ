@@ -11,7 +11,7 @@ const RiskMetricCard = ({ title, value, subtext, level, trend }) => {
     };
 
     return (
-        <div className={`glass-panel p-4 flex flex-col justify-between border ${level === 'high' ? 'border-rose-500/30' : 'border-white/5'}`}>
+        <div className={`glass-panel p-4 flex flex-col justify-between border ${level === 'high' ? 'border-rose-500/30' : 'border-white/5'} transition-all duration-300 hover:translate-y-[-4px] hover:shadow-lg hover:bg-white/[0.02]`}>
             <div>
                 <p className="text-xs text-gray-400 uppercase tracking-widest mb-1">{title}</p>
                 <div className="flex items-end gap-2">
