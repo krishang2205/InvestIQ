@@ -16,9 +16,9 @@ const PortfolioHero = () => {
     const [timeRange, setTimeRange] = useState('1Y');
 
     return (
-        <div className="grid grid-cols-12 gap-6 h-[340px]">
+        <div className="grid grid-cols-12 gap-6 h-auto lg:h-[340px]">
             {/* Left Card: Performance Graph (60%) */}
-            <div className="col-span-12 lg:col-span-7 xl:col-span-8 glass-panel p-6 flex flex-col relative overflow-hidden group">
+            <div className="col-span-12 lg:col-span-7 xl:col-span-8 glass-panel p-6 flex flex-col relative overflow-hidden group min-h-[350px] lg:min-h-0">
                 <div className="flex justify-between items-start mb-6 relative z-10">
                     <div>
                         <h2 className="text-lg font-semibold text-white/90">Portfolio Performance</h2>
@@ -33,8 +33,8 @@ const PortfolioHero = () => {
                                 key={range}
                                 onClick={() => setTimeRange(range)}
                                 className={`px-3 py-1 text-xs font-medium rounded-md transition-all ${timeRange === range
-                                        ? 'bg-violet-500/20 text-violet-300 shadow-sm'
-                                        : 'text-gray-500 hover:text-gray-300 hover:bg-white/5'
+                                    ? 'bg-violet-500/20 text-violet-300 shadow-sm'
+                                    : 'text-gray-500 hover:text-gray-300 hover:bg-white/5'
                                     }`}
                             >
                                 {range}
