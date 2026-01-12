@@ -1,5 +1,6 @@
 import PortfolioHero from './components/portfolio/PortfolioHero';
 import PortfolioIntelligence from './components/portfolio/PortfolioIntelligence';
+import PortfolioAllocation from './components/portfolio/PortfolioAllocation';
 
 const PortfolioPage = () => {
     return (
@@ -27,12 +28,8 @@ const PortfolioPage = () => {
             {/* Section C: Intelligence Row */}
             <PortfolioIntelligence />
 
-            {/* Placeholder Content for Allocation */}
-            <div className="grid grid-cols-12 gap-6">
-                <div className="col-span-12 h-64 border border-dashed border-white/10 rounded-xl flex items-center justify-center text-gray-500">
-                    Allocation & Rebalancing Coming Soon...
-                </div>
-            </div>
+            {/* Section D: Allocation & Rebalancing */}
+            <PortfolioAllocation />
         </div>
     );
 };
