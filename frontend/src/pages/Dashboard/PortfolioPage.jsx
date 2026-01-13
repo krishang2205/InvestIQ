@@ -4,7 +4,7 @@ import PortfolioAllocation from './components/portfolio/PortfolioAllocation';
 
 const PortfolioPage = () => {
     return (
-        <div className="p-6 space-y-6 animate-in fade-in duration-500">
+        <div className="p-6 space-y-6 animate-in fade-in duration-500 min-h-screen bg-[#000000] text-gray-100 font-sans">
             {/* Header Section */}
             <div className="flex justify-between items-center">
                 <div>
