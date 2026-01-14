@@ -50,13 +50,19 @@ const PortfolioPage = () => {
             </div>
 
             {/* Section B: Hero Row */}
-            <PortfolioHero />
+            <div style={{ marginBottom: '1.5rem' }}>
+                <PortfolioHero />
+            </div>
 
             {/* Section C: Intelligence Row */}
-            <PortfolioIntelligence />
+            <div style={{ marginBottom: '1.5rem' }}>
+                <PortfolioIntelligence />
+            </div>
 
             {/* Section D: Allocation & Rebalancing */}
-            <PortfolioAllocation />
+            <div style={{ marginBottom: '1.5rem' }}>
+                <PortfolioAllocation />
+            </div>
         </div>
     );
 };
