@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { ArrowUpRight, ArrowDownRight, Activity } from 'lucide-react';
+import { ArrowUpRight, Activity } from 'lucide-react';
 
 const data = [
     { name: 'Jan', value: 124000 },
@@ -16,26 +16,43 @@ const PortfolioHero = () => {
     const [timeRange, setTimeRange] = useState('1Y');
 
     return (
-        <div className="grid grid-cols-12 gap-6 h-auto lg:h-[340px]">
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: '1.5rem', height: 'auto', minHeight: '340px' }}>
             {/* Left Card: Performance Graph (60%) */}
-            <div className="col-span-12 lg:col-span-7 xl:col-span-8 glass-panel p-6 flex flex-col relative overflow-hidden group min-h-[350px] lg:min-h-0">
-                <div className="flex justify-between items-start mb-6 relative z-10">
+            <div className="glass-panel" style={{
+                gridColumn: 'span 8',
+                padding: '1.5rem',
+                display: 'flex',
+                flexDirection: 'column',
+                position: 'relative',
+                overflow: 'hidden',
+                borderRadius: '12px',
+                border: '1px solid var(--glass-border)'
+            }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem', position: 'relative', zIndex: 10 }}>
                     <div>
-                        <h2 className="text-lg font-semibold text-white/90">Portfolio Performance</h2>
-                        <div className="text-sm text-gray-400 flex items-center gap-2">
-                            <span className="w-2 h-2 rounded-full bg-violet-500"></span>
+                        <h2 style={{ fontSize: '1.125rem', fontWeight: 600, color: 'rgba(255,255,255,0.9)', margin: 0 }}>Portfolio Performance</h2>
+                        <div style={{ fontSize: '0.875rem', color: 'var(--color-secondary)', display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.25rem' }}>
+                            <span style={{ width: '0.5rem', height: '0.5rem', borderRadius: '50%', backgroundColor: '#8b5cf6' }}></span>
                             Net Asset Value
                         </div>
                     </div>
-                    <div className="flex bg-[#1E1E1E] rounded-lg p-1 border border-white/5">
+                    <div style={{ display: 'flex', backgroundColor: '#1E1E1E', borderRadius: '0.5rem', padding: '0.25rem', border: '1px solid rgba(255,255,255,0.05)' }}>
                         {['1M', '3M', '1Y', 'ALL'].map((range) => (
                             <button
                                 key={range}
                                 onClick={() => setTimeRange(range)}
-                                className={`px-3 py-1 text-xs font-medium rounded-md transition-all ${timeRange === range
-                                    ? 'bg-violet-500/20 text-violet-300 shadow-sm'
-                                    : 'text-gray-500 hover:text-gray-300 hover:bg-white/5'
-                                    }`}
+                                style={{
+                                    padding: '0.25rem 0.75rem',
+                                    fontSize: '0.75rem',
+                                    fontWeight: 500,
+                                    borderRadius: '0.375rem',
+                                    transition: 'all 0.2s',
+                                    border: 'none',
+                                    cursor: 'pointer',
+                                    backgroundColor: timeRange === range ? 'rgba(139, 92, 246, 0.2)' : 'transparent',
+                                    color: timeRange === range ? '#c4b5fd' : '#6b7280',
+                                    boxShadow: timeRange === range ? '0 1px 2px 0 rgba(0, 0, 0, 0.05)' : 'none'
+                                }}
                             >
                                 {range}
                             </button>
@@ -43,7 +60,7 @@ const PortfolioHero = () => {
                     </div>
                 </div>
 
-                <div className="flex-1 w-full min-h-0">
+                <div style={{ flex: 1, width: '100%', minHeight: 0 }}>
                     <ResponsiveContainer width="100%" height="100%">
                         <AreaChart data={data} margin={{ top: 5, right: 0, left: 0, bottom: 0 }}>
                             <defs>
@@ -85,21 +102,31 @@ const PortfolioHero = () => {
             </div>
 
             {/* Right Card: The Pulse (40%) */}
-            <div className="col-span-12 lg:col-span-5 xl:col-span-4 flex flex-col gap-6">
+            <div style={{ gridColumn: 'span 4', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
                 {/* Total Value & P/L */}
-                <div className="glass-panel p-6 flex-1 flex flex-col justify-center relative overflow-hidden">
-                    <div className="absolute top-0 right-0 p-5 opacity-10">
-                        <Activity size={120} className="text-violet-500" />
+                <div className="glass-panel" style={{
+                    padding: '1.5rem',
+                    flex: 1,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'center',
+                    position: 'relative',
+                    overflow: 'hidden',
+                    borderRadius: '12px',
+                    border: '1px solid var(--glass-border)'
+                }}>
+                    <div style={{ position: 'absolute', top: 0, right: 0, padding: '1.25rem', opacity: 0.1 }}>
+                        <Activity size={120} color="#8b5cf6" />
                     </div>
 
-                    <div className="relative z-10">
-                        <p className="text-sm font-medium text-gray-400 mb-1">Total Portfolio Value</p>
-                        <h3 className="text-4xl font-bold text-white tracking-tight mb-4">$155,420.50</h3>
+                    <div style={{ position: 'relative', zIndex: 10 }}>
+                        <p style={{ fontSize: '0.875rem', fontWeight: 500, color: 'var(--color-secondary)', marginBottom: '0.25rem' }}>Total Portfolio Value</p>
+                        <h3 style={{ fontSize: '2.25rem', fontWeight: 700, color: 'white', letterSpacing: '-0.025em', margin: '0 0 1rem 0' }}>$155,420.50</h3>
 
-                        <div className="flex gap-4">
-                            <div className="flex flex-col">
-                                <span className="text-xs text-gray-500 uppercase tracking-wider">Daily P/L</span>
-                                <span className="text-lg font-semibold text-emerald-400 flex items-center gap-1">
+                        <div style={{ display: 'flex', gap: '1rem' }}>
+                            <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                <span style={{ fontSize: '0.75rem', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Daily P/L</span>
+                                <span style={{ fontSize: '1.125rem', fontWeight: 600, color: '#34d399', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
                                     <ArrowUpRight size={18} /> +$1,240.50 (0.8%)
                                 </span>
                             </div>
@@ -108,13 +135,23 @@ const PortfolioHero = () => {
                 </div>
 
                 {/* Risk Score Badge */}
-                <div className="glass-panel p-6 flex items-center justify-between border-l-4 border-l-emerald-500">
+                <div className="glass-panel" style={{
+                    padding: '1.5rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    borderLeft: '4px solid #10b981',
+                    borderRadius: '12px',
+                    border: '1px solid var(--glass-border)',
+                    borderLeftWidth: '4px',
+                    borderLeftColor: '#10b981'
+                }}>
                     <div>
-                        <p className="text-sm font-medium text-gray-400 mb-1">Composite Risk Score</p>
-                        <h4 className="text-2xl font-bold text-white">42/100 <span className="text-sm font-normal text-emerald-400 ml-2">(Low Risk)</span></h4>
+                        <p style={{ fontSize: '0.875rem', fontWeight: 500, color: 'var(--color-secondary)', marginBottom: '0.25rem' }}>Composite Risk Score</p>
+                        <h4 style={{ fontSize: '1.5rem', fontWeight: 700, color: 'white', margin: 0 }}>42/100 <span style={{ fontSize: '0.875rem', fontWeight: 400, color: '#34d399', marginLeft: '0.5rem' }}>(Low Risk)</span></h4>
                     </div>
-                    <div className="h-12 w-12 rounded-full bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20">
-                        <Activity size={24} className="text-emerald-500" />
+                    <div style={{ height: '3rem', width: '3rem', borderRadius: '50%', backgroundColor: 'rgba(16, 185, 129, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(16, 185, 129, 0.2)' }}>
+                        <Activity size={24} color="#10b981" />
                     </div>
                 </div>
             </div>
