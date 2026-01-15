@@ -9,25 +9,27 @@ const data = [
     { name: 'Cash', value: 10, color: '#64748b' },       // Slate
 ];
 
-const renderActiveShape = (props) => {
-    // Custom active shape logic can be added here if needed
-    return props.payload.name;
-};
-
 const PortfolioAllocation = () => {
     return (
-        <div className="grid grid-cols-12 gap-6">
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: '1.5rem' }}>
             {/* Donut Chart Card (Asset Allocation) */}
-            <div className="col-span-12 md:col-span-6 lg:col-span-7 glass-panel p-6 flex flex-col">
-                <div className="flex justify-between items-start mb-6">
+            <div className="glass-panel" style={{
+                gridColumn: 'span 7',
+                padding: '1.5rem',
+                display: 'flex',
+                flexDirection: 'column',
+                borderRadius: '12px',
+                border: '1px solid var(--glass-border)'
+            }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem' }}>
                     <div>
-                        <h3 className="text-lg font-semibold text-white">Asset Allocation</h3>
-                        <p className="text-sm text-gray-400">Breakdown by Sector</p>
+                        <h3 style={{ fontSize: '1.125rem', fontWeight: 600, color: 'white', margin: 0 }}>Asset Allocation</h3>
+                        <p style={{ fontSize: '0.875rem', color: '#9ca3af', marginTop: '0.25rem' }}>Breakdown by Sector</p>
                     </div>
-                    <button className="text-xs text-violet-400 hover:text-violet-300">Manage Categories</button>
+                    <button style={{ background: 'none', border: 'none', fontSize: '0.75rem', color: '#a78bfa', cursor: 'pointer', transition: 'color 0.2s' }}>Manage Categories</button>
                 </div>
 
-                <div className="flex-1 w-full min-h-[300px] relative">
+                <div style={{ flex: 1, width: '100%', minHeight: '300px', position: 'relative' }}>
                     <ResponsiveContainer width="100%" height="100%">
                         <PieChart>
                             <Pie
@@ -54,22 +56,31 @@ const PortfolioAllocation = () => {
                                 verticalAlign="middle"
                                 align="right"
                                 iconType="circle"
-                                wrapperStyle={{ fontSize: '12px' }}
+                                wrapperStyle={{ fontSize: '12px', color: '#9ca3af' }}
                             />
                         </PieChart>
                     </ResponsiveContainer>
                     {/* Center Text Overlay */}
-                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none md:pr-24">
-                        <div className="text-center">
-                            <span className="block text-3xl font-bold text-white">5</span>
-                            <span className="text-xs text-gray-400 uppercase tracking-widest">Sectors</span>
+                    <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none', paddingRight: '6rem' }}>
+                        <div style={{ textAlign: 'center' }}>
+                            <span style={{ display: 'block', fontSize: '1.875rem', fontWeight: 700, color: 'white' }}>5</span>
+                            <span style={{ fontSize: '0.75rem', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Sectors</span>
                         </div>
                     </div>
                 </div>
             </div>
 
-            {/* Placeholder for Rebalancing Hints (Values to be added in next commit) */}
-            <div className="col-span-12 md:col-span-6 lg:col-span-5 glass-panel p-6 border border-dashed border-white/10 flex items-center justify-center text-gray-500">
+            {/* Placeholder for Rebalancing Hints */}
+            <div className="glass-panel" style={{
+                gridColumn: 'span 5',
+                padding: '1.5rem',
+                border: '1px dashed rgba(255,255,255,0.1)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: '#6b7280',
+                borderRadius: '12px'
+            }}>
                 Rebalancing Recommendations module inactive.
             </div>
         </div>
