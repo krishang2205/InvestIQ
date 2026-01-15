@@ -1,29 +1,51 @@
 import React from 'react';
-import { Sparkles, TrendingDown, Zap, AlertTriangle } from 'lucide-react';
-import { AreaChart, Area, ResponsiveContainer } from 'recharts';
+import { Sparkles } from 'lucide-react';
 
-const RiskMetricCard = ({ title, value, subtext, level, trend }) => {
+const RiskMetricCard = ({ title, value, subtext, level }) => {
     // Level: low (green), medium (yellow), high (red)
     const colors = {
-        low: 'text-emerald-400 border-emerald-500/20 bg-emerald-500/5',
-        medium: 'text-amber-400 border-amber-500/20 bg-amber-500/5',
-        high: 'text-rose-400 border-rose-500/20 bg-rose-500/5',
+        low: { text: '#34d399', border: 'rgba(16, 185, 129, 0.2)', bg: 'rgba(16, 185, 129, 0.05)' },
+        medium: { text: '#fbbf24', border: 'rgba(245, 158, 11, 0.2)', bg: 'rgba(245, 158, 11, 0.05)' },
+        high: { text: '#f87171', border: 'rgba(243, 24, 65, 0.2)', bg: 'rgba(243, 24, 65, 0.05)' },
     };
 
+    const style = colors[level] || colors.medium;
+
     return (
-        <div className={`glass-panel p-4 flex flex-col justify-between border ${level === 'high' ? 'border-rose-500/30' : 'border-white/5'} transition-all duration-300 hover:translate-y-[-4px] hover:shadow-lg hover:bg-white/[0.02]`}>
+        <div className="glass-panel" style={{
+            padding: '1rem',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'space-between',
+            border: `1px solid ${level === 'high' ? 'rgba(243, 24, 65, 0.3)' : 'rgba(255,255,255,0.05)'}`,
+            transition: 'all 0.3s',
+            borderRadius: '12px',
+            backgroundColor: 'var(--glass-bg)',
+            backdropFilter: 'blur(12px)'
+        }}
+            onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'translateY(-4px)';
+                e.currentTarget.style.boxShadow = '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)';
+                e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.02)';
+            }}
+            onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = 'none';
+                e.currentTarget.style.backgroundColor = 'var(--glass-bg)';
+            }}
+        >
             <div>
-                <p className="text-xs text-gray-400 uppercase tracking-widest mb-1">{title}</p>
-                <div className="flex items-end gap-2">
-                    <span className="text-xl font-bold text-white">{value}</span>
-                    <span className={`text-xs ${level === 'high' ? 'text-rose-400' : 'text-gray-400'}`}>{subtext}</span>
+                <p style={{ fontSize: '0.75rem', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.25rem' }}>{title}</p>
+                <div style={{ display: 'flex', alignItems: 'flex-end', gap: '0.5rem' }}>
+                    <span style={{ fontSize: '1.25rem', fontWeight: 700, color: 'white' }}>{value}</span>
+                    <span style={{ fontSize: '0.75rem', color: level === 'high' ? '#f87171' : '#9ca3af' }}>{subtext}</span>
                 </div>
             </div>
 
-            <div className="mt-3">
+            <div style={{ marginTop: '0.75rem' }}>
                 {/* Mini Sparkline Placeholder */}
-                <div className="h-1 w-full bg-white/10 rounded-full overflow-hidden">
-                    <div className={`h-full ${level === 'high' ? 'bg-rose-500' : 'bg-emerald-500'}`} style={{ width: '60%' }}></div>
+                <div style={{ height: '0.25rem', width: '100%', backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: '9999px', overflow: 'hidden' }}>
+                    <div style={{ height: '100%', backgroundColor: level === 'high' ? '#f43f5e' : '#10b981', width: '60%' }}></div>
                 </div>
             </div>
         </div>
@@ -32,35 +54,49 @@ const RiskMetricCard = ({ title, value, subtext, level, trend }) => {
 
 const PortfolioIntelligence = () => {
     return (
-        <div className="grid grid-cols-12 gap-6">
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: '1.5rem' }}>
             {/* AI Insight Box (Full Width) */}
-            <div className="col-span-12 glass-panel p-1 relative overflow-hidden group">
-                <div className="absolute inset-0 bg-gradient-to-r from-violet-600/10 to-transparent pointer-events-none" />
+            <div className="glass-panel" style={{
+                gridColumn: 'span 12',
+                padding: '0.25rem',
+                position: 'relative',
+                overflow: 'hidden',
+                borderRadius: '12px',
+                border: '1px solid var(--glass-border)'
+            }}>
+                <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to right, rgba(124, 58, 237, 0.1), transparent)', pointerEvents: 'none' }} />
 
-                <div className="p-5 flex gap-4 items-start relative z-10">
-                    <div className="p-3 rounded-xl bg-gradient-to-br from-violet-500/20 to-fuchsia-500/20 border border-white/10 shadow-[0_0_15px_rgba(139,92,246,0.3)]">
-                        <Sparkles className="text-violet-300" size={24} />
+                <div style={{ padding: '1.25rem', display: 'flex', gap: '1rem', alignItems: 'flex-start', position: 'relative', zIndex: 10 }}>
+                    <div style={{
+                        padding: '0.75rem',
+                        borderRadius: '0.75rem',
+                        background: 'linear-gradient(to bottom right, rgba(139, 92, 246, 0.2), rgba(217, 70, 239, 0.2))',
+                        border: '1px solid rgba(255,255,255,0.1)',
+                        boxShadow: '0 0 15px rgba(139,92,246,0.3)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center'
+                    }}>
+                        <Sparkles color="#c4b5fd" size={24} />
                     </div>
 
-                    <div className="flex-1">
-                        <div className="flex justify-between items-start mb-2">
-                            <h3 className="text-base font-semibold text-white flex items-center gap-2">
+                    <div style={{ flex: 1 }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.5rem' }}>
+                            <h3 style={{ fontSize: '1rem', fontWeight: 600, color: 'white', display: 'flex', alignItems: 'center', gap: '0.5rem', margin: 0 }}>
                                 AI Portfolio Analysis
-                                <span className="text-[10px] bg-violet-500/20 text-violet-300 px-2 py-0.5 rounded-full border border-violet-500/20">BETA</span>
+                                <span style={{ fontSize: '0.625rem', backgroundColor: 'rgba(139, 92, 246, 0.2)', color: '#c4b5fd', padding: '0.125rem 0.5rem', borderRadius: '9999px', border: '1px solid rgba(139, 92, 246, 0.2)' }}>BETA</span>
                             </h3>
-                            <button className="text-xs text-violet-400 hover:text-violet-300 transition-colors">View detailed report →</button>
+                            <button style={{ background: 'none', border: 'none', fontSize: '0.75rem', color: '#a78bfa', cursor: 'pointer', transition: 'color 0.2s' }}>View detailed report →</button>
                         </div>
-                        <p className="text-sm text-gray-300 leading-relaxed">
-                            Your portfolio is heavily weighted towards <span className="text-white font-medium">Technology (45%)</span>, which increases volatility.
-                            Consider diversifying into <span className="text-emerald-400 cursor-pointer hover:underline">Government Bonds</span> or <span className="text-emerald-400 cursor-pointer hover:underline">Consumer Staples</span> to balance risk.
-                            The recent drop in tech stocks has increased your drawdown risk by <span className="text-rose-400">2.4%</span>.
+                        <p style={{ fontSize: '0.875rem', color: '#d1d5db', lineHeight: '1.625' }}>
+                            Your portfolio is heavily weighted towards <span style={{ color: 'white', fontWeight: 500 }}>Technology (45%)</span>, which increases volatility.
+                            Consider diversifying into <span style={{ color: '#34d399', cursor: 'pointer', textDecoration: 'underline' }}>Government Bonds</span> or <span style={{ color: '#34d399', cursor: 'pointer', textDecoration: 'underline' }}>Consumer Staples</span> to balance risk.
+                            The recent drop in tech stocks has increased your drawdown risk by <span style={{ color: '#f87171' }}>2.4%</span>.
                         </p>
                     </div>
                 </div>
             </div>
 
             {/* Risk Metrics Grid */}
-            <div className="col-span-12 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div style={{ gridColumn: 'span 12', display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1rem' }}>
                 <RiskMetricCard
                     title="Max Drawdown"
                     value="-12.4%"
