@@ -31,18 +31,24 @@ const PortfolioPage = () => {
                     </button>
                     <button style={{
                         padding: '0.5rem 1rem',
-                        background: 'linear-gradient(to right, #7c3aed, #c026d3)',
+                        background: 'linear-gradient(135deg, #D1C79D 0%, #B0A678 100%)', // Gold Gradient
                         borderRadius: '0.5rem',
                         fontSize: '0.875rem',
-                        color: 'white',
-                        fontWeight: 500,
-                        boxShadow: '0 10px 15px -3px rgba(139, 92, 246, 0.2)',
+                        color: '#000', // Black text on Gold
+                        fontWeight: 600,
+                        boxShadow: '0 4px 12px rgba(209, 199, 157, 0.2)',
                         cursor: 'pointer',
                         transition: 'all 0.2s',
                         border: 'none'
                     }}
-                        onMouseEnter={(e) => e.target.style.opacity = '0.9'}
-                        onMouseLeave={(e) => e.target.style.opacity = '1'}
+                        onMouseEnter={(e) => {
+                            e.target.style.transform = 'translateY(-1px)';
+                            e.target.style.boxShadow = '0 6px 16px rgba(209, 199, 157, 0.3)';
+                        }}
+                        onMouseLeave={(e) => {
+                            e.target.style.transform = 'translateY(0)';
+                            e.target.style.boxShadow = '0 4px 12px rgba(209, 199, 157, 0.2)';
+                        }}
                     >
                         Add Transaction
                     </button>
