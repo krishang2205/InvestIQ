@@ -64,30 +64,30 @@ const PortfolioIntelligence = () => {
                 borderRadius: '12px',
                 border: '1px solid var(--glass-border)'
             }}>
-                <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to right, rgba(124, 58, 237, 0.1), transparent)', pointerEvents: 'none' }} />
+                <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to right, rgba(209, 199, 157, 0.1), transparent)', pointerEvents: 'none' }} />
 
                 <div style={{ padding: '1.25rem', display: 'flex', gap: '1rem', alignItems: 'flex-start', position: 'relative', zIndex: 10 }}>
                     <div style={{
                         padding: '0.75rem',
                         borderRadius: '0.75rem',
-                        background: 'linear-gradient(to bottom right, rgba(139, 92, 246, 0.2), rgba(217, 70, 239, 0.2))',
-                        border: '1px solid rgba(255,255,255,0.1)',
-                        boxShadow: '0 0 15px rgba(139,92,246,0.3)',
+                        background: 'linear-gradient(to bottom right, rgba(209, 199, 157, 0.2), rgba(176, 166, 120, 0.2))',
+                        border: '1px solid rgba(209, 199, 157, 0.1)',
+                        boxShadow: '0 0 15px rgba(209, 199, 157, 0.2)',
                         display: 'flex', alignItems: 'center', justifyContent: 'center'
                     }}>
-                        <Sparkles color="#c4b5fd" size={24} />
+                        <Sparkles color="#D1C79D" size={24} />
                     </div>
 
                     <div style={{ flex: 1 }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.5rem' }}>
                             <h3 style={{ fontSize: '1rem', fontWeight: 600, color: 'white', display: 'flex', alignItems: 'center', gap: '0.5rem', margin: 0 }}>
                                 AI Portfolio Analysis
-                                <span style={{ fontSize: '0.625rem', backgroundColor: 'rgba(139, 92, 246, 0.2)', color: '#c4b5fd', padding: '0.125rem 0.5rem', borderRadius: '9999px', border: '1px solid rgba(139, 92, 246, 0.2)' }}>BETA</span>
+                                <span style={{ fontSize: '0.625rem', backgroundColor: 'rgba(209, 199, 157, 0.15)', color: '#D1C79D', padding: '0.125rem 0.5rem', borderRadius: '9999px', border: '1px solid rgba(209, 199, 157, 0.2)' }}>BETA</span>
                             </h3>
-                            <button style={{ background: 'none', border: 'none', fontSize: '0.75rem', color: '#a78bfa', cursor: 'pointer', transition: 'color 0.2s' }}>View detailed report →</button>
+                            <button style={{ background: 'none', border: 'none', fontSize: '0.75rem', color: '#D1C79D', cursor: 'pointer', transition: 'color 0.2s' }}>View detailed report →</button>
                         </div>
                         <p style={{ fontSize: '0.875rem', color: '#d1d5db', lineHeight: '1.625' }}>
-                            Your portfolio is heavily weighted towards <span style={{ color: 'white', fontWeight: 500 }}>Technology (45%)</span>, which increases volatility.
+                            Your portfolio is heavily weighted towards <span style={{ color: '#D1C79D', fontWeight: 500 }}>Technology (45%)</span>, which increases volatility.
                             Consider diversifying into <span style={{ color: '#34d399', cursor: 'pointer', textDecoration: 'underline' }}>Government Bonds</span> or <span style={{ color: '#34d399', cursor: 'pointer', textDecoration: 'underline' }}>Consumer Staples</span> to balance risk.
                             The recent drop in tech stocks has increased your drawdown risk by <span style={{ color: '#f87171' }}>2.4%</span>.
                         </p>
