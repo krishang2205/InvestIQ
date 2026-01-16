@@ -1,12 +1,9 @@
-import React from 'react';
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
-
 const data = [
-    { name: 'Technology', value: 45, color: '#8b5cf6' }, // Violet
-    { name: 'Healthcare', value: 20, color: '#10b981' }, // Emerald
-    { name: 'Finance', value: 15, color: '#f59e0b' },    // Amber
-    { name: 'Consumer', value: 10, color: '#ec4899' },   // Pink
-    { name: 'Cash', value: 10, color: '#64748b' },       // Slate
+    { name: 'Technology', value: 45, color: '#D1C79D' }, // Gold (Primary)
+    { name: 'Healthcare', value: 20, color: '#4B5563' }, // Gray
+    { name: 'Finance', value: 15, color: '#B45309' },    // Bronze
+    { name: 'Consumer', value: 10, color: '#F59E0B' },   // Amber
+    { name: 'Cash', value: 10, color: '#1F2937' },       // Dark Gray
 ];
 
 const PortfolioAllocation = () => {
