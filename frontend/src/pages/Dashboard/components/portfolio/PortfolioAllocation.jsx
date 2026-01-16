@@ -1,3 +1,6 @@
+import React from 'react';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
+
 const data = [
     { name: 'Technology', value: 45, color: '#D1C79D' }, // Gold (Primary)
     { name: 'Healthcare', value: 20, color: '#4B5563' }, // Gray
