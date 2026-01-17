@@ -1,8 +1,13 @@
 import PortfolioHero from './components/portfolio/PortfolioHero';
 import PortfolioIntelligence from './components/portfolio/PortfolioIntelligence';
 import PortfolioAllocation from './components/portfolio/PortfolioAllocation';
+import PortfolioEmptyState from './components/portfolio/PortfolioEmptyState';
+import { useState } from 'react';
 
 const PortfolioPage = () => {
+    // Demo state: Set to true to see data, false to see empty state
+    const [hasData, setHasData] = useState(false);
+
     return (
         <div style={{ padding: '1.5rem', minHeight: '100vh', backgroundColor: 'var(--color-bg)', color: 'var(--color-primary)', fontFamily: 'var(--font-family-base)' }} className="animate-in fade-in duration-500">
             {/* Header Section */}
@@ -11,7 +16,7 @@ const PortfolioPage = () => {
                     <h1 style={{ fontSize: '1.5rem', fontWeight: 'bold', letterSpacing: '-0.025em', color: 'var(--color-primary)', margin: 0 }}>Portfolio</h1>
                     <p style={{ fontSize: '0.875rem', color: 'var(--color-secondary)', marginTop: '0.25rem' }}>Track your performance and risk metrics.</p>
                 </div>
-                {/* Placeholder for actions */}
+                {/* Actions */}
                 <div style={{ display: 'flex', gap: '0.75rem' }}>
                     <button style={{
                         padding: '0.5rem 1rem',
@@ -26,8 +31,9 @@ const PortfolioPage = () => {
                     }}
                         onMouseEnter={(e) => e.target.style.backgroundColor = '#333'}
                         onMouseLeave={(e) => e.target.style.backgroundColor = '#2a2a2a'}
+                        onClick={() => setHasData(!hasData)} // Toggle for demo purposes
                     >
-                        Connect Broker
+                        {hasData ? 'View Empty State' : 'View Demo Data'}
                     </button>
                     <button style={{
                         padding: '0.5rem 1rem',
@@ -55,20 +61,26 @@ const PortfolioPage = () => {
                 </div>
             </div>
 
-            {/* Section B: Hero Row */}
-            <div style={{ marginBottom: '1.5rem' }}>
-                <PortfolioHero />
-            </div>
+            {!hasData ? (
+                <PortfolioEmptyState />
+            ) : (
+                <>
+                    {/* Section B: Hero Row */}
+                    <div style={{ marginBottom: '1.5rem' }}>
+                        <PortfolioHero />
+                    </div>
 
-            {/* Section C: Intelligence Row */}
-            <div style={{ marginBottom: '1.5rem' }}>
-                <PortfolioIntelligence />
-            </div>
+                    {/* Section C: Intelligence Row */}
+                    <div style={{ marginBottom: '1.5rem' }}>
+                        <PortfolioIntelligence />
+                    </div>
 
-            {/* Section D: Allocation & Rebalancing */}
-            <div style={{ marginBottom: '1.5rem' }}>
-                <PortfolioAllocation />
-            </div>
+                    {/* Section D: Allocation & Rebalancing */}
+                    <div style={{ marginBottom: '1.5rem' }}>
+                        <PortfolioAllocation />
+                    </div>
+                </>
+            )}
         </div>
     );
 };
