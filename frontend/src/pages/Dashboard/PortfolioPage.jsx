@@ -2,11 +2,13 @@ import PortfolioHero from './components/portfolio/PortfolioHero';
 import PortfolioIntelligence from './components/portfolio/PortfolioIntelligence';
 import PortfolioAllocation from './components/portfolio/PortfolioAllocation';
 import PortfolioEmptyState from './components/portfolio/PortfolioEmptyState';
+import AddTransactionModal from './components/portfolio/AddTransactionModal';
 import { useState } from 'react';
 
 const PortfolioPage = () => {
     // Demo state: Set to true to see data, false to see empty state
     const [hasData, setHasData] = useState(false);
+    const [isAddTransactionOpen, setIsAddTransactionOpen] = useState(false);
 
     return (
         <div style={{ padding: '1.5rem', minHeight: '100vh', backgroundColor: 'var(--color-bg)', color: 'var(--color-primary)', fontFamily: 'var(--font-family-base)' }} className="animate-in fade-in duration-500">
@@ -55,6 +57,7 @@ const PortfolioPage = () => {
                             e.target.style.transform = 'translateY(0)';
                             e.target.style.boxShadow = '0 4px 12px rgba(209, 199, 157, 0.2)';
                         }}
+                        onClick={() => setIsAddTransactionOpen(true)}
                     >
                         Add Transaction
                     </button>
@@ -62,7 +65,7 @@ const PortfolioPage = () => {
             </div>
 
             {!hasData ? (
-                <PortfolioEmptyState />
+                <PortfolioEmptyState onAddTransaction={() => setIsAddTransactionOpen(true)} />
             ) : (
                 <>
                     {/* Section B: Hero Row */}
@@ -81,6 +84,11 @@ const PortfolioPage = () => {
                     </div>
                 </>
             )}
+
+            <AddTransactionModal
+                isOpen={isAddTransactionOpen}
+                onClose={() => setIsAddTransactionOpen(false)}
+            />
         </div>
     );
 };

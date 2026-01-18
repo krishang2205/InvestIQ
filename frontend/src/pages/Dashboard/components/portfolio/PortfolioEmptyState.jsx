@@ -1,7 +1,7 @@
 import React from 'react';
 import { Wallet, Upload, Plus } from 'lucide-react';
 
-const PortfolioEmptyState = () => {
+const PortfolioEmptyState = ({ onAddTransaction }) => {
     return (
         <div style={{
             display: 'flex',
@@ -105,6 +105,7 @@ const PortfolioEmptyState = () => {
                         }}
                             onMouseEnter={(e) => e.target.style.backgroundColor = 'rgba(255, 255, 255, 0.05)'}
                             onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
+                            onClick={onAddTransaction}
                         >
                             <Plus size={16} />
                             Add Transactions Manually
