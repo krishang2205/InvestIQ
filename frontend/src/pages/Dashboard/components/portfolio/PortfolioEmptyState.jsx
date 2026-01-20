@@ -1,5 +1,5 @@
 import React from 'react';
-import { Wallet, Upload, Plus, Sparkles, TrendingUp, ShieldCheck } from 'lucide-react';
+import { Wallet, Upload, Plus, Sparkles, TrendingUp, ShieldCheck, Lock } from 'lucide-react';
 
 const PortfolioEmptyState = ({ onAddTransaction }) => {
     return (
@@ -13,42 +13,34 @@ const PortfolioEmptyState = ({ onAddTransaction }) => {
             <div style={{
                 display: 'grid',
                 gridTemplateColumns: 'repeat(12, 1fr)',
-                gridTemplateRows: 'repeat(2, 280px)', // Fixed height rows for bento feel
+                gridTemplateRows: 'repeat(2, 280px)',
                 gap: '1.5rem',
                 maxWidth: '1200px',
                 width: '100%',
                 margin: '0 auto'
             }}>
-                {/* 1. Hero Tile: Connect Broker (Span 8 cols, 2 rows) */}
+                {/* 1. Hero Tile: Connect Broker (Locked/Premium) */}
                 <div style={{
                     gridColumn: 'span 8',
                     gridRow: 'span 2',
-                    background: 'linear-gradient(135deg, rgba(209, 199, 157, 0.1) 0%, rgba(30, 30, 30, 0.4) 100%)',
+                    background: 'linear-gradient(135deg, rgba(30, 30, 30, 0.6) 0%, rgba(20, 20, 20, 0.8) 100%)',
                     borderRadius: '24px',
-                    border: '1px solid rgba(209, 199, 157, 0.2)',
+                    border: '1px solid rgba(255, 255, 255, 0.05)',
                     display: 'flex',
                     flexDirection: 'column',
                     justifyContent: 'space-between',
                     padding: '3rem',
                     position: 'relative',
                     overflow: 'hidden',
-                    transition: 'transform 0.3s ease',
-                    backdropFilter: 'blur(10px)'
-                }}
-                    onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.01)'}
-                    onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
-                >
-                    {/* Abstract Gold Background Shape */}
+                }}>
+                    {/* Locked Overlay Pattern */}
                     <div style={{
                         position: 'absolute',
-                        top: '-10%',
-                        right: '-10%',
-                        width: '400px',
-                        height: '400px',
-                        background: 'radial-gradient(circle, rgba(209, 199, 157, 0.15) 0%, transparent 70%)',
-                        zIndex: 0,
-                        pointerEvents: 'none',
-                        filter: 'blur(80px)'
+                        inset: 0,
+                        backgroundImage: 'radial-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px)',
+                        backgroundSize: '20px 20px',
+                        opacity: 0.5,
+                        pointerEvents: 'none'
                     }} />
 
                     <div style={{ position: 'relative', zIndex: 10 }}>
@@ -58,73 +50,55 @@ const PortfolioEmptyState = ({ onAddTransaction }) => {
                             gap: '0.5rem',
                             padding: '0.5rem 1rem',
                             borderRadius: '999px',
-                            backgroundColor: 'rgba(209, 199, 157, 0.1)',
-                            border: '1px solid rgba(209, 199, 157, 0.2)',
-                            color: '#D1C79D',
+                            backgroundColor: 'rgba(245, 158, 11, 0.1)', // Amber/Gold tint for Premium
+                            border: '1px solid rgba(245, 158, 11, 0.2)',
+                            color: '#F59E0B',
                             fontSize: '0.875rem',
                             fontWeight: 600,
                             marginBottom: '1.5rem'
                         }}>
-                            <Sparkles size={16} /> Recommended for You
+                            <Lock size={16} /> Premium Feature
                         </div>
-                        <h2 style={{ fontSize: '3rem', fontWeight: 800, color: 'white', lineHeight: '1.1', marginBottom: '1rem', letterSpacing: '-0.02em' }}>
-                            Sync Your <br />
-                            <span style={{
-                                background: 'linear-gradient(to right, #D1C79D, #B0A678)',
-                                WebkitBackgroundClip: 'text',
-                                WebkitTextFillColor: 'transparent'
-                            }}>Entire Wealth.</span>
+                        <h2 style={{ fontSize: '3rem', fontWeight: 800, color: 'rgba(255,255,255,0.5)', lineHeight: '1.1', marginBottom: '1rem', letterSpacing: '-0.02em' }}>
+                            Sorry, nothing in <br />
+                            portfolio yet.
                         </h2>
-                        <p style={{ fontSize: '1.125rem', color: '#9ca3af', maxWidth: '480px', lineHeight: '1.6' }}>
-                            Connect Zerodha, Groww, or Upstox to automatically track your equity, mutual funds, and gold in real-time. Safe, secure, and seamless.
+                        <p style={{ fontSize: '1.125rem', color: '#6b7280', maxWidth: '480px', lineHeight: '1.6' }}>
+                            Automate your tracking with <span style={{ color: '#D1C79D', fontWeight: 600 }}>InvestIQ Premium</span>. Connect Zerodha, Groww, or Upstox for real-time sync.
                         </p>
                     </div>
 
-                    <div style={{ position: 'relative', zIndex: 10 }}>
+                    <div style={{ position: 'relative', zIndex: 10, opacity: 0.5, filter: 'grayscale(100%)' }}>
                         <button style={{
                             padding: '1.25rem 2.5rem',
-                            background: '#D1C79D',
-                            color: '#000',
+                            background: '#333',
+                            color: '#999',
                             fontSize: '1.125rem',
                             fontWeight: 700,
                             borderRadius: '16px',
-                            border: 'none',
-                            cursor: 'pointer',
+                            border: '1px solid rgba(255,255,255,0.1)',
+                            cursor: 'not-allowed',
                             display: 'flex',
                             alignItems: 'center',
                             gap: '0.75rem',
-                            boxShadow: '0 10px 30px rgba(209, 199, 157, 0.2)',
-                            transition: 'all 0.2s'
-                        }}
-                            onMouseEnter={(e) => {
-                                e.currentTarget.style.transform = 'translateY(-2px)';
-                                e.currentTarget.style.boxShadow = '0 15px 40px rgba(209, 199, 157, 0.3)';
-                            }}
-                            onMouseLeave={(e) => {
-                                e.currentTarget.style.transform = 'translateY(0)';
-                                e.currentTarget.style.boxShadow = '0 10px 30px rgba(209, 199, 157, 0.2)';
-                            }}
-                        >
+                        }} disabled>
                             <Upload size={24} />
                             Connect Broker Account
                         </button>
-                        <div style={{ marginTop: '1.5rem', display: 'flex', gap: '1.5rem', alignItems: 'center', opacity: 0.6 }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#9ca3af', fontSize: '0.875rem' }}>
+                        <div style={{ marginTop: '1.5rem', display: 'flex', gap: '1.5rem', alignItems: 'center' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#6b7280', fontSize: '0.875rem' }}>
                                 <ShieldCheck size={16} /> Bank-grade Encryption
-                            </div>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#9ca3af', fontSize: '0.875rem' }}>
-                                <ShieldCheck size={16} /> ISO 27001 Certified
                             </div>
                         </div>
                     </div>
                 </div>
 
-                {/* 2. Action Tile: Manual Entry (Span 4 cols, 1 row) */}
+                {/* 2. Action Tile: Manual Entry (Prominent Free Option) */}
                 <div style={{
                     gridColumn: 'span 4',
-                    background: 'rgba(30, 30, 30, 0.4)',
+                    background: 'linear-gradient(135deg, rgba(209, 199, 157, 0.1) 0%, rgba(30, 30, 30, 0.4) 100%)', // Gold tint moved here
                     borderRadius: '24px',
-                    border: '1px solid rgba(255, 255, 255, 0.05)',
+                    border: '1px solid rgba(209, 199, 157, 0.3)', // brighter border
                     padding: '2rem',
                     display: 'flex',
                     flexDirection: 'column',
@@ -132,41 +106,62 @@ const PortfolioEmptyState = ({ onAddTransaction }) => {
                     cursor: 'pointer',
                     transition: 'all 0.3s ease',
                     position: 'relative',
-                    overflow: 'hidden'
+                    overflow: 'hidden',
+                    boxShadow: '0 10px 30px rgba(0,0,0,0.5)'
                 }}
                     onClick={onAddTransaction}
                     onMouseEnter={(e) => {
-                        e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
-                        e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+                        e.currentTarget.style.transform = 'translateY(-4px)';
+                        e.currentTarget.style.boxShadow = '0 20px 40px rgba(0,0,0,0.6)';
+                        e.currentTarget.style.borderColor = '#D1C79D';
                     }}
                     onMouseLeave={(e) => {
-                        e.currentTarget.style.background = 'rgba(30, 30, 30, 0.4)';
-                        e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.05)';
+                        e.currentTarget.style.transform = 'translateY(0)';
+                        e.currentTarget.style.boxShadow = '0 10px 30px rgba(0,0,0,0.5)';
+                        e.currentTarget.style.borderColor = 'rgba(209, 199, 157, 0.3)';
                     }}
                 >
+                    {/* Gold Glow Effect */}
                     <div style={{
-                        width: '64px',
-                        height: '64px',
-                        borderRadius: '50%',
-                        backgroundColor: 'rgba(52, 211, 153, 0.1)', // Green tint
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        marginBottom: '1.5rem',
-                        border: '1px solid rgba(52, 211, 153, 0.2)'
-                    }}>
-                        <Plus size={32} color="#34d399" />
+                        position: 'absolute',
+                        top: '-20%',
+                        right: '-20%',
+                        width: '200px',
+                        height: '200px',
+                        background: 'radial-gradient(circle, rgba(209, 199, 157, 0.2) 0%, transparent 70%)',
+                        filter: 'blur(40px)',
+                        zIndex: 0,
+                    }} />
+
+                    <div style={{ position: 'relative', zIndex: 10 }}>
+                        <div style={{
+                            width: '64px',
+                            height: '64px',
+                            borderRadius: '50%',
+                            backgroundColor: '#D1C79D', // Solid Gold
+                            color: 'black',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            marginBottom: '1.5rem',
+                            boxShadow: '0 0 20px rgba(209, 199, 157, 0.3)'
+                        }}>
+                            <Plus size={32} />
+                        </div>
+                        <h3 style={{ fontSize: '1.75rem', fontWeight: 700, color: 'white', marginBottom: '0.5rem' }}>Add Manually</h3>
+                        <p style={{ color: '#d1d5db', fontSize: '1rem', lineHeight: '1.5' }}>
+                            Start tracking your assets for free. The classic way to build wealth.
+                        </p>
+                        <div style={{ marginTop: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#D1C79D', fontWeight: 600, fontSize: '0.875rem' }}>
+                            Get Started →
+                        </div>
                     </div>
-                    <h3 style={{ fontSize: '1.5rem', fontWeight: 600, color: 'white', marginBottom: '0.5rem' }}>Manual Entry</h3>
-                    <p style={{ color: '#9ca3af', fontSize: '0.875rem', lineHeight: '1.5' }}>
-                        Prefer to add assets yourself? <br /> Use our streamlined form.
-                    </p>
                 </div>
 
-                {/* 3. Feature Tile: Teaser (Span 4 cols, 1 row) */}
+                {/* 3. Feature Tile: Teaser */}
                 <div style={{
                     gridColumn: 'span 4',
-                    background: 'linear-gradient(180deg, rgba(30, 30, 30, 0.4) 0%, rgba(20, 20, 20, 0.8) 100%)',
+                    background: 'rgba(30, 30, 30, 0.4)',
                     borderRadius: '24px',
                     border: '1px dashed rgba(255, 255, 255, 0.1)',
                     padding: '2rem',
@@ -180,18 +175,8 @@ const PortfolioEmptyState = ({ onAddTransaction }) => {
                     <TrendingUp size={48} color="#6b7280" style={{ marginBottom: '1rem', opacity: 0.5 }} />
                     <h3 style={{ fontSize: '1.25rem', fontWeight: 600, color: '#9ca3af', marginBottom: '0.5rem' }}>AI Insights</h3>
                     <p style={{ color: '#6b7280', fontSize: '0.875rem' }}>
-                        Connect to unlock risk analysis and rebalancing tips.
+                        Unlock advanced analytics with Premium.
                     </p>
-
-                    {/* Blur Overlay Effect */}
-                    <div style={{
-                        position: 'absolute',
-                        inset: 0,
-                        backdropFilter: 'blur(2px)',
-                        background: 'linear-gradient(to bottom, transparent, rgba(0,0,0,0.5))',
-                        borderRadius: '24px',
-                        pointerEvents: 'none'
-                    }} />
                 </div>
             </div>
         </div>
