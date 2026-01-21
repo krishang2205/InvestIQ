@@ -1,5 +1,13 @@
-import React, { useState, useEffect } from 'react';
-import { X, Calendar, DollarSign, Hash } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { X, Calendar, DollarSign, Hash, Check } from 'lucide-react';
+
+const INDIAN_STOCKS = [
+    "RELIANCE", "TCS", "HDFCBANK", "INFY", "ICICIBANK", "HINDUNILVR", "SBIN", "BHARTIARTL", "ITC", "KOTAKBANK",
+    "LTIM", "AXISBANK", "LT", "HCLTECH", "BAJFINANCE", "ASIANPAINT", "MARUTI", "SUNPHARMA", "TITAN", "ULTRACEMCO",
+    "TATASTEEL", "NTPC", "POWERGRID", "M&M", "JSWSTEEL", "ADANIENT", "ADANIGREEN", "ADANIPORTS", "COALINDIA", "ONGC",
+    "TATAMOTORS", "BAJAJFINSV", "NESTLEIND", "BPCL", "GRASIM", "BRITANNIA", "TECHM", "WIPRO", "HINDALCO", "CIPLA",
+    "EICHERMOT", "DRREDDY", "DIVISLAB", "SBILIFE", "HDFCLIFE", "APOLLOHOSP", "TATACONSUM", "UPL", "HEROMOTOCO"
+];
 
 const AddTransactionModal = ({ isOpen, onClose }) => {
     const [formData, setFormData] = useState({
@@ -12,6 +20,9 @@ const AddTransactionModal = ({ isOpen, onClose }) => {
     });
 
     const [totalValue, setTotalValue] = useState(0);
+    const [suggestions, setSuggestions] = useState([]);
+    const [showSuggestions, setShowSuggestions] = useState(false);
+    const wrapperRef = useRef(null);
 
     // Auto-calculate total value
     useEffect(() => {
@@ -19,6 +30,39 @@ const AddTransactionModal = ({ isOpen, onClose }) => {
         const price = parseFloat(formData.price) || 0;
         setTotalValue(qty * price);
     }, [formData.quantity, formData.price]);
+
+    // Handle outside click to close suggestions
+    useEffect(() => {
+        function handleClickOutside(event) {
+            if (wrapperRef.current && !wrapperRef.current.contains(event.target)) {
+                setShowSuggestions(false);
+            }
+        }
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => {
+            document.removeEventListener("mousedown", handleClickOutside);
+        };
+    }, [wrapperRef]);
+
+    const handleSymbolChange = (e) => {
+        const value = e.target.value.toUpperCase();
+        setFormData({ ...formData, symbol: value });
+
+        if (value.length > 0) {
+            const filtered = INDIAN_STOCKS.filter(stock =>
+                stock.includes(value)
+            );
+            setSuggestions(filtered);
+            setShowSuggestions(true);
+        } else {
+            setShowSuggestions(false);
+        }
+    };
+
+    const selectStock = (stock) => {
+        setFormData({ ...formData, symbol: stock });
+        setShowSuggestions(false);
+    };
 
     if (!isOpen) return null;
 
@@ -122,13 +166,14 @@ const AddTransactionModal = ({ isOpen, onClose }) => {
 
                     {/* Symbol & Date Row */}
                     <div style={{ display: 'flex', gap: '1rem' }}>
-                        <div style={{ flex: 1 }}>
+                        <div style={{ flex: 1, position: 'relative' }} ref={wrapperRef}>
                             <label style={{ display: 'block', fontSize: '0.875rem', color: '#9ca3af', marginBottom: '0.5rem' }}>Symbol / Ticker</label>
                             <input
                                 type="text"
                                 placeholder="e.g. RELIANCE"
                                 value={formData.symbol}
-                                onChange={(e) => setFormData({ ...formData, symbol: e.target.value.toUpperCase() })}
+                                onChange={handleSymbolChange}
+                                onFocus={() => formData.symbol && setShowSuggestions(true)}
                                 style={{
                                     width: '100%',
                                     padding: '0.75rem',
@@ -140,6 +185,52 @@ const AddTransactionModal = ({ isOpen, onClose }) => {
                                 }}
                                 required
                             />
+                            {/* Autocomplete Dropdown */}
+                            {showSuggestions && suggestions.length > 0 && (
+                                <ul style={{
+                                    position: 'absolute',
+                                    top: '100%',
+                                    left: 0,
+                                    right: 0,
+                                    backgroundColor: '#262626',
+                                    border: '1px solid rgba(255,255,255,0.1)',
+                                    borderRadius: '0.5rem',
+                                    marginTop: '0.25rem',
+                                    maxHeight: '200px',
+                                    overflowY: 'auto',
+                                    zIndex: 100,
+                                    listStyle: 'none',
+                                    padding: '0.25rem 0',
+                                    boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.5)'
+                                }}>
+                                    {suggestions.map((stock) => (
+                                        <li
+                                            key={stock}
+                                            onClick={() => selectStock(stock)}
+                                            style={{
+                                                padding: '0.5rem 1rem',
+                                                cursor: 'pointer',
+                                                color: '#e5e7eb',
+                                                fontSize: '0.875rem',
+                                                transition: 'background-color 0.1s',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'space-between'
+                                            }}
+                                            onMouseEnter={(e) => {
+                                                e.currentTarget.style.backgroundColor = 'rgba(209, 199, 157, 0.1)';
+                                                e.currentTarget.style.color = '#D1C79D';
+                                            }}
+                                            onMouseLeave={(e) => {
+                                                e.currentTarget.style.backgroundColor = 'transparent';
+                                                e.currentTarget.style.color = '#e5e7eb';
+                                            }}
+                                        >
+                                            {stock}
+                                        </li>
+                                    ))}
+                                </ul>
+                            )}
                         </div>
                         <div style={{ flex: 1 }}>
                             <label style={{ display: 'block', fontSize: '0.875rem', color: '#9ca3af', marginBottom: '0.5rem' }}>Date</label>
