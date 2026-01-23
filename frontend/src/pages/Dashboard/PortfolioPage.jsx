@@ -2,6 +2,7 @@ import PortfolioHero from './components/portfolio/PortfolioHero';
 import PortfolioIntelligence from './components/portfolio/PortfolioIntelligence';
 import PortfolioAllocation from './components/portfolio/PortfolioAllocation';
 import PortfolioEmptyState from './components/portfolio/PortfolioEmptyState';
+import PortfolioDrillDown from './components/portfolio/PortfolioDrillDown';
 import AddTransactionModal from './components/portfolio/AddTransactionModal';
 import { useState } from 'react';
 
@@ -9,6 +10,7 @@ const PortfolioPage = () => {
     // Demo state: Set to true to see data, false to see empty state
     const [hasData, setHasData] = useState(false);
     const [isAddTransactionOpen, setIsAddTransactionOpen] = useState(false);
+    const [viewMode, setViewMode] = useState('overview'); // 'overview' | 'detailed'
 
     return (
         <div style={{ padding: '1.5rem', minHeight: '100vh', backgroundColor: 'var(--color-bg)', color: 'var(--color-primary)', fontFamily: 'var(--font-family-base)' }} className="animate-in fade-in duration-500">
@@ -42,10 +44,12 @@ const PortfolioPage = () => {
 
             {!hasData ? (
                 <PortfolioEmptyState onAddTransaction={() => setIsAddTransactionOpen(true)} />
+            ) : viewMode === 'detailed' ? (
+                <PortfolioDrillDown onBack={() => setViewMode('overview')} />
             ) : (
                 <>
                     {/* Section B: Hero Row */}
-                    <div style={{ marginBottom: '1.5rem' }}>
+                    <div style={{ marginBottom: '1.5rem', cursor: 'pointer' }} onClick={() => setViewMode('detailed')}>
                         <PortfolioHero />
                     </div>
 
