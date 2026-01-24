@@ -1,5 +1,8 @@
-import React from 'react';
+
+import React, { useState } from 'react';
 import { ArrowLeft, TrendingUp, TrendingDown, DollarSign, Wallet, ArrowUpRight } from 'lucide-react';
+import PortfolioHoldingsTable from './PortfolioHoldingsTable';
+import { PORTFOLIO_HOLDINGS } from '../../data/portfolioData';
 
 const PortfolioDrillDown = ({ onBack }) => {
     // Mock Data for Shell
@@ -10,6 +13,26 @@ const PortfolioDrillDown = ({ onBack }) => {
         xirr: 18.5,
         cash: 45000,
     };
+
+    const [sortConfig, setSortConfig] = useState({ key: 'weight', direction: 'descending' });
+
+    const handleSort = (key) => {
+        let direction = 'ascending';
+        if (sortConfig.key === key && sortConfig.direction === 'ascending') {
+            direction = 'descending';
+        }
+        setSortConfig({ key, direction });
+    };
+
+    const sortedData = [...PORTFOLIO_HOLDINGS].sort((a, b) => {
+        if (a[sortConfig.key] < b[sortConfig.key]) {
+            return sortConfig.direction === 'ascending' ? -1 : 1;
+        }
+        if (a[sortConfig.key] > b[sortConfig.key]) {
+            return sortConfig.direction === 'ascending' ? 1 : -1;
+        }
+        return 0;
+    });
 
     return (
         <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -175,20 +198,15 @@ const PortfolioDrillDown = ({ onBack }) => {
                 </div>
             </div>
 
-            {/* 3. Placeholder for Table (Day 2) */}
-            <div style={{
-                height: '400px',
-                border: '2px dashed rgba(255,255,255,0.1)',
-                borderRadius: '20px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: '#6b7280'
-            }}>
-                Detailed Holdings Table Coming Soon...
-            </div>
+            {/* 3. Holdings Table */}
+            <PortfolioHoldingsTable
+                data={sortedData}
+                sortConfig={sortConfig}
+                onSort={handleSort}
+            />
         </div>
     );
 };
 
 export default PortfolioDrillDown;
+
