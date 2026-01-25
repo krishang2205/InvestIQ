@@ -27,30 +27,39 @@ const PortfolioHoldingsTable = ({ data, sortConfig, onSort }) => {
             {/* Header Row */}
             <div style={{
                 display: 'grid',
-                gridTemplateColumns: '2fr 1fr 1fr 1fr 1fr 1fr',
+                gridTemplateColumns: 'repeat(12, 1fr)', // Using explicit 12-col grid for better control
                 padding: '1rem 1.5rem',
                 borderBottom: '1px solid rgba(255,255,255,0.05)',
                 background: 'rgba(255,255,255,0.02)'
             }}>
-                {headers.map((header) => (
-                    <div
-                        key={header.key}
-                        onClick={() => onSort(header.key)}
-                        style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '0.5rem',
-                            fontSize: '0.875rem',
-                            fontWeight: 600,
-                            color: sortConfig.key === header.key ? '#D1C79D' : '#9ca3af',
-                            cursor: 'pointer',
-                            userSelect: 'none'
-                        }}
-                    >
-                        {header.label}
-                        {getSortIcon(header.key)}
-                    </div>
-                ))}
+                {headers.map((header) => {
+                    // Responsive Visibility Logic
+                    const isHiddenOnMobile = ['avgPrice', 'weight'].includes(header.key);
+                    const colSpan = header.key === 'ticker' ? 'col-span-4 md:col-span-3' :
+                        isHiddenOnMobile ? 'hidden md:block md:col-span-2' :
+                            'col-span-2';
+
+                    return (
+                        <div
+                            key={header.key}
+                            className={colSpan}
+                            onClick={() => onSort(header.key)}
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '0.5rem',
+                                fontSize: '0.875rem',
+                                fontWeight: 600,
+                                color: sortConfig.key === header.key ? '#D1C79D' : '#9ca3af',
+                                cursor: 'pointer',
+                                userSelect: 'none'
+                            }}
+                        >
+                            {header.label}
+                            {getSortIcon(header.key)}
+                        </div>
+                    );
+                })}
             </div>
 
             {/* Table Body */}
@@ -69,7 +78,7 @@ const PortfolioHoldingsTable = ({ data, sortConfig, onSort }) => {
                             key={stock.id}
                             style={{
                                 display: 'grid',
-                                gridTemplateColumns: '2fr 1fr 1fr 1fr 1fr 1fr',
+                                gridTemplateColumns: 'repeat(12, 1fr)',
                                 padding: '1rem 1.5rem',
                                 borderBottom: '1px solid rgba(255,255,255,0.05)',
                                 alignItems: 'center',
@@ -79,23 +88,23 @@ const PortfolioHoldingsTable = ({ data, sortConfig, onSort }) => {
                             onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.02)'}
                             onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
                         >
-                            {/* Ticker & Name */}
-                            <div>
+                            {/* Ticker & Name - Span 4 on mobile, 3 on desktop */}
+                            <div className="col-span-4 md:col-span-3">
                                 <div style={{ fontWeight: 700, color: 'white' }}>{stock.ticker}</div>
                                 <div style={{ fontSize: '0.75rem', color: '#9ca3af' }}>{stock.name}</div>
                             </div>
 
-                            {/* Qty */}
-                            <div style={{ color: '#e5e7eb', fontWeight: 500 }}>{stock.qty}</div>
+                            {/* Qty - Span 2 */}
+                            <div className="col-span-2" style={{ color: '#e5e7eb', fontWeight: 500 }}>{stock.qty}</div>
 
-                            {/* Avg Price */}
-                            <div style={{ color: '#9ca3af' }}>{formatCurrency(stock.avgPrice)}</div>
+                            {/* Avg Price - Hidden on mobile, Span 2 on desktop */}
+                            <div className="hidden md:block md:col-span-2" style={{ color: '#9ca3af' }}>{formatCurrency(stock.avgPrice)}</div>
 
-                            {/* LTP */}
-                            <div style={{ color: 'white', fontWeight: 600 }}>{formatCurrency(stock.ltp)}</div>
+                            {/* LTP - Span 2 */}
+                            <div className="col-span-2" style={{ color: 'white', fontWeight: 600 }}>{formatCurrency(stock.ltp)}</div>
 
-                            {/* P&L */}
-                            <div>
+                            {/* P&L - Span 2 */}
+                            <div className="col-span-3 md:col-span-2">
                                 <div style={{ color: isProfit ? '#10b981' : '#f43f5e', fontWeight: 600, fontSize: '0.9rem' }}>
                                     {isProfit ? '+' : ''}{formatCurrency(pnl)}
                                 </div>
@@ -112,8 +121,8 @@ const PortfolioHoldingsTable = ({ data, sortConfig, onSort }) => {
                                 </div>
                             </div>
 
-                            {/* Weight */}
-                            <div style={{ color: '#9ca3af' }}>{stock.weight}%</div>
+                            {/* Weight - Hidden on mobile, Span 1 on desktop */}
+                            <div className="hidden md:block md:col-span-1" style={{ color: '#9ca3af' }}>{stock.weight}%</div>
                         </div>
                     );
                 })}
