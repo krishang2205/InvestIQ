@@ -53,9 +53,45 @@ const PortfolioHoldingsTable = ({ data, sortConfig, onSort }) => {
                 ))}
             </div>
 
-            {/* Table Body (Placeholder for now) */}
-            <div style={{ padding: '2rem', textAlign: 'center', color: '#6b7280' }}>
-                <p>Data integration in next commit...</p>
+            {/* Table Body */}
+            <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
+                {data.map((stock) => (
+                    <div
+                        key={stock.id}
+                        style={{
+                            display: 'grid',
+                            gridTemplateColumns: '2fr 1fr 1fr 1fr 1fr 1fr',
+                            padding: '1rem 1.5rem',
+                            borderBottom: '1px solid rgba(255,255,255,0.05)',
+                            alignItems: 'center',
+                            transition: 'background 0.2s',
+                            cursor: 'pointer'
+                        }}
+                        onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.02)'}
+                        onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                    >
+                        {/* Ticker & Name */}
+                        <div>
+                            <div style={{ fontWeight: 700, color: 'white' }}>{stock.ticker}</div>
+                            <div style={{ fontSize: '0.75rem', color: '#9ca3af' }}>{stock.name}</div>
+                        </div>
+
+                        {/* Qty */}
+                        <div style={{ color: '#e5e7eb', fontWeight: 500 }}>{stock.qty}</div>
+
+                        {/* Avg Price */}
+                        <div style={{ color: '#9ca3af' }}>{stock.avgPrice}</div>
+
+                        {/* LTP */}
+                        <div style={{ color: 'white', fontWeight: 600 }}>{stock.ltp}</div>
+
+                        {/* P&L (Placeholder) */}
+                        <div style={{ color: 'white' }}>--</div>
+
+                        {/* Weight */}
+                        <div style={{ color: '#9ca3af' }}>{stock.weight}%</div>
+                    </div>
+                ))}
             </div>
         </div>
     );
