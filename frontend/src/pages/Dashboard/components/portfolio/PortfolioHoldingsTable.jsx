@@ -75,7 +75,7 @@ const PortfolioHoldingsTable = ({ data, sortConfig, onSort }) => {
 
                     const formatCurrency = (val) => '₹' + val.toLocaleString('en-IN', { maximumFractionDigits: 2 });
 
-                    return (
+
                     const isExpanded = expandedRowId === stock.id;
 
                     return (
@@ -145,23 +145,86 @@ const PortfolioHoldingsTable = ({ data, sortConfig, onSort }) => {
                                         gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
                                         gap: '2rem'
                                     }}>
-                                        {/* Left Col: Chart Placeholder (Day 4 Commit 2) */}
+                                        {/* Left Col: Chart Placeholder */}
                                         <div style={{
                                             height: '120px',
-                                            border: '2px dashed rgba(255,255,255,0.1)',
+                                            background: 'rgba(0,0,0,0.2)',
                                             borderRadius: '12px',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'center',
-                                            color: '#6b7280',
-                                            fontSize: '0.875rem'
+                                            padding: '1rem',
+                                            position: 'relative',
+                                            overflow: 'hidden'
                                         }}>
-                                            Sparkline Visualization Area
+                                            <div style={{ fontSize: '0.75rem', color: '#9ca3af', marginBottom: '0.5rem' }}>7-Day Performance</div>
+                                            {/* Simulated Sparkline SVG */}
+                                            <svg width="100%" height="70%" viewBox="0 0 300 100" preserveAspectRatio="none">
+                                                <path
+                                                    d={isProfit
+                                                        ? "M0,80 C50,80 50,40 100,50 C150,60 150,20 200,30 C250,40 250,0 300,10"
+                                                        : "M0,20 C50,20 50,60 100,50 C150,40 150,80 200,70 C250,60 250,100 300,90"}
+                                                    fill="none"
+                                                    stroke={isProfit ? '#10b981' : '#f43f5e'}
+                                                    strokeWidth="2"
+                                                    vectorEffect="non-scaling-stroke"
+                                                />
+                                                <defs>
+                                                    <linearGradient id={`grad-${stock.id}`} x1="0%" y1="0%" x2="0%" y2="100%">
+                                                        <stop offset="0%" stopColor={isProfit ? '#10b981' : '#f43f5e'} stopOpacity="0.2" />
+                                                        <stop offset="100%" stopColor={isProfit ? '#10b981' : '#f43f5e'} stopOpacity="0" />
+                                                    </linearGradient>
+                                                </defs>
+                                                <path
+                                                    d={isProfit
+                                                        ? "M0,80 C50,80 50,40 100,50 C150,60 150,20 200,30 C250,40 250,0 300,10 V100 H0 Z"
+                                                        : "M0,20 C50,20 50,60 100,50 C150,40 150,80 200,70 C250,60 250,100 300,90 V100 H0 Z"}
+                                                    fill={`url(#grad-${stock.id})`}
+                                                    stroke="none"
+                                                />
+                                            </svg>
                                         </div>
 
-                                        {/* Right Col: Quick Stats & Actions (Day 4 Commit 2) */}
-                                        <div style={{ color: '#9ca3af', fontSize: '0.875rem' }}>
-                                            <p>Additional tools coming soon...</p>
+                                        {/* Right Col: Quick Stats & Actions */}
+                                        <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+                                                <div>
+                                                    <p style={{ fontSize: '0.75rem', color: '#9ca3af' }}>Day's High</p>
+                                                    <p style={{ color: 'white', fontWeight: 600 }}>{formatCurrency(stock.ltp * 1.02)}</p>
+                                                </div>
+                                                <div>
+                                                    <p style={{ fontSize: '0.75rem', color: '#9ca3af' }}>Day's Low</p>
+                                                    <p style={{ color: 'white', fontWeight: 600 }}>{formatCurrency(stock.ltp * 0.98)}</p>
+                                                </div>
+                                                <div>
+                                                    <p style={{ fontSize: '0.75rem', color: '#9ca3af' }}>52W High</p>
+                                                    <p style={{ color: 'white', fontWeight: 600 }}>{formatCurrency(stock.ltp * 1.4)}</p>
+                                                </div>
+                                                <div>
+                                                    <p style={{ fontSize: '0.75rem', color: '#9ca3af' }}>52W Low</p>
+                                                    <p style={{ color: 'white', fontWeight: 600 }}>{formatCurrency(stock.ltp * 0.7)}</p>
+                                                </div>
+                                            </div>
+
+                                            <div style={{ display: 'flex', gap: '1rem' }}>
+                                                <button style={{
+                                                    flex: 1,
+                                                    padding: '0.5rem',
+                                                    background: '#10b981',
+                                                    color: 'white',
+                                                    border: 'none',
+                                                    borderRadius: '8px',
+                                                    fontWeight: 600,
+                                                    cursor: 'pointer'
+                                                }}>Buy More</button>
+                                                <button style={{
+                                                    flex: 1,
+                                                    padding: '0.5rem',
+                                                    background: 'rgba(244, 63, 94, 0.1)',
+                                                    color: '#f43f5e',
+                                                    border: '1px solid rgba(244, 63, 94, 0.2)',
+                                                    borderRadius: '8px',
+                                                    fontWeight: 600,
+                                                    cursor: 'pointer'
+                                                }}>Sell</button>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
