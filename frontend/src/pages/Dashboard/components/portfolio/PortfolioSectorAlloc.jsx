@@ -74,7 +74,18 @@ const PortfolioSectorAlloc = ({ data }) => {
                 </div>
             </div>
 
-            <div style={{ marginTop: '1rem', textAlign: 'center', fontSize: '0.875rem', color: '#6b7280' }}>
+            {/* Custom Legend */}
+            <div style={{ marginTop: '1.5rem', display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.5rem' }}>
+                {chartData.slice(0, 4).map((sector, index) => ( // Show top 4
+                    <div key={sector.name} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.75rem' }}>
+                        <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: COLORS[index % COLORS.length] }} />
+                        <span style={{ color: '#e5e7eb' }}>{sector.name}</span>
+                        <span style={{ color: '#6b7280', marginLeft: 'auto' }}>{Math.round(sector.percent)}%</span>
+                    </div>
+                ))}
+            </div>
+
+            <div style={{ marginTop: '1rem', textAlign: 'center', fontSize: '0.875rem', color: '#6b7280', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '0.5rem' }}>
                 Leading Sector: <span style={{ color: COLORS[0], fontWeight: 600 }}>{chartData[0]?.name || '--'}</span>
             </div>
         </div>
