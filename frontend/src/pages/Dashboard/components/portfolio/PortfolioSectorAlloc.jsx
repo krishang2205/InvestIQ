@@ -2,12 +2,25 @@ import React from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 
 const PortfolioSectorAlloc = ({ data }) => {
-    // Basic Shell - Data processing will be added in Commit 2
-    const dummyData = [
-        { name: 'Loading', value: 100 }
-    ];
+    // 1. Process Data
+    const sectorMap = data.reduce((acc, stock) => {
+        const currentValue = stock.qty * stock.ltp;
+        acc[stock.sector] = (acc[stock.sector] || 0) + currentValue;
+        return acc;
+    }, {});
 
-    const COLORS = ['#D1C79D', '#10b981', '#6b7280', '#374151', '#f43f5e'];
+    const totalValue = Object.values(sectorMap).reduce((sum, val) => sum + val, 0);
+
+    const chartData = Object.keys(sectorMap)
+        .map(sector => ({
+            name: sector,
+            value: sectorMap[sector],
+            percent: (sectorMap[sector] / totalValue) * 100
+        }))
+        .sort((a, b) => b.value - a.value); // Sort desc for better visualization
+
+    // Theme Colors (Gold, Green, Slate, etc.)
+    const COLORS = ['#D1C79D', '#10b981', '#6b7280', '#c2410c', '#3b82f6', '#8b5cf6'];
 
     return (
         <div className="glass-panel" style={{
@@ -27,7 +40,7 @@ const PortfolioSectorAlloc = ({ data }) => {
                 <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
                         <Pie
-                            data={dummyData}
+                            data={chartData}
                             cx="50%"
                             cy="50%"
                             innerRadius={60}
@@ -36,11 +49,15 @@ const PortfolioSectorAlloc = ({ data }) => {
                             dataKey="value"
                             stroke="none"
                         >
-                            {dummyData.map((entry, index) => (
+                            {chartData.map((entry, index) => (
                                 <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                             ))}
                         </Pie>
-                        <Tooltip />
+                        <Tooltip
+                            contentStyle={{ background: '#1f2937', border: '1px solid #374151', borderRadius: '8px' }}
+                            itemStyle={{ color: '#e5e7eb' }}
+                            formatter={(value) => `₹${value.toLocaleString('en-IN')}`}
+                        />
                     </PieChart>
                 </ResponsiveContainer>
 
@@ -58,7 +75,7 @@ const PortfolioSectorAlloc = ({ data }) => {
             </div>
 
             <div style={{ marginTop: '1rem', textAlign: 'center', fontSize: '0.875rem', color: '#6b7280' }}>
-                Awaiting Data Integration...
+                Leading Sector: <span style={{ color: COLORS[0], fontWeight: 600 }}>{chartData[0]?.name || '--'}</span>
             </div>
         </div>
     );
