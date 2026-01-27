@@ -1,0 +1,67 @@
+import React from 'react';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
+
+const PortfolioSectorAlloc = ({ data }) => {
+    // Basic Shell - Data processing will be added in Commit 2
+    const dummyData = [
+        { name: 'Loading', value: 100 }
+    ];
+
+    const COLORS = ['#D1C79D', '#10b981', '#6b7280', '#374151', '#f43f5e'];
+
+    return (
+        <div className="glass-panel" style={{
+            padding: '1.5rem',
+            borderRadius: '20px',
+            background: 'rgba(30,30,30,0.4)',
+            border: '1px solid rgba(255,255,255,0.05)',
+            display: 'flex',
+            flexDirection: 'column',
+            height: '100%'
+        }}>
+            <h3 style={{ fontSize: '1rem', fontWeight: 600, color: 'white', marginBottom: '1rem' }}>
+                Sector Exposure
+            </h3>
+
+            <div style={{ flex: 1, minHeight: '200px', position: 'relative' }}>
+                <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                        <Pie
+                            data={dummyData}
+                            cx="50%"
+                            cy="50%"
+                            innerRadius={60}
+                            outerRadius={80}
+                            paddingAngle={5}
+                            dataKey="value"
+                            stroke="none"
+                        >
+                            {dummyData.map((entry, index) => (
+                                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                            ))}
+                        </Pie>
+                        <Tooltip />
+                    </PieChart>
+                </ResponsiveContainer>
+
+                {/* Center Text (Donut Hole) */}
+                <div style={{
+                    position: 'absolute',
+                    top: '50%',
+                    left: '50%',
+                    transform: 'translate(-50%, -50%)',
+                    textAlign: 'center',
+                    pointerEvents: 'none'
+                }}>
+                    <div style={{ fontSize: '0.75rem', color: '#9ca3af' }}>Sectors</div>
+                </div>
+            </div>
+
+            <div style={{ marginTop: '1rem', textAlign: 'center', fontSize: '0.875rem', color: '#6b7280' }}>
+                Awaiting Data Integration...
+            </div>
+        </div>
+    );
+};
+
+export default PortfolioSectorAlloc;
