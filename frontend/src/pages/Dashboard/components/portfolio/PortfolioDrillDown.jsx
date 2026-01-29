@@ -6,7 +6,7 @@ import PortfolioMarketCap from './PortfolioMarketCap';
 import { PORTFOLIO_HOLDINGS } from '../../data/portfolioData';
 
 const PortfolioDrillDown = ({ onBack }) => {
-    // Mock Data for Shell
+    // Portfolio Summary Stats
     const stats = {
         invested: 1250000,
         current: 1420000,
