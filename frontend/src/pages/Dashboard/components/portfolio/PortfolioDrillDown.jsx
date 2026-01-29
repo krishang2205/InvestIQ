@@ -73,7 +73,7 @@ const PortfolioDrillDown = ({ onBack }) => {
             {/* 2. Top Summary Cards */}
             <div style={{
                 display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
                 gap: '1.5rem',
                 marginBottom: '2rem'
             }}>
@@ -200,7 +200,7 @@ const PortfolioDrillDown = ({ onBack }) => {
             </div>
 
             {/* 3. Holdings Table */}
-            <div style={{ marginBottom: '2rem' }}>
+            <div style={{ marginBottom: '2rem', overflowX: 'auto' }}>
                 <PortfolioHoldingsTable
                     data={sortedData}
                     sortConfig={sortConfig}
@@ -209,7 +209,7 @@ const PortfolioDrillDown = ({ onBack }) => {
             </div>
 
             {/* 4. Insights Grid (Day 5 & 6) */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '1.5rem', marginBottom: '4rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem', marginBottom: '4rem' }}>
                 {/* Day 5: Sector Allocation */}
                 <PortfolioSectorAlloc data={PORTFOLIO_HOLDINGS} />
 
