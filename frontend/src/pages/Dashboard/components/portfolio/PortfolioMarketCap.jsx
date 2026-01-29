@@ -24,7 +24,7 @@ const PortfolioMarketCap = ({ data }) => {
     if (dominant.name === 'Small Cap') insightText = "High-growth aggression detected.";
 
     return (
-        <div className="glass-panel" style={{
+        <div className="glass-panel animate-in fade-in slide-in-from-bottom-4 duration-700 delay-200" style={{
             padding: '1.5rem',
             borderRadius: '20px',
             background: 'rgba(30,30,30,0.4)',
