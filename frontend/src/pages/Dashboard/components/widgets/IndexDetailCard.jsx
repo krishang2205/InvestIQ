@@ -191,7 +191,6 @@ const IndexDetailCard = ({ indexData, onClose, anchorEl }) => {
                     flex: 1,
                     padding: '0.6rem',
                     borderRadius: '6px',
-                    border: 'none',
                     backgroundColor: 'var(--color-bg)', // Dark bg
                     color: '#fff',
                     border: '1px solid rgba(255,255,255,0.1)',
