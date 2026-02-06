@@ -14,31 +14,32 @@ class MarketDataService:
     """
     
     def __init__(self):
+        # Using Yahoo Finance Tickers for Indian Markets
         self.indices_tickers = {
             'NIFTY 50': '^NSEI',
             'SENSEX': '^BSESN',
             'BANK NIFTY': '^NSEBANK',
-            'NIFTY IT': '^CNXIT',
-            'NIFTY MIDCAP': '^NSMIDCP', # Or similar available ticker
-             # Note: Ticker symbols might need adjustment based on yfinance availability
+            'NIFTY IT': '^CNXIT', 
+            'NIFTY MIDCAP': '^NSMIDCP' 
         }
 
-    def _fetch_ticker(self, symbol):
+    def _get_ticker_data(self, symbol):
         """
         Helper to fetch a single ticker's info and price.
         """
         try:
             ticker = yf.Ticker(symbol)
-            # fast_info is often faster/more reliable for current price
-            price = ticker.fast_info.last_price
-            prev_close = ticker.fast_info.previous_close
-            
-            if price is None or prev_close is None:
-                # Fallback to history for some indices if fast_info fails
+            # Try fast_info first (available in newer yfinance versions)
+            try:
+                price = ticker.fast_info.last_price
+                prev_close = ticker.fast_info.previous_close
+            except:
+                # Fallback to history
                 hist = ticker.history(period="2d")
-                if not hist.empty:
-                    price = hist['Close'].iloc[-1]
-                    prev_close = hist['Close'].iloc[-2] if len(hist) > 1 else price
+                if hist.empty:
+                    return None
+                price = hist['Close'].iloc[-1]
+                prev_close = hist['Close'].iloc[-2] if len(hist) > 1 else price
             
             change = price - prev_close
             pct_change = (change / prev_close) * 100 if prev_close else 0
@@ -51,3 +52,30 @@ class MarketDataService:
         except Exception as e:
             logger.error(f"Error fetching {symbol}: {e}")
             return None
+
+    def get_indices(self):
+        """
+        Fetches data for all configured indices.
+        Returns a list of dictionaries with index data.
+        """
+        results = []
+        for name, symbol in self.indices_tickers.items():
+            data = self._get_ticker_data(symbol)
+            if data:
+                results.append({
+                    'name': name,
+                    'symbol': symbol,
+                    **data
+                })
+            else:
+                 # Return explicit error state for this index so UI knows it failed
+                results.append({
+                    'name': name,
+                    'symbol': symbol,
+                    'price': 0,
+                    'change': 0,
+                    'percentChange': 0,
+                    'error': True
+                })
+                
+        return results
