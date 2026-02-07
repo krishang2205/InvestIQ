@@ -22,6 +22,13 @@ class MarketDataService:
             'NIFTY IT': '^CNXIT', 
             'NIFTY MIDCAP': '^NSMIDCP' 
         }
+        
+        # Subsection of Nifty 50 for Movers Scan (Expanded in next commit)
+        self.movers_tickers = [
+            'RELIANCE.NS', 'TCS.NS', 'HDFCBANK.NS', 'INFY.NS', 'ICICIBANK.NS',
+            'HINDUNILVR.NS', 'ITC.NS', 'SBIN.NS', 'BHARTIARTL.NS', 'KOTAKBANK.NS',
+            'LT.NS', 'BAJFINANCE.NS', 'AXISBANK.NS', 'ASIANPAINT.NS', 'MARUTI.NS'
+        ]
 
     def _get_ticker_data(self, symbol):
         """
@@ -44,7 +51,12 @@ class MarketDataService:
             change = price - prev_close
             pct_change = (change / prev_close) * 100 if prev_close else 0
             
+            info = ticker.info # Be careful with this call, it can be slow
+            name = info.get('shortName', symbol)
+
             return {
+                'symbol': symbol,
+                'name': name,
                 'price': round(price, 2),
                 'change': round(change, 2),
                 'percentChange': round(pct_change, 2)
@@ -60,22 +72,26 @@ class MarketDataService:
         """
         results = []
         for name, symbol in self.indices_tickers.items():
-            data = self._get_ticker_data(symbol)
-            if data:
+            # For indices we just want price, not heavy info calls
+            try:
+                ticker = yf.Ticker(symbol)
+                # Optimization: Duplicate logic but specific for indices to avoid .info call
+                price = ticker.fast_info.last_price
+                prev_close = ticker.fast_info.previous_close
+                change = price - prev_close
+                pct_change = (change / prev_close) * 100
+                
                 results.append({
                     'name': name,
                     'symbol': symbol,
-                    **data
+                    'price': round(price, 2),
+                    'change': round(change, 2),
+                    'percentChange': round(pct_change, 2)
                 })
-            else:
-                 # Return explicit error state for this index so UI knows it failed
+            except Exception as e:
+                logger.error(f"Error fetching index {name}: {e}")
                 results.append({
-                    'name': name,
-                    'symbol': symbol,
-                    'price': 0,
-                    'change': 0,
-                    'percentChange': 0,
-                    'error': True
+                    'name': name, 'symbol': symbol, 'price': 0, 'change': 0, 'percentChange': 0, 'error': True
                 })
                 
         return results
@@ -105,12 +121,7 @@ class MarketDataService:
             sma_50 = hist['Close'].rolling(window=50).mean().iloc[-1]
             
             # 3. Calculate Score
-            # VIX Contribution (60%): Lower VIX = Higher Score (Greed)
-            # Normalizing VIX: 10 (Greed) to 30 (Fear)
-            # If VIX <= 10, Score component is 100. If VIX >= 30, Score component is 0.
             vix_score = max(0, min(100, (30 - vix) / (30 - 10) * 100))
-            
-            # Trend Contribution (40%): Price > SMA = Bullish (Add score)
             trend_score = 100 if current_price > sma_50 else 0
             
             final_score = (vix_score * 0.6) + (trend_score * 0.4)
@@ -139,3 +150,23 @@ class MarketDataService:
         except Exception as e:
             logger.error(f"Error calculating market mood: {e}")
             return {'score': 50, 'label': 'Neutral', 'zone': 'yellow'}
+
+    def get_top_movers(self):
+        """
+        Scans Nifty 50 tickers to find Top Gainers and Losers.
+        """
+        data = []
+        # Batch download is faster but yfinance returns complex multi-index df
+        # For simplicity in this step, we loop. Next optimization: Batch.
+        for symbol in self.movers_tickers:
+            ticker_data = self._get_ticker_data(symbol)
+            if ticker_data:
+                data.append(ticker_data)
+        
+        # Sort by percent change
+        data.sort(key=lambda x: x['percentChange'], reverse=True)
+        
+        return {
+            'gainers': data[:5],
+            'losers': data[-5:]
+        }
