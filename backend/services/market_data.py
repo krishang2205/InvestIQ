@@ -79,3 +79,63 @@ class MarketDataService:
                 })
                 
         return results
+
+    def get_market_mood(self):
+        """
+        Calculates Market Mood Index based on India VIX and Nifty 50 Trend.
+        Returns: { score: 0-100, label: str, zone: str }
+        """
+        try:
+            # 1. Fetch India VIX
+            vix_ticker = yf.Ticker("^INDIAVIX")
+            try:
+                vix = vix_ticker.fast_info.last_price
+            except:
+                hist = vix_ticker.history(period="1d")
+                vix = hist['Close'].iloc[-1] if not hist.empty else 15.0 # Fallback average
+
+            # 2. Fetch Nifty 50 Trend (Price vs SMA50)
+            nifty = yf.Ticker("^NSEI")
+            hist = nifty.history(period="3mo") # Need enough data for SMA
+            
+            if hist.empty:
+                return {'score': 50, 'label': 'Neutral', 'zone': 'yellow'}
+
+            current_price = hist['Close'].iloc[-1]
+            sma_50 = hist['Close'].rolling(window=50).mean().iloc[-1]
+            
+            # 3. Calculate Score
+            # VIX Contribution (60%): Lower VIX = Higher Score (Greed)
+            # Normalizing VIX: 10 (Greed) to 30 (Fear)
+            # If VIX <= 10, Score component is 100. If VIX >= 30, Score component is 0.
+            vix_score = max(0, min(100, (30 - vix) / (30 - 10) * 100))
+            
+            # Trend Contribution (40%): Price > SMA = Bullish (Add score)
+            trend_score = 100 if current_price > sma_50 else 0
+            
+            final_score = (vix_score * 0.6) + (trend_score * 0.4)
+            final_score = round(final_score, 1)
+
+            # Determine Label
+            if final_score <= 25:
+                label, zone = "Extreme Fear", "red"
+            elif final_score <= 45:
+                label, zone = "Fear", "orange"
+            elif final_score <= 55:
+                label, zone = "Neutral", "yellow"
+            elif final_score <= 75:
+                label, zone = "Greed", "lightgreen"
+            else:
+                label, zone = "Extreme Greed", "green"
+
+            return {
+                'score': final_score,
+                'label': label,
+                'zone': zone,
+                'vix': round(vix, 2),
+                'timestamp': datetime.now().isoformat()
+            }
+
+        except Exception as e:
+            logger.error(f"Error calculating market mood: {e}")
+            return {'score': 50, 'label': 'Neutral', 'zone': 'yellow'}
