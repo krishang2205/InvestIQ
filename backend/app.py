@@ -28,6 +28,9 @@ if not url or not key:
 
 supabase: Client = create_client(url, key)
 
+# Initialize Services
+market_data_service = MarketDataService()
+
 # Auth Decorator
 def token_required(f):
     @wraps(f)
