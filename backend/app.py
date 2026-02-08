@@ -1,6 +1,8 @@
 
 from flask import Flask, jsonify, request
+from services.market_data import MarketDataService
 from flask_cors import CORS
+from flask_caching import Cache
 from supabase import create_client, Client
 from dotenv import load_dotenv
 import os
@@ -11,6 +13,11 @@ load_dotenv()
 
 app = Flask(__name__)
 CORS(app) # Enable CORS for frontend communication
+
+# Cache Configuration
+app.config['CACHE_TYPE'] = 'SimpleCache'  # Uses memory, good for single process
+app.config['CACHE_DEFAULT_TIMEOUT'] = 300 # 5 minutes default
+cache = Cache(app)
 
 # Initialize Supabase Client
 url: str = os.environ.get("SUPABASE_URL")
