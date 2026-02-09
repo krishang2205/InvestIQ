@@ -81,6 +81,24 @@ def get_market_mood():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+@app.route('/api/market/movers')
+@cache.cached(timeout=300) # Cache for 5 minutes (Expensive operation)
+def get_movers():
+    try:
+        data = market_data_service.get_top_movers()
+        return jsonify(data)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/market/news')
+@cache.cached(timeout=900) # Cache for 15 minutes
+def get_news():
+    try:
+        data = market_data_service.get_news()
+        return jsonify(data)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 @app.route('/')
 def home():
     return jsonify({"message": "InvestIQ Backend is running!"})
