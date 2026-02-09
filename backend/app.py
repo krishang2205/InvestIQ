@@ -63,6 +63,24 @@ def token_required(f):
 
     return decorated
 
+@app.route('/api/market/indices')
+@cache.cached(timeout=60) # Cache for 1 minute
+def get_indices():
+    try:
+        data = market_data_service.get_indices()
+        return jsonify(data)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/market/mood')
+@cache.cached(timeout=300) # Cache for 5 minutes (Mood doesn't change instantly)
+def get_market_mood():
+    try:
+        data = market_data_service.get_market_mood()
+        return jsonify(data)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 @app.route('/')
 def home():
     return jsonify({"message": "InvestIQ Backend is running!"})
