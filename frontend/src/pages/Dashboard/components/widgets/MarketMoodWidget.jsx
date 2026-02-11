@@ -2,6 +2,7 @@ import React from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 import { ChevronRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import useMarketData from '../../../../hooks/useMarketData';
 
 const MiniGauge = ({ score }) => {
     const getColor = (s) => {
@@ -61,23 +62,47 @@ const HistoricalDot = ({ day, score, isToday }) => {
 
 const MarketMoodWidget = () => {
     const navigate = useNavigate();
-    const score = 24.42;
-    const activeColor = '#00C853';
+    const { data, loading, error } = useMarketData('mood', 300000); // Refresh every 5 mins
 
-    const history = [
-        { day: 'Wed', score: 45 },
-        { day: 'Fri', score: 38 },
-        { day: 'Mon', score: 32 },
-        { day: 'Tue', score: 28 },
-        { day: 'Today', score: 24.42, isToday: true },
-    ];
+    // Default/Fallback values
+    const score = data?.score || 50;
+    const label = data?.label || 'Neutral';
+    const zoneColor = data?.zone === 'green' ? '#00C853' :
+        data?.zone === 'lightgreen' ? '#B2FF59' :
+            data?.zone === 'yellow' ? '#FFEB3B' :
+                data?.zone === 'orange' ? '#FF9800' :
+                    '#FF5252'; // red
+
+    // Calculate accumulation for needle rotation (0 to 180 degrees)
+    // Score 0 -> -90deg (left), Score 100 -> 90deg (right)
+    // But our start angle is 180, end is 0. 
+    // Recharts Pie start 180 (left) to 0 (right).
+    // Needle rotation needs to map 0-100 score to angles.
+    // Let's simplify: visually align needle based on score percentage.
+    const needleRotation = (score / 100) * 180 - 90;
+
+    if (loading && !data) {
+        return (
+            <div className="glass-panel shadow-soft-lift" style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <span style={{ color: 'var(--color-text-secondary)' }}>Loading Mood...</span>
+            </div>
+        );
+    }
+
+    if (error && !data) {
+        return (
+            <div className="glass-panel shadow-soft-lift" style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <span style={{ color: 'var(--color-text-secondary)' }}>Mood Unavailable</span>
+            </div>
+        );
+    }
 
     return (
         <div
             className="glass-panel shadow-soft-lift"
             onClick={() => navigate('/dashboard/market-mood-index')}
             style={{
-                padding: '1.25rem', // Aesthetic padding
+                padding: '1.25rem',
                 borderRadius: '16px',
                 height: '100%',
                 display: 'flex',
@@ -109,7 +134,7 @@ const MarketMoodWidget = () => {
                 {/* Gauge - Medium Size */}
                 <div style={{
                     width: '140px', height: '80px', position: 'relative',
-                    filter: `drop-shadow(0 0 20px ${activeColor}25)`,
+                    filter: `drop-shadow(0 0 20px ${zoneColor}25)`,
                     marginBottom: '0.25rem'
                 }}>
                     <ResponsiveContainer width="100%" height="100%">
@@ -125,23 +150,24 @@ const MarketMoodWidget = () => {
                                 dataKey="value"
                                 stroke="none"
                             >
-                                <Cell fill={activeColor} />
+                                <Cell fill={zoneColor} />
                                 <Cell fill="rgba(255,255,255,0.05)" />
                             </Pie>
                         </PieChart>
                     </ResponsiveContainer>
                     {/* Needle */}
                     <div style={{
-                        position: 'absolute', bottom: '10px', left: '69px', // Centered
+                        position: 'absolute', bottom: '10px', left: '69px',
                         width: '2px', height: '50px', background: '#fff',
-                        transform: 'rotate(-45deg)', transformOrigin: 'bottom center',
+                        transform: `rotate(${needleRotation}deg)`, transformOrigin: 'bottom center',
                         borderRadius: '2px',
+                        transition: 'transform 1s ease-out',
                         boxShadow: '0 0 10px rgba(0,0,0,0.5)'
                     }} />
                     {/* Score Text in Center */}
                     <div style={{
                         position: 'absolute', bottom: '-15px', width: '100%', textAlign: 'center',
-                        fontSize: '1.75rem', fontWeight: '800', color: activeColor
+                        fontSize: '1.75rem', fontWeight: '800', color: zoneColor
                     }}>
                         {Math.round(score)}
                     </div>
@@ -153,12 +179,12 @@ const MarketMoodWidget = () => {
                     <div style={{
                         fontSize: '1.75rem',
                         fontWeight: '700',
-                        color: activeColor,
+                        color: zoneColor,
                         lineHeight: '1.2',
                         letterSpacing: '-0.3px',
-                        textShadow: `0 0 15px ${activeColor}30`
+                        textShadow: `0 0 15px ${zoneColor}30`
                     }}>
-                        Fear
+                        {label}
                     </div>
                 </div>
             </div>
@@ -166,11 +192,11 @@ const MarketMoodWidget = () => {
             {/* Middle Divider */}
             <div style={{ height: '1px', width: '100%', backgroundColor: 'rgba(255,255,255,0.08)', marginBottom: '1rem' }} />
 
-            {/* Bottom Section: Historical Dots */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0 0.5rem' }}>
-                {history.map((item, idx) => (
-                    <HistoricalDot key={idx} {...item} />
-                ))}
+            {/* Bottom Section: Historical Dots (Static for now, but could be fetched) */}
+            <div style={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
+                <span style={{ fontSize: '0.75rem', color: 'var(--color-text-dim)' }}>
+                    Based on market volatility
+                </span>
             </div>
         </div>
     );
