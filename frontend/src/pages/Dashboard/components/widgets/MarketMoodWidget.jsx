@@ -103,7 +103,7 @@ const MarketMoodWidget = () => {
                 <div
                     title="Score derived from India VIX (60%) and Nifty 50 Trend (40%)"
                     style={{
-                        width: '140px', height: '80px', position: 'relative',
+                        width: '100%', maxWidth: '140px', height: '80px', position: 'relative',
                         filter: `drop-shadow(0 0 20px ${zoneColor}25)`,
                         marginBottom: '0.25rem',
                         cursor: 'help'
@@ -138,7 +138,7 @@ const MarketMoodWidget = () => {
                     {/* Score Text in Center */}
                     <div style={{
                         position: 'absolute', bottom: '-15px', width: '100%', textAlign: 'center',
-                        fontSize: '1.75rem', fontWeight: '800', color: zoneColor
+                        fontSize: 'clamp(1.5rem, 5vw, 1.75rem)', fontWeight: '800', color: zoneColor
                     }}>
                         {Math.round(score)}
                     </div>
