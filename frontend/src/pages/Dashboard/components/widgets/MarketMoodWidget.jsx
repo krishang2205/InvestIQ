@@ -29,16 +29,38 @@ const MarketMoodWidget = () => {
 
     if (loading && !data) {
         return (
-            <div className="glass-panel shadow-soft-lift" style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <span style={{ color: 'var(--color-text-secondary)' }}>Loading Mood...</span>
+            <div className="glass-panel shadow-soft-lift" style={{
+                padding: '1.25rem', borderRadius: '16px', height: '100%',
+                display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
+                border: '1px solid rgba(255,255,255,0.08)',
+                background: 'linear-gradient(145deg, rgba(30,30,30,0.8) 0%, rgba(10,10,10,0.95) 100%)'
+            }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                    <div className="skeleton-pulse" style={{ width: '100px', height: '14px', borderRadius: '4px' }} />
+                    <div className="skeleton-pulse" style={{ width: '16px', height: '16px', borderRadius: '50%' }} />
+                </div>
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                    <div className="skeleton-pulse" style={{ width: '140px', height: '80px', borderRadius: '70px 70px 0 0', opacity: 0.3 }} />
+                    <div className="skeleton-pulse" style={{ width: '60px', height: '24px', marginTop: '1rem', borderRadius: '4px' }} />
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '1rem' }}>
+                    {[1, 2, 3, 4, 5].map(i => <div key={i} className="skeleton-pulse" style={{ width: '24px', height: '36px', borderRadius: '4px' }} />)}
+                </div>
             </div>
         );
     }
 
     if (error && !data) {
         return (
-            <div className="glass-panel shadow-soft-lift" style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <span style={{ color: 'var(--color-text-secondary)' }}>Mood Unavailable</span>
+            <div className="glass-panel shadow-soft-lift" style={{
+                padding: '1.25rem', borderRadius: '16px', height: '100%',
+                display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                border: '1px solid rgba(255,50,50,0.1)',
+                background: 'linear-gradient(145deg, rgba(40,20,20,0.8) 0%, rgba(20,10,10,0.95) 100%)'
+            }}>
+                <div style={{ color: '#FF5252', marginBottom: '0.5rem' }}>⚠️</div>
+                <span style={{ color: 'var(--color-text-secondary)', fontSize: '0.9rem' }}>Mood Unavailable</span>
+                <span style={{ color: 'var(--color-text-dim)', fontSize: '0.75rem', marginTop: '4px' }}>Check connection</span>
             </div>
         );
     }
@@ -78,11 +100,14 @@ const MarketMoodWidget = () => {
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', marginBottom: '0.75rem' }}>
 
                 {/* Gauge - Medium Size */}
-                <div style={{
-                    width: '140px', height: '80px', position: 'relative',
-                    filter: `drop-shadow(0 0 20px ${zoneColor}25)`,
-                    marginBottom: '0.25rem'
-                }}>
+                <div
+                    title="Score derived from India VIX (60%) and Nifty 50 Trend (40%)"
+                    style={{
+                        width: '140px', height: '80px', position: 'relative',
+                        filter: `drop-shadow(0 0 20px ${zoneColor}25)`,
+                        marginBottom: '0.25rem',
+                        cursor: 'help'
+                    }}>
                     <ResponsiveContainer width="100%" height="100%">
                         <PieChart>
                             <Pie
