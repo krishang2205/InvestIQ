@@ -43,6 +43,25 @@ const MarketIndicesWidget = () => {
         return 'https://www.google.com/s2/favicons?domain=google.com&sz=128';
     };
 
+    // Market Status Helper
+    const getMarketStatus = () => {
+        const now = new Date();
+        const day = now.getDay();
+        const hour = now.getHours();
+        const minute = now.getMinutes();
+
+        // Weekend
+        if (day === 0 || day === 6) return { label: 'Closed', color: '#FF5252' };
+
+        // Market Hours (9:15 - 15:30)
+        const time = hour * 60 + minute;
+        if (time >= 9 * 60 + 15 && time < 15 * 60 + 30) return { label: 'Live', color: '#00C853', pulse: true };
+
+        return { label: 'Closed', color: '#FF5252' };
+    };
+
+    const status = getMarketStatus();
+
     if (loading && indices.length === 0) {
         return (
             <div className="glass-panel shadow-soft-lift" style={{
@@ -66,7 +85,7 @@ const MarketIndicesWidget = () => {
                             </div>
                             <div className="skeleton-pulse" style={{ width: '80px', height: '20px', borderRadius: '4px' }} />
                             <div className="skeleton-pulse" style={{ width: '40px', height: '14px', borderRadius: '4px' }} />
-                            <div style={{ marginTop: 'auto' }} className="skeleton-pulse" style={{ width: '100%', height: '30px', borderRadius: '4px' }} />
+                            <div className="skeleton-pulse" style={{ marginTop: 'auto', width: '100%', height: '30px', borderRadius: '4px' }} />
                         </div>
                     ))}
                 </div>
@@ -96,7 +115,18 @@ const MarketIndicesWidget = () => {
             }}
         >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                <h3 style={{ fontSize: '1.05rem', fontWeight: '600', color: 'var(--color-text-primary)' }}>Indian Indices</h3>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <h3 style={{ fontSize: '1.05rem', fontWeight: '600', color: 'var(--color-text-primary)' }}>Indian Indices</h3>
+                    <span style={{
+                        fontSize: '0.7rem', fontWeight: '600',
+                        color: status.color, border: `1px solid ${status.color}40`,
+                        padding: '1px 6px', borderRadius: '12px',
+                        display: 'flex', alignItems: 'center', gap: '4px'
+                    }}>
+                        {status.pulse && <span className="pulsing-dot" style={{ backgroundColor: status.color, width: '6px', height: '6px', borderRadius: '50%' }} />}
+                        {status.label}
+                    </span>
+                </div>
                 <MoreHorizontal size={18} color="var(--color-text-secondary)" style={{ cursor: 'pointer' }} />
             </div>
 
