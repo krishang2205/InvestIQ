@@ -133,19 +133,16 @@ const MarketIndicesWidget = () => {
             <div className="custom-scrollbar" style={{
                 flex: 1,
                 paddingRight: '0.25rem',
-            < div className="custom-scrollbar" style={{
-                    flex: 1,
-                    paddingRight: '0.25rem',
-                    display: 'grid',
-                    gridAutoFlow: 'column',
-                    gridAutoColumns: '150px', // Fixed width for consistent cards
-                    gap: '0.75rem',
-                    alignContent: 'start',
-                    overflowX: 'auto',
-                    overflowY: 'hidden',
-                    scrollSnapType: 'x mandatory',
-                    scrollPaddingLeft: '0'
-                }}>
+                display: 'grid',
+                gridAutoFlow: 'column',
+                gridAutoColumns: '150px', // Fixed width for consistent cards
+                gap: '0.75rem',
+                alignContent: 'start',
+                overflowX: 'auto',
+                overflowY: 'hidden',
+                scrollSnapType: 'x mandatory',
+                scrollPaddingLeft: '0'
+            }}>
                 {indices.map((index, i) => (
                     <IndexItem
                         key={index.symbol || i}
