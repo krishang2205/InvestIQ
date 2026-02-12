@@ -45,8 +45,31 @@ const MarketIndicesWidget = () => {
 
     if (loading && indices.length === 0) {
         return (
-            <div className="glass-panel shadow-soft-lift" style={{ height: '100%', padding: '1.25rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <span style={{ color: 'var(--color-text-secondary)' }}>Loading Indices...</span>
+            <div className="glass-panel shadow-soft-lift" style={{
+                padding: '1.25rem', borderRadius: '16px', height: '100%',
+                display: 'flex', flexDirection: 'column'
+            }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                    <div className="skeleton-pulse" style={{ width: '120px', height: '20px', borderRadius: '4px' }} />
+                    <div className="skeleton-pulse" style={{ width: '20px', height: '20px', borderRadius: '50%' }} />
+                </div>
+                <div style={{ display: 'flex', gap: '0.75rem', overflow: 'hidden' }}>
+                    {[1, 2, 3, 4].map(i => (
+                        <div key={i} style={{
+                            minWidth: '140px', height: '120px', borderRadius: '10px',
+                            backgroundColor: 'rgba(255,255,255,0.02)', padding: '0.85rem',
+                            display: 'flex', flexDirection: 'column', gap: '8px'
+                        }}>
+                            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                                <div className="skeleton-pulse" style={{ width: '18px', height: '18px', borderRadius: '50%' }} />
+                                <div className="skeleton-pulse" style={{ width: '60px', height: '14px', borderRadius: '4px' }} />
+                            </div>
+                            <div className="skeleton-pulse" style={{ width: '80px', height: '20px', borderRadius: '4px' }} />
+                            <div className="skeleton-pulse" style={{ width: '40px', height: '14px', borderRadius: '4px' }} />
+                            <div style={{ marginTop: 'auto' }} className="skeleton-pulse" style={{ width: '100%', height: '30px', borderRadius: '4px' }} />
+                        </div>
+                    ))}
+                </div>
             </div>
         );
     }
