@@ -46,13 +46,11 @@ const StockMoversWidget = () => {
     // For this step, we map 'Gainers' -> api.gainers, 'Losers' -> api.losers.
     const { data: moversData, loading: isLoading } = useMarketData('movers', 300000); // 5 min refresh
 
-    const [displayData, setDisplayData] = useState([]);
-
-    // Mock Data Fallback for unimplemented tabs to keep UI functional
+    // Mock Data Fallback
     const mockDataFallback = {
-        'Most Active': [{ symbol: 'HDFCBANK.NS', name: 'HDFC Bank', price: 1680.50, change: 1.5 }, { symbol: 'ICICIBANK.NS', name: 'ICICI Bank', price: 990.00, change: 0.5 }],
-        '52W High': [{ symbol: 'COALINDIA.NS', name: 'Coal India', price: 380.00, change: 2.5 }, { symbol: 'NTPC.NS', name: 'NTPC Ltd', price: 310.00, change: 1.1 }],
-        '52W Low': [{ symbol: 'HINDUNILVR.NS', name: 'Hindustan Unilever', price: 2400.00, change: -0.5 }, { symbol: 'UPL.NS', name: 'UPL Ltd', price: 550.00, change: -2.3 }]
+        'Most Active': [{ symbol: 'HDFCBANK.NS', name: 'HDFC Bank', price: 1680.50, change: 1.5, percentChange: 0.8 }, { symbol: 'ICICIBANK.NS', name: 'ICICI Bank', price: 990.00, change: 0.5, percentChange: 0.5 }],
+        '52W High': [{ symbol: 'COALINDIA.NS', name: 'Coal India', price: 380.00, change: 2.5, percentChange: 0.6 }, { symbol: 'NTPC.NS', name: 'NTPC Ltd', price: 310.00, change: 1.1, percentChange: 0.3 }],
+        '52W Low': [{ symbol: 'HINDUNILVR.NS', name: 'Hindustan Unilever', price: 2400.00, change: -0.5, percentChange: -0.2 }, { symbol: 'UPL.NS', name: 'UPL Ltd', price: 550.00, change: -2.3, percentChange: -0.4 }]
     };
 
     // Close dropdown on outside click
@@ -253,9 +251,19 @@ const StockMoversWidget = () => {
                 </div>
                 {isLoading ? <LoadingSkeleton /> : (
                     <div className="custom-scrollbar" style={{ overflowY: 'auto', flex: 1, paddingRight: '4px' }}>
-                        {displayData.map((stock, idx) => (
-                            <StockRow key={stock.symbol} stock={stock} index={idx} activeTab={activeTab} logo={getLogo(stock.symbol)} />
-                        ))}
+                        {displayData.length > 0 ? (
+                            displayData.map((stock, idx) => (
+                                <StockRow key={stock.symbol} stock={stock} index={idx} activeTab={activeTab} logo={getLogo(stock.symbol)} />
+                            ))
+                        ) : (
+                            <div style={{
+                                height: '100%', display: 'flex', flexDirection: 'column',
+                                alignItems: 'center', justifyContent: 'center', opacity: 0.5
+                            }}>
+                                <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>📉</div>
+                                <div style={{ fontSize: '0.9rem' }}>No data available</div>
+                            </div>
+                        )}
                     </div>
                 )}
             </div>
