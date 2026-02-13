@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { ArrowUpRight, ArrowDownRight, MoreHorizontal, ChevronDown, ArrowUpCircle, ArrowDownCircle, Flame, TrendingUp, TrendingDown } from 'lucide-react';
+import useMarketData from '../../../../hooks/useMarketData';
 
 const StockRow = ({ stock, index, activeTab, logo }) => {
     const isGain = stock.change >= 0;
@@ -105,23 +106,19 @@ const StockMoversWidget = () => {
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const dropdownRef = useRef(null);
 
-    const [isLoading, setIsLoading] = useState(false);
+    // Fetch real movers data
+    // Note: API currently provides 'gainers' and 'losers'. 
+    // 'Most Active', '52W High', '52W Low' are not yet endpoints, so we might need to fallback or hide them for now.
+    // For this step, we map 'Gainers' -> api.gainers, 'Losers' -> api.losers.
+    const { data: moversData, loading: isLoading } = useMarketData('movers', 300000); // 5 min refresh
+
     const [displayData, setDisplayData] = useState([]);
 
-    // Mock Data
-    const mockData = {
-        'Gainers': [
-            { symbol: 'ADANIENT', name: 'Adani Enterprises', price: 2890.45, change: 5.4 },
-            { symbol: 'TATASTEEL', name: 'Tata Steel', price: 156.70, change: 3.2 },
-            { symbol: 'INFY', name: 'Infosys', price: 1670.30, change: 2.1 },
-            { symbol: 'RELIANCE', name: 'Reliance Ind', price: 2750.00, change: 1.8 },
-            { symbol: 'HDFCBANK', name: 'HDFC Bank', price: 1680.50, change: 1.5 },
-        ],
-        // ... (Other data same as before, simplified for this replace)
-        'Losers': [{ symbol: 'WIPRO', name: 'Wipro Ltd', price: 450.20, change: -4.2 }, { symbol: 'TECHM', name: 'Tech Mahindra', price: 1240.50, change: -3.1 }],
-        'Most Active': [{ symbol: 'HDFCBANK', name: 'HDFC Bank', price: 1680.50, change: 1.5 }, { symbol: 'ICICIBANK', name: 'ICICI Bank', price: 990.00, change: 0.5 }],
-        '52W High': [{ symbol: 'COALINDIA', name: 'Coal India', price: 380.00, change: 2.5 }, { symbol: 'NTPC', name: 'NTPC Ltd', price: 310.00, change: 1.1 }],
-        '52W Low': [{ symbol: 'HUL', name: 'Hindustan Unilever', price: 2400.00, change: -0.5 }, { symbol: 'UPL', name: 'UPL Ltd', price: 550.00, change: -2.3 }]
+    // Mock Data Fallback for unimplemented tabs to keep UI functional
+    const mockDataFallback = {
+        'Most Active': [{ symbol: 'HDFCBANK.NS', name: 'HDFC Bank', price: 1680.50, change: 1.5 }, { symbol: 'ICICIBANK.NS', name: 'ICICI Bank', price: 990.00, change: 0.5 }],
+        '52W High': [{ symbol: 'COALINDIA.NS', name: 'Coal India', price: 380.00, change: 2.5 }, { symbol: 'NTPC.NS', name: 'NTPC Ltd', price: 310.00, change: 1.1 }],
+        '52W Low': [{ symbol: 'HINDUNILVR.NS', name: 'Hindustan Unilever', price: 2400.00, change: -0.5 }, { symbol: 'UPL.NS', name: 'UPL Ltd', price: 550.00, change: -2.3 }]
     };
 
     // Close dropdown on outside click
@@ -136,29 +133,59 @@ const StockMoversWidget = () => {
     }, []);
 
     useEffect(() => {
-        setIsLoading(true);
-        const timer = setTimeout(() => {
-            setDisplayData(mockData[activeTab] || []);
-            setIsLoading(false);
-        }, 500);
-        return () => clearTimeout(timer);
-    }, [activeTab]);
+        if (isLoading) return;
+
+        if (activeTab === 'Gainers') {
+            setDisplayData(moversData?.gainers || []);
+        } else if (activeTab === 'Losers') {
+            setDisplayData(moversData?.losers || []);
+        } else {
+            // Fallback for tabs not yet in API
+            setDisplayData(mockDataFallback[activeTab] || []);
+        }
+    }, [activeTab, moversData, isLoading]);
 
     // Logo Mapping using Google Favicon API for reliability
-    const logoMap = {
-        'ADANIENT': 'https://www.google.com/s2/favicons?domain=adani.com&sz=128',
-        'TATASTEEL': 'https://www.google.com/s2/favicons?domain=tatasteel.com&sz=128',
-        'INFY': 'https://www.google.com/s2/favicons?domain=infosys.com&sz=128',
-        'RELIANCE': 'https://www.google.com/s2/favicons?domain=ril.com&sz=128',
-        'HDFCBANK': 'https://www.google.com/s2/favicons?domain=hdfcbank.com&sz=128',
-        'WIPRO': 'https://www.google.com/s2/favicons?domain=wipro.com&sz=128',
-        'TECHM': 'https://www.google.com/s2/favicons?domain=techmahindra.com&sz=128',
-        'COALINDIA': 'https://www.google.com/s2/favicons?domain=coalindia.in&sz=128',
-        'NTPC': 'https://www.google.com/s2/favicons?domain=ntpc.co.in&sz=128',
-        'HUL': 'https://www.google.com/s2/favicons?domain=hul.co.in&sz=128',
-        'UPL': 'https://www.google.com/s2/favicons?domain=upl-ltd.com&sz=128',
-        'ICICIBANK': 'https://www.google.com/s2/favicons?domain=icicibank.com&sz=128',
-        'KOTAK': 'https://www.google.com/s2/favicons?domain=kotak.com&sz=128'
+    const getLogo = (symbol) => {
+        // Simple mapping based on known symbols, or try to guess domain
+        const cleanSymbol = symbol.replace('.NS', '').replace('.BO', '');
+        const domains = {
+            'ADANIENT': 'adani.com',
+            'TATASTEEL': 'tatasteel.com',
+            'INFY': 'infosys.com',
+            'RELIANCE': 'ril.com',
+            'HDFCBANK': 'hdfcbank.com',
+            'WIPRO': 'wipro.com',
+            'TECHM': 'techmahindra.com',
+            'COALINDIA': 'coalindia.in',
+            'NTPC': 'ntpc.co.in',
+            'HINDUNILVR': 'hul.co.in', 'HUL': 'hul.co.in',
+            'UPL': 'upl-ltd.com',
+            'ICICIBANK': 'icicibank.com',
+            'KOTAKBANK': 'kotak.com',
+            'SBIN': 'sbi.co.in',
+            'ITC': 'itcportal.com',
+            'LT': 'larsentoubro.com',
+            'AXISBANK': 'axisbank.com',
+            'MARUTI': 'marutisuzuki.com',
+            'TITAN': 'titan.co.in',
+            'ULTRACEMCO': 'ultratechcement.com',
+            'SUNPHARMA': 'sunpharma.com',
+            'NESTLEIND': 'nestle.in',
+            'M&M': 'mahindra.com',
+            'POWERGRID': 'powergrid.in',
+            'JSWSTEEL': 'jsw.in',
+            'HCLTECH': 'hcltech.com',
+            'ADANIPORTS': 'adaniports.com',
+            'ONGC': 'ongcindia.com',
+            'BAJFINANCE': 'bajajfinserv.in',
+            'ASIANPAINT': 'asianpaints.com',
+            'BHARTIARTL': 'airtel.in'
+        };
+
+        const domain = domains[cleanSymbol];
+        if (domain) return `https://www.google.com/s2/favicons?domain=${domain}&sz=128`;
+        return null;
     };
 
     return (
@@ -288,7 +315,7 @@ const StockMoversWidget = () => {
                 {isLoading ? <LoadingSkeleton /> : (
                     <div className="custom-scrollbar" style={{ overflowY: 'auto', flex: 1, paddingRight: '4px' }}>
                         {displayData.map((stock, idx) => (
-                            <StockRow key={stock.symbol} stock={stock} index={idx} activeTab={activeTab} logo={logoMap[stock.symbol]} />
+                            <StockRow key={stock.symbol} stock={stock} index={idx} activeTab={activeTab} logo={getLogo(stock.symbol)} />
                         ))}
                     </div>
                 )}
