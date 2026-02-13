@@ -63,7 +63,9 @@ export const StockRow = ({ stock, index, activeTab, logo }) => {
                 </div>
             </div>
             <div style={{ textAlign: 'right' }}>
-                <div style={{ fontWeight: '600', fontSize: '0.95rem', color: 'var(--color-text-primary)' }}>₹{stock.price.toFixed(2)}</div>
+                <div style={{ fontWeight: '600', fontSize: '0.95rem', color: 'var(--color-text-primary)' }}>
+                    ₹{stock.price.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </div>
                 <div style={{ fontSize: '0.8rem', color: color, fontWeight: '600' }}>
                     {isGain ? '+' : ''}{stock.change.toFixed(2)} ({stock.percentChange ? stock.percentChange.toFixed(2) + '%' : ''})
                 </div>
