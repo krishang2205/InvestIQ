@@ -66,18 +66,23 @@ const StockMoversWidget = () => {
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
-    useEffect(() => {
-        if (isLoading) return;
+    // Filter data based on active tab
+    const getDisplayData = () => {
+        if (isLoading) return []; // Return empty array if data is still loading
 
-        if (activeTab === 'Gainers') {
-            setDisplayData(moversData?.gainers || []);
-        } else if (activeTab === 'Losers') {
-            setDisplayData(moversData?.losers || []);
-        } else {
-            // Fallback for tabs not yet in API
-            setDisplayData(mockDataFallback[activeTab] || []);
+        if (activeTab === 'Gainers') return moversData?.gainers || [];
+        if (activeTab === 'Losers') return moversData?.losers || [];
+        if (activeTab === 'Most Active') {
+            // Combine and sort by absolute percent change as a proxy for activity
+            const all = [...(moversData?.gainers || []), ...(moversData?.losers || [])];
+            // Assuming 'percentChange' exists in the mover objects
+            return all.sort((a, b) => Math.abs(b.percentChange) - Math.abs(a.percentChange)).slice(0, 5);
         }
-    }, [activeTab, moversData, isLoading]);
+        // Fallback for tabs not yet in API
+        return mockDataFallback[activeTab] || [];
+    };
+
+    const displayData = getDisplayData();
 
     // Logo Mapping using Google Favicon API for reliability
     const getLogo = (symbol) => {
