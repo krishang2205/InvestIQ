@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { ExternalLink } from 'lucide-react';
 
 const getSourceDomain = (source) => {
     const map = {
@@ -18,6 +19,7 @@ const getSourceDomain = (source) => {
 export const NewsItem = ({ title, summary, source, time, type, link }) => {
     // Simple logic to detect "Just now" or "min ago" for badges
     const isNew = time?.includes('Just now') || time?.includes('min ago');
+    const [imgError, setImgError] = useState(false);
 
     return (
         <div
@@ -87,12 +89,16 @@ export const NewsItem = ({ title, summary, source, time, type, link }) => {
             </p>
             <div style={{ display: 'flex', gap: '0.75rem', fontSize: '0.7rem', color: 'var(--color-text-tertiary)', alignItems: 'center' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <img
-                        src={`https://www.google.com/s2/favicons?domain=${getSourceDomain(source)}&sz=64`}
-                        alt={source}
-                        style={{ width: '14px', height: '14px', borderRadius: '3px' }}
-                        onError={(e) => e.target.style.display = 'none'}
-                    />
+                    {!imgError ? (
+                        <img
+                            src={`https://www.google.com/s2/favicons?domain=${getSourceDomain(source)}&sz=64`}
+                            alt={source}
+                            style={{ width: '14px', height: '14px', borderRadius: '3px' }}
+                            onError={() => setImgError(true)}
+                        />
+                    ) : (
+                        <ExternalLink size={12} color="var(--color-text-secondary)" />
+                    )}
                     <span style={{ color: 'var(--color-accent)', fontWeight: '500' }}>{source}</span>
                 </div>
                 <span style={{ opacity: 0.5 }}>•</span>
