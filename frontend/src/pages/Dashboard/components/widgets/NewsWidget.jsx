@@ -1,19 +1,24 @@
-import React, { useState } from 'react';
-import { ExternalLink } from 'lucide-react';
-import useMarketData from '../../../../hooks/useMarketData';
-
+import { useNavigate } from 'react-router-dom';
 import { NewsItem } from './NewsComponents';
 
 const NewsWidget = () => {
+    const navigate = useNavigate();
     const tabs = ['All', 'News', 'Macro', 'Earnings'];
     const [activeTab, setActiveTab] = useState('All');
 
     // Fetch real news
     const { data: newsItems, loading, error } = useMarketData('news', 600000); // 10 min refresh
 
-    const displayNews = newsItems || [];
+    // Client-side filtering
+    const displayNews = (newsItems || []).filter(item => {
+        if (activeTab === 'All') return true;
+        // Simple heuristic mapping if type isn't perfect, or exact match
+        if (activeTab === 'Macro') return item.type === 'Macro' || item.title.includes('RBI') || item.title.includes('inflation');
+        if (activeTab === 'Earnings') return item.type === 'Earnings' || item.title.includes('Results') || item.title.includes('Profit');
+        return true; // Default to showing all for 'News' tab or if logic misses, to avoid empty
+    });
 
-    if (loading && displayNews.length === 0) {
+    if (loading && (!newsItems || newsItems.length === 0)) {
         return (
             <div className="glass-panel shadow-soft-lift" style={{
                 borderRadius: '16px', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center'
@@ -23,7 +28,7 @@ const NewsWidget = () => {
         );
     }
 
-    if (error && displayNews.length === 0) {
+    if (error && (!newsItems || newsItems.length === 0)) {
         return (
             <div className="glass-panel shadow-soft-lift" style={{
                 borderRadius: '16px', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center'
@@ -42,14 +47,17 @@ const NewsWidget = () => {
             overflow: 'hidden'
         }}>
             <div style={{
-                padding: '1.25rem 1.25rem 0 1.25rem', // Reduced padding
+                padding: '1.25rem 1.25rem 0 1.25rem',
                 borderBottom: '1px solid rgba(255,255,255,0.05)'
             }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
                     <h3 style={{ fontSize: '1rem', fontWeight: '600', color: 'var(--color-text-primary)' }}>
                         Today's news and events
                     </h3>
-                    <div style={{ fontSize: '0.75rem', color: 'var(--color-primary)', cursor: 'pointer', fontWeight: '600' }}>
+                    <div
+                        onClick={() => navigate('/news')}
+                        style={{ fontSize: '0.75rem', color: 'var(--color-primary)', cursor: 'pointer', fontWeight: '600' }}
+                    >
                         View all
                     </div>
                 </div>
