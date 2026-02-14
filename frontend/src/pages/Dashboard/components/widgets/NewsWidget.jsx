@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { ExternalLink } from 'lucide-react';
+import useMarketData from '../../../../hooks/useMarketData';
 
 const getSourceDomain = (source) => {
     const map = {
@@ -70,42 +71,33 @@ const NewsItem = ({ title, summary, source, time, type }) => (
 );
 
 const NewsWidget = () => {
-    const [activeTab, setActiveTab] = useState('News');
-
-    // Mock Data
-    const newsItems = [
-        {
-            title: "Adani Ports to raise up to $500 million quickly via dollar bonds",
-            summary: "Adani Ports and Special Economic Zone is looking to raise fast money from the overseas market.",
-            source: "Economic Times",
-            time: "2 hours ago",
-            type: "Equity"
-        },
-        // ... (data same)
-        {
-            title: "TCS Q3 Results Preview: Revenue likely to grow 2.5% YoY",
-            summary: "Tata Consultancy Services is expected to report a steady quarter despite global headwinds.",
-            source: "Moneycontrol",
-            time: "4 hours ago",
-            type: "Earnings"
-        },
-        {
-            title: "Gold prices hit new all-time high as Fed signals rate cuts",
-            summary: "Yellow metal shines as dollar index falls below 102 mark.",
-            source: "Bloomberg",
-            time: "5 hours ago",
-            type: "Commodities"
-        },
-        {
-            title: "Sensex, Nifty barely hold gains as auto stocks slide",
-            summary: "Benchmark indices ended flat on Tuesday after a volatile session.",
-            source: "LiveMint",
-            time: "6 hours ago",
-            type: "Market"
-        },
-    ];
-
     const tabs = ['All', 'News', 'Macro', 'Earnings'];
+    const [activeTab, setActiveTab] = useState('All');
+
+    // Fetch real news
+    const { data: newsItems, loading, error } = useMarketData('news', 600000); // 10 min refresh
+
+    const displayNews = newsItems || [];
+
+    if (loading && displayNews.length === 0) {
+        return (
+            <div className="glass-panel shadow-soft-lift" style={{
+                borderRadius: '16px', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center'
+            }}>
+                <span style={{ color: 'var(--color-text-secondary)' }}>Loading News...</span>
+            </div>
+        );
+    }
+
+    if (error && displayNews.length === 0) {
+        return (
+            <div className="glass-panel shadow-soft-lift" style={{
+                borderRadius: '16px', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center'
+            }}>
+                <span style={{ color: 'var(--color-text-secondary)' }}>News Unavailable</span>
+            </div>
+        );
+    }
 
     return (
         <div className="glass-panel shadow-soft-lift" style={{
@@ -150,7 +142,7 @@ const NewsWidget = () => {
             </div>
 
             <div className="custom-scrollbar" style={{ overflowY: 'auto', flex: 1 }}>
-                {newsItems.map((item, idx) => (
+                {displayNews.map((item, idx) => (
                     <NewsItem key={idx} {...item} />
                 ))}
             </div>
