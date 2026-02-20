@@ -38,49 +38,122 @@ class MarketDataService:
         ]
 
     def _get_ticker_data(self, symbol):
-        # ... (Method remains for individual calls if needed, but unused in new get_top_movers)
-        pass 
+        """
+        Helper to fetch a single ticker's info and price.
+        """
+        try:
+            ticker = yf.Ticker(symbol)
+            # Try fast_info first (available in newer yfinance versions)
+            try:
+                price = ticker.fast_info.last_price
+                prev_close = ticker.fast_info.previous_close
+            except:
+                # Fallback to history
+                hist = ticker.history(period="2d")
+                if hist.empty:
+                    return None
+                price = hist['Close'].iloc[-1]
+                prev_close = hist['Close'].iloc[-2] if len(hist) > 1 else price
+            
+            change = price - prev_close
+            pct_change = (change / prev_close) * 100 if prev_close else 0
+            
+            # Use symbol as name default, can be enhanced with dictionary mapping for speed
+            name = symbol.replace('.NS', '')
 
-    # ... (get_indices and get_market_mood remain unchanged)
+            return {
+                'symbol': symbol,
+                'name': name,
+                'price': round(price, 2),
+                'change': round(change, 2),
+                'percentChange': round(pct_change, 2)
+            }
+        except Exception as e:
+            logger.error(f"Error fetching {symbol}: {e}")
+            return None
+
+    def get_indices(self):
+        """
+        Fetches data for all configured indices.
+        Returns a list of dictionaries with index data.
+        """
+        results = []
+        for name, symbol in self.indices_tickers.items():
+            data = self._get_ticker_data(symbol)
+            if data:
+                results.append({
+                    'name': name,
+                    'symbol': symbol,
+                    'price': data['price'],
+                    'change': data['change'],
+                    'percentChange': data['percentChange']
+                })
+            else:
+                results.append({
+                    'name': name, 'symbol': symbol, 'price': 0, 'change': 0, 'percentChange': 0, 'error': True
+                })
+        return results
+
+    def get_market_mood(self):
+        """
+        Calculates Market Mood Index based on India VIX and Nifty 50 Trend.
+        Returns: { score: 0-100, label: str, zone: str }
+        """
+        try:
+            # 1. Fetch India VIX
+            vix_ticker = yf.Ticker("^INDIAVIX")
+            try:
+                vix = vix_ticker.fast_info.last_price
+            except:
+                hist = vix_ticker.history(period="1d")
+                vix = hist['Close'].iloc[-1] if not hist.empty else 15.0 # Fallback average
+
+            # 2. Fetch Nifty 50 Trend (Price vs SMA50)
+            nifty = yf.Ticker("^NSEI")
+            hist = nifty.history(period="3mo") # Need enough data for SMA
+            
+            if hist.empty:
+                return {'score': 50, 'label': 'Neutral', 'zone': 'yellow'}
+
+            current_price = hist['Close'].iloc[-1]
+            sma_50 = hist['Close'].rolling(window=50).mean().iloc[-1]
+            
+            # 3. Calculate Score
+            vix_score = max(0, min(100, (30 - vix) / (30 - 10) * 100))
+            trend_score = 100 if current_price > sma_50 else 0
+            
+            final_score = (vix_score * 0.6) + (trend_score * 0.4)
+            final_score = round(final_score, 1)
+
+            # Determine Label
+            if final_score <= 25:
+                label, zone = "Extreme Fear", "red"
+            elif final_score <= 45:
+                label, zone = "Fear", "orange"
+            elif final_score <= 55:
+                label, zone = "Neutral", "yellow"
+            elif final_score <= 75:
+                label, zone = "Greed", "lightgreen"
+            else:
+                label, zone = "Extreme Greed", "green"
+
+            return {
+                'score': final_score,
+                'label': label,
+                'zone': zone,
+                'vix': round(vix, 2),
+                'timestamp': datetime.now().isoformat()
+            }
+
+        except Exception as e:
+            logger.error(f"Error calculating market mood: {e}")
+            return {'score': 50, 'label': 'Neutral', 'zone': 'yellow'}
 
     def get_top_movers(self):
         """
         Batch fetches Nifty 50 data to find Top Gainers and Losers.
         """
         try:
-            # Batch download for 1 day period
-            # group_by='ticker' ensures a MultiIndex dataframe if multiple tickers
-            batch_data = yf.download(self.movers_tickers, period="1d", group_by='ticker', progress=False, threads=True)
-            
-            processed_data = []
-
-            for symbol in self.movers_tickers:
-                try:
-                    # Handle case where download failed for specific symbol or data is missing
-                    if symbol not in batch_data.columns.levels[0]:
-                        continue
-                        
-                    ticker_df = batch_data[symbol]
-                    
-                    if ticker_df.empty or len(ticker_df) < 1:
-                        continue
-
-                    # Get Price and Prev Close
-                    # yfinance batch 'Close' might have NaN if market just opened or bad data
-                    # We take the last available valid index
-                    current_close = ticker_df['Close'].iloc[-1]
-                    
-                    # For change, we need previous close. 
-                    # If period='1d', yfinance often returns just today's OHLC.
-                    # We utilize the 'Open' as a proxy for 'Prev Close' if 'Prev Close' isn't explicitly available,
-                    # OR we calculate change from the day's open (Intraday Change) which is often what users care about for "Movers".
-                    # BETTER: yfinance batch doesn't give 'previousClose' property easily in DataFrame.
-                    # We will use (Close - Open) for "Day's Change" approx, or we need 2d history.
-                    # Let's fetch 2d history to be accurate about "Change from Yesterday".
-                    pass
-                except Exception:
-                    continue
-
             # RE-STRATEGY: yf.download with period='2d' to get yesterday's close
             batch_data = yf.download(self.movers_tickers, period="2d", group_by='ticker', progress=False, threads=True)
             
@@ -88,14 +161,15 @@ class MarketDataService:
             
             for symbol in self.movers_tickers:
                 try:
+                    # Check if symbol is in columns (Top Level)
+                    if symbol not in batch_data.columns.levels[0]:
+                        continue
+                        
                     stats = batch_data[symbol]
                     if stats.empty: 
                         continue
                     
                     # Ensure we have data
-                    # If only 1 row (today), we can't calc change from yesterday accurately without prev close info.
-                    # But often row 0 is yesterday, row 1 is today.
-                    
                     current_price = stats['Close'].iloc[-1]
                     
                     if len(stats) > 1:
