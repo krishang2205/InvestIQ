@@ -155,12 +155,19 @@ class MarketDataService:
             if ticker_data:
                 data.append(ticker_data)
         
-        # Sort by percent change
-        data.sort(key=lambda x: x['percentChange'], reverse=True)
-        
+        # Separate Gainers and Losers
+        gainers = [x for x in data if x['percentChange'] > 0]
+        losers = [x for x in data if x['percentChange'] < 0]
+
+        # Sort Gainers: Highest positive change first
+        gainers.sort(key=lambda x: x['percentChange'], reverse=True)
+
+        # Sort Losers: Highest negative change first (most negative)
+        losers.sort(key=lambda x: x['percentChange'])
+
         return {
-            'gainers': data[:5],
-            'losers': data[-5:]
+            'gainers': gainers[:5],
+            'losers': losers[:5]
         }
 
     def get_news(self):
