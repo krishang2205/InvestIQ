@@ -82,10 +82,11 @@ def get_market_mood():
         return jsonify({"error": str(e)}), 500
 
 @app.route('/api/market/movers')
-@cache.cached(timeout=300) # Cache for 5 minutes (Expensive operation)
+@cache.cached(timeout=300, query_string=True) # Cache based on query params (category)
 def get_movers():
     try:
-        data = market_data_service.get_top_movers()
+        category = request.args.get('category', 'large_cap')
+        data = market_data_service.get_top_movers(category)
         return jsonify(data)
     except Exception as e:
         return jsonify({"error": str(e)}), 500

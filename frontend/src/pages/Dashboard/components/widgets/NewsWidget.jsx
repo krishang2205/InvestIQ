@@ -1,4 +1,6 @@
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import useMarketData from '../../../../hooks/useMarketData';
 import { NewsItem } from './NewsComponents';
 
 const NewsWidget = () => {
@@ -6,11 +8,11 @@ const NewsWidget = () => {
     const tabs = ['All', 'News', 'Macro', 'Earnings'];
     const [activeTab, setActiveTab] = useState('All');
 
-    // Fetch real news
-    const { data: newsItems, loading, error } = useMarketData('news', 600000); // 10 min refresh
+    // 5 minute refresh for news
+    const { data: newsData, loading, error } = useMarketData('news', 300000); // 5 min refresh
 
     // Client-side filtering
-    const displayNews = (newsItems || []).filter(item => {
+    const displayNews = (newsData || []).filter(item => {
         if (activeTab === 'All') return true;
         // Simple heuristic mapping if type isn't perfect, or exact match
         if (activeTab === 'Macro') return item.type === 'Macro' || item.title.includes('RBI') || item.title.includes('inflation');
@@ -18,7 +20,7 @@ const NewsWidget = () => {
         return true; // Default to showing all for 'News' tab or if logic misses, to avoid empty
     });
 
-    if (loading && (!newsItems || newsItems.length === 0)) {
+    if (loading && (!newsData || newsData.length === 0)) {
         return (
             <div className="glass-panel shadow-soft-lift" style={{
                 borderRadius: '16px', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center'
@@ -28,7 +30,7 @@ const NewsWidget = () => {
         );
     }
 
-    if (error && (!newsItems || newsItems.length === 0)) {
+    if (error && (!newsData || newsData.length === 0)) {
         return (
             <div className="glass-panel shadow-soft-lift" style={{
                 borderRadius: '16px', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center'

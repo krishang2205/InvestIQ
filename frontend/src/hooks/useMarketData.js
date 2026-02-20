@@ -5,8 +5,9 @@ import api from '../services/api';
  * Custom hook to fetch market data.
  * @param {string} dataType - One of: 'indices', 'mood', 'movers', 'news'
  * @param {number} refreshInterval - Auto-refresh interval in ms (default: 0 = disabled)
+ * @param {object} params - Optional parameters to pass to API calls (e.g., { category: 'top-gainers' } for movers)
  */
-const useMarketData = (dataType, refreshInterval = 0) => {
+const useMarketData = (dataType, refreshInterval = 0, params = {}) => {
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -14,7 +15,8 @@ const useMarketData = (dataType, refreshInterval = 0) => {
     useEffect(() => {
         let isMounted = true;
 
-        const fetchData = async () => {
+        const fetchData = async (isInitial = false) => {
+            if (isInitial) setLoading(true); // Only show loading on initial fetch
             try {
                 // Determine which API function to call
                 let result;
@@ -26,7 +28,7 @@ const useMarketData = (dataType, refreshInterval = 0) => {
                         result = await api.getMarketMood();
                         break;
                     case 'movers':
-                        result = await api.getMovers();
+                        result = await api.getMovers(params.category); // Pass category
                         break;
                     case 'news':
                         result = await api.getNews();
@@ -52,11 +54,11 @@ const useMarketData = (dataType, refreshInterval = 0) => {
             }
         };
 
-        fetchData(); // Initial fetch
+        fetchData(true); // Initial fetch with loading
 
         let intervalId;
         if (refreshInterval > 0) {
-            intervalId = setInterval(fetchData, refreshInterval);
+            intervalId = setInterval(() => fetchData(false), refreshInterval);
         }
 
         return () => {

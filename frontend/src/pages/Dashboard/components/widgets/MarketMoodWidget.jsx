@@ -8,6 +8,7 @@ import { MiniGauge, HistoricalDot } from './MarketMoodComponents';
 
 const MarketMoodWidget = () => {
     const navigate = useNavigate();
+    // 5 minute refresh for Mood
     const { data, loading, error } = useMarketData('mood', 300000); // Refresh every 5 mins
 
     // Default/Fallback values

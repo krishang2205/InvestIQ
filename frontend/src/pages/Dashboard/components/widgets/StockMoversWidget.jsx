@@ -40,18 +40,12 @@ const StockMoversWidget = () => {
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const dropdownRef = useRef(null);
 
-    // Fetch real movers data
-    // Note: API currently provides 'gainers' and 'losers'. 
-    // 'Most Active', '52W High', '52W Low' are not yet endpoints, so we might need to fallback or hide them for now.
-    // For this step, we map 'Gainers' -> api.gainers, 'Losers' -> api.losers.
-    const { data: moversData, loading: isLoading } = useMarketData('movers', 300000); // 5 min refresh
+    // Map UI Selection to API Params
+    const categoryMap = { 'Large Cap': 'large_cap', 'Mid Cap': 'mid_cap', 'Small Cap': 'small_cap' };
+    const params = React.useMemo(() => ({ category: categoryMap[activeCap] }), [activeCap]);
 
-    // Mock Data Fallback
-    const mockDataFallback = {
-        'Most Active': [{ symbol: 'HDFCBANK.NS', name: 'HDFC Bank', price: 1680.50, change: 1.5, percentChange: 0.8 }, { symbol: 'ICICIBANK.NS', name: 'ICICI Bank', price: 990.00, change: 0.5, percentChange: 0.5 }],
-        '52W High': [{ symbol: 'COALINDIA.NS', name: 'Coal India', price: 380.00, change: 2.5, percentChange: 0.6 }, { symbol: 'NTPC.NS', name: 'NTPC Ltd', price: 310.00, change: 1.1, percentChange: 0.3 }],
-        '52W Low': [{ symbol: 'HINDUNILVR.NS', name: 'Hindustan Unilever', price: 2400.00, change: -0.5, percentChange: -0.2 }, { symbol: 'UPL.NS', name: 'UPL Ltd', price: 550.00, change: -2.3, percentChange: -0.4 }]
-    };
+    // Fetch real movers data
+    const { data: moversData, loading: isLoading } = useMarketData('movers', 300000, params);
 
     // Close dropdown on outside click
     useEffect(() => {
@@ -66,18 +60,21 @@ const StockMoversWidget = () => {
 
     // Filter data based on active tab
     const getDisplayData = () => {
-        if (isLoading) return []; // Return empty array if data is still loading
+        if (isLoading || !moversData) return [];
 
-        if (activeTab === 'Gainers') return moversData?.gainers || [];
-        if (activeTab === 'Losers') return moversData?.losers || [];
+        if (activeTab === 'Gainers') return moversData.gainers || [];
+        if (activeTab === 'Losers') return moversData.losers || [];
+        if (activeTab === '52W High') return moversData.fiftyTwoWeekHigh || [];
+        if (activeTab === '52W Low') return moversData.fiftyTwoWeekLow || [];
+
         if (activeTab === 'Most Active') {
-            // Combine and sort by absolute percent change as a proxy for activity
-            const all = [...(moversData?.gainers || []), ...(moversData?.losers || [])];
-            // Assuming 'percentChange' exists in the mover objects
-            return all.sort((a, b) => Math.abs(b.percentChange) - Math.abs(a.percentChange)).slice(0, 5);
+            // Combine Gainers and Losers and sort by activity (using absolute change as proxy if Volume not available)
+            // ideally backend should return volume, but strictly using available data:
+            const all = [...(moversData.gainers || []), ...(moversData.losers || [])];
+            return all.sort((a, b) => Math.abs(b.percentChange) - Math.abs(a.percentChange)).slice(0, 10);
         }
-        // Fallback for tabs not yet in API
-        return mockDataFallback[activeTab] || [];
+
+        return [];
     };
 
     const displayData = getDisplayData();

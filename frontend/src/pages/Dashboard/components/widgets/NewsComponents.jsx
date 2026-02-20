@@ -65,13 +65,11 @@ export const NewsItem = ({ title, summary, source, time, type, link }) => {
                     color: 'var(--color-text-primary)',
                     lineHeight: '1.4',
                     margin: 0,
-                    flex: 1,
                     display: '-webkit-box',
                     WebkitLineClamp: 2,
                     WebkitBoxOrient: 'vertical',
                     overflow: 'hidden'
                 }}>
-                    {title}
                 </h4>
             </div>
             <p style={{
@@ -89,16 +87,6 @@ export const NewsItem = ({ title, summary, source, time, type, link }) => {
             </p>
             <div style={{ display: 'flex', gap: '0.75rem', fontSize: '0.7rem', color: 'var(--color-text-tertiary)', alignItems: 'center' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    {!imgError ? (
-                        <img
-                            src={`https://www.google.com/s2/favicons?domain=${getSourceDomain(source)}&sz=64`}
-                            alt={source}
-                            style={{ width: '14px', height: '14px', borderRadius: '3px' }}
-                            onError={() => setImgError(true)}
-                        />
-                    ) : (
-                        <ExternalLink size={12} color="var(--color-text-secondary)" />
-                    )}
                     <span style={{ color: 'var(--color-accent)', fontWeight: '500' }}>{source}</span>
                 </div>
                 <span style={{ opacity: 0.5 }}>•</span>
@@ -114,6 +102,7 @@ export const NewsItem = ({ title, summary, source, time, type, link }) => {
                         }}>{type}</span>
                     </>
                 )}
+
             </div>
         </div>
     );

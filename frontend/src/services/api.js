@@ -32,14 +32,12 @@ const api = {
     /**
      * Fetch Top Movers (Gainers/Losers)
      */
-    getMovers: async () => {
+    getMovers: async (category = 'large_cap') => {
         try {
-            const response = await fetch(`${API_BASE_URL}/market/movers`);
-            if (!response.ok) throw new Error('Network response was not ok');
+            const response = await fetch(`${API_BASE_URL}/market/movers?category=${category}`);
             return await response.json();
         } catch (error) {
-            console.error("Error fetching movers:", error);
-            return null;
+            return { error: error.message };
         }
     },
 
