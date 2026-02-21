@@ -5,3 +5,6 @@ flask-cors
 yfinance
 flask-caching
 pandas
+
+google-generativeai
+pydantic
