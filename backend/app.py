@@ -1,6 +1,7 @@
 
 from flask import Flask, jsonify, request
 from services.market_data import MarketDataService
+from routes.report_routes import report_bp
 from flask_cors import CORS
 from flask_caching import Cache
 from supabase import create_client, Client
@@ -12,6 +13,7 @@ from functools import wraps
 load_dotenv()
 
 app = Flask(__name__)
+app.register_blueprint(report_bp)
 CORS(app) # Enable CORS for frontend communication
 
 # Cache Configuration
@@ -92,7 +94,7 @@ def get_movers():
         return jsonify({"error": str(e)}), 500
 
 @app.route('/api/market/news')
-@cache.cached(timeout=900) # Cache for 15 minutes
+@cache.cached(timeout=300) # Cache for 5 minutes
 def get_news():
     try:
         data = market_data_service.get_news()
