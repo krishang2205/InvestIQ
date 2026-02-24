@@ -23,7 +23,9 @@ def handle_generate_report():
         return jsonify({"error": "AI Service unavailable"}), 503
     
     # Submit job and return job ID immediately
-    job_id = report_service.submit_report_job(symbol, preferences)
+    # Assuming valid user auth happens before
+    user_id = data.get("user_id") 
+    job_id = report_service.submit_report_job(symbol, preferences, user_id=user_id)
 
     return jsonify({
         "status": "success",
@@ -44,4 +46,13 @@ def get_report_status(job_id):
         "error": job.get("error"),
         "report_data": job.get("report_data")
     }), 200
+
+@report_bp.route('/api/report/history', methods=['GET'])
+def get_report_history():
+    history = report_service.get_history(limit=20)
+    return jsonify({
+        "status": "success",
+        "data": history
+    }), 200
+
 

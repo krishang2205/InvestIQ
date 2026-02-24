@@ -4,10 +4,10 @@ from services.market_data import MarketDataService
 from routes.report_routes import report_bp
 from flask_cors import CORS
 from flask_caching import Cache
-from supabase import create_client, Client
 from dotenv import load_dotenv
 import os
 from functools import wraps
+from db.database import supabase
 
 # Load environment variables
 load_dotenv()
@@ -21,14 +21,7 @@ app.config['CACHE_TYPE'] = 'SimpleCache'  # Uses memory, good for single process
 app.config['CACHE_DEFAULT_TIMEOUT'] = 300 # 5 minutes default
 cache = Cache(app)
 
-# Initialize Supabase Client
-url: str = os.environ.get("SUPABASE_URL")
-key: str = os.environ.get("SUPABASE_KEY")
-
-if not url or not key:
-    raise ValueError("Missing SUPABASE_URL or SUPABASE_KEY environment variables")
-
-supabase: Client = create_client(url, key)
+# Supabase client is imported from db.database
 
 # Initialize Services
 market_data_service = MarketDataService()
