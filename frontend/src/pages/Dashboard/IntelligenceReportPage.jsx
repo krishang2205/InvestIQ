@@ -103,11 +103,11 @@ const IntelligenceReportPage = () => {
                     fetchHistory();
                 } else if (data.status === 'failed') {
                     clearInterval(pollIntervalRef.current);
-                    setError(data.error || 'Generation failed');
+                    setError(data.error || 'Generation failed. Please try again later.');
                     setIsGenerating(false);
                 } else {
                     setLoadingStage(prev => 
-                        prev.includes('Synthesis') ? 'Finalizing Output JSON...' : 'Processing Multi-Agent Synthesis...'
+                        prev.includes('Synthesis') ? 'Finalizing Output JSON Format...' : 'Processing Multi-Agent Synthesis...'
                     );
                 }
             } catch (err) {
