@@ -64,8 +64,8 @@ const DashboardPage = () => {
                     gridTemplateColumns: '1.5fr 1fr', // Wider stock section
                     gap: '2rem', // Reverted gap
                     marginBottom: '2rem', // Reverted margin
-                    minHeight: '480px', // More vertical space
-                    alignItems: 'start'
+                    height: '720px', // Further increased height
+
                 }}>
                     <StockMoversWidget />
                     <NewsWidget />

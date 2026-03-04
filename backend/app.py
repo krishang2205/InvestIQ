@@ -1,112 +1,35 @@
-
-from flask import Flask, jsonify, request
-from services.market_data import MarketDataService
-from routes.report_routes import report_bp
+from flask import Flask, jsonify
 from flask_cors import CORS
-from flask_caching import Cache
 from dotenv import load_dotenv
 import os
-from functools import wraps
-from db.database import supabase
 
-# Load environment variables
+# Load .env variables locally
 load_dotenv()
 
 app = Flask(__name__)
-app.register_blueprint(report_bp)
-CORS(app) # Enable CORS for frontend communication
+# Enable CORS for the React frontend
+CORS(app)
 
-# Cache Configuration
-app.config['CACHE_TYPE'] = 'SimpleCache'  # Uses memory, good for single process
-app.config['CACHE_DEFAULT_TIMEOUT'] = 300 # 5 minutes default
-cache = Cache(app)
+# Import the simple clean routes
+from routes.market_routes import market_bp, cache
+from reports.api import reports_v2_bp
 
-# Supabase client is imported from db.database
+# Initialize the simple cache
+cache.init_app(app, config={'CACHE_TYPE': 'SimpleCache'})
 
-# Initialize Services
-market_data_service = MarketDataService()
-
-# Auth Decorator
-def token_required(f):
-    @wraps(f)
-    def decorated(*args, **kwargs):
-        token = None
-        
-        # Check for Authorization header
-        if 'Authorization' in request.headers:
-            auth_header = request.headers['Authorization']
-            try:
-                token = auth_header.split(" ")[1] # Bearer <token>
-            except IndexError:
-                return jsonify({'message': 'Token is missing or malformed!'}), 401
-        
-        if not token:
-            return jsonify({'message': 'Token is missing!'}), 401
-
-        try:
-            # Verify token with Supabase
-            user_response = supabase.auth.get_user(token)
-            current_user = user_response.user
-            
-            if not current_user:
-                 return jsonify({'message': 'Invalid or expired token!'}), 401
-                 
-        except Exception as e:
-            return jsonify({'message': 'Token is invalid!', 'error': str(e)}), 401
-
-        return f(current_user, *args, **kwargs)
-
-    return decorated
-
-@app.route('/api/market/indices')
-@cache.cached(timeout=60) # Cache for 1 minute
-def get_indices():
-    try:
-        data = market_data_service.get_indices()
-        return jsonify(data)
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-@app.route('/api/market/mood')
-@cache.cached(timeout=300) # Cache for 5 minutes (Mood doesn't change instantly)
-def get_market_mood():
-    try:
-        data = market_data_service.get_market_mood()
-        return jsonify(data)
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-@app.route('/api/market/movers')
-@cache.cached(timeout=300, query_string=True) # Cache based on query params (category)
-def get_movers():
-    try:
-        category = request.args.get('category', 'large_cap')
-        data = market_data_service.get_top_movers(category)
-        return jsonify(data)
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-@app.route('/api/market/news')
-@cache.cached(timeout=300) # Cache for 5 minutes
-def get_news():
-    try:
-        data = market_data_service.get_news()
-        return jsonify(data)
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+# Register the endpoints
+app.register_blueprint(market_bp)
+app.register_blueprint(reports_v2_bp)
 
 @app.route('/')
 def home():
-    return jsonify({"message": "InvestIQ Backend is running!"})
+    return jsonify({"message": "InvestIQ Backend is active!"})
 
-@app.route('/api/protected', methods=['GET'])
-@token_required
-def protected_route(current_user):
-    return jsonify({
-        "message": "You have accessed a protected route!",
-        "user_id": current_user.id,
-        "email": current_user.email
-    })
+# Catch-all simple error handler
+@app.errorhandler(500)
+def server_error(e):
+    return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':
-    app.run(port=5001, debug=True)
+    # Running natively on port 5001
+    app.run(host="0.0.0.0", port=5001, debug=True)

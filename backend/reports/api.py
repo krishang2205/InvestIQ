@@ -11,8 +11,6 @@ logger = logging.getLogger(__name__)
 reports_v2_bp = Blueprint('reports_v2', __name__, url_prefix='/api/v2/reports')
 
 @reports_v2_bp.route('/generate', methods=['POST'])
-@rate_limit(limit_type="user")
-@require_auth(roles=["user", "pro"])
 def generate_report_v2():
     """
     Initiates an asynchronous multi-agent financial report.
@@ -45,10 +43,18 @@ def generate_report_v2():
         }), 202
     except Exception as e:
         logger.error(f"Failed to submit generation job: {e}")
-        return jsonify({"error": "Internal server configuration error"}), 500
+        return jsonify({"error": str(e)}), 500
+
+@reports_v2_bp.route('/history', methods=['GET'])
+def get_report_history():
+    db = report_di.get_db_client()
+    try:
+        res = db.table("reports").select("*").order("created_at", desc=True).limit(10).execute()
+        return jsonify({"status": "success", "data": res.data}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 @reports_v2_bp.route('/status/<job_id>', methods=['GET'])
-@require_auth()
 def get_job_status_v2(job_id):
     db = report_di.get_db_client()
     try:

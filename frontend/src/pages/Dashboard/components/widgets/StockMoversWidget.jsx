@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { ArrowUpRight, ArrowDownRight, MoreHorizontal, ChevronDown, ArrowUpCircle, ArrowDownCircle, Flame, TrendingUp, TrendingDown } from 'lucide-react';
 import useMarketData from '../../../../hooks/useMarketData';
 
-import { StockRow } from './StockMoversComponents';
+import { StockRow, StockLogo } from './StockMoversComponents';
 
 const LoadingSkeleton = () => (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
@@ -79,48 +79,7 @@ const StockMoversWidget = () => {
 
     const displayData = getDisplayData();
 
-    // Logo Mapping using Google Favicon API for reliability
-    const getLogo = (symbol) => {
-        // Simple mapping based on known symbols, or try to guess domain
-        const cleanSymbol = symbol.replace('.NS', '').replace('.BO', '');
-        const domains = {
-            'ADANIENT': 'adani.com',
-            'TATASTEEL': 'tatasteel.com',
-            'INFY': 'infosys.com',
-            'RELIANCE': 'ril.com',
-            'HDFCBANK': 'hdfcbank.com',
-            'WIPRO': 'wipro.com',
-            'TECHM': 'techmahindra.com',
-            'COALINDIA': 'coalindia.in',
-            'NTPC': 'ntpc.co.in',
-            'HINDUNILVR': 'hul.co.in', 'HUL': 'hul.co.in',
-            'UPL': 'upl-ltd.com',
-            'ICICIBANK': 'icicibank.com',
-            'KOTAKBANK': 'kotak.com',
-            'SBIN': 'sbi.co.in',
-            'ITC': 'itcportal.com',
-            'LT': 'larsentoubro.com',
-            'AXISBANK': 'axisbank.com',
-            'MARUTI': 'marutisuzuki.com',
-            'TITAN': 'titan.co.in',
-            'ULTRACEMCO': 'ultratechcement.com',
-            'SUNPHARMA': 'sunpharma.com',
-            'NESTLEIND': 'nestle.in',
-            'M&M': 'mahindra.com',
-            'POWERGRID': 'powergrid.in',
-            'JSWSTEEL': 'jsw.in',
-            'HCLTECH': 'hcltech.com',
-            'ADANIPORTS': 'adaniports.com',
-            'ONGC': 'ongcindia.com',
-            'BAJFINANCE': 'bajajfinserv.in',
-            'ASIANPAINT': 'asianpaints.com',
-            'BHARTIARTL': 'airtel.in'
-        };
 
-        const domain = domains[cleanSymbol];
-        if (domain) return `https://www.google.com/s2/favicons?domain=${domain}&sz=128`;
-        return null;
-    };
 
     return (
         <div
@@ -131,7 +90,8 @@ const StockMoversWidget = () => {
                 height: '100%',
                 display: 'flex',
                 flexDirection: 'column',
-                borderTop: '1px solid rgba(255,255,255,0.1)'
+                borderTop: '1px solid rgba(255,255,255,0.1)',
+                overflow: 'hidden' // Prevent overflow
             }}
         >
             <div style={{ marginBottom: '1rem' }}>
@@ -250,7 +210,7 @@ const StockMoversWidget = () => {
                     <div className="custom-scrollbar" style={{ overflowY: 'auto', flex: 1, paddingRight: '4px' }}>
                         {displayData.length > 0 ? (
                             displayData.map((stock, idx) => (
-                                <StockRow key={stock.symbol} stock={stock} index={idx} activeTab={activeTab} logo={getLogo(stock.symbol)} />
+                                <StockRow key={stock.symbol} stock={stock} index={idx} activeTab={activeTab} LogoComponent={<StockLogo symbol={stock.symbol} logoUrl={stock.logoUrl} />} />
                             ))
                         ) : (
                             <div style={{

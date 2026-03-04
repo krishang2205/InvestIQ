@@ -1,7 +1,7 @@
-import React from 'react';
-import { ArrowUpRight, ArrowDownRight } from 'lucide-react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { Building2 } from 'lucide-react';
 
-export const StockRow = ({ stock, index, activeTab, logo }) => {
+export const StockRow = ({ stock, index, activeTab, LogoComponent }) => {
     const isGain = stock.change >= 0;
     const color = isGain ? '#00C853' : '#FF4D4D';
 
@@ -36,26 +36,9 @@ export const StockRow = ({ stock, index, activeTab, logo }) => {
                     backgroundColor: 'rgba(255,255,255,0.03)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     overflow: 'hidden',
-                    padding: '6px'
+                    padding: '4px' // slightly reduced padding
                 }}>
-                    {logo ? (
-                        <img
-                            src={logo}
-                            alt={stock.symbol}
-                            style={{ width: '100%', height: '100%', objectFit: 'contain' }}
-                            onError={(e) => {
-                                e.target.style.display = 'none';
-                                e.target.parentElement.innerHTML = isGain ?
-                                    '<svg width="20" height="20" ...><path d="..." stroke="#00C853" .../></svg>' :
-                                    '<svg width="20" height="20" ...><path d="..." stroke="#FF4D4D" .../></svg>';
-                                // Proper fallback logic via parent or icon re-render would be better but this is quick fix
-                            }}
-                        />
-                    ) : (
-                        <div style={{ color: color }}>
-                            {isGain ? <ArrowUpRight size={20} /> : <ArrowDownRight size={20} />}
-                        </div>
-                    )}
+                    {LogoComponent}
                 </div>
                 <div>
                     <div style={{ fontWeight: '600', fontSize: '0.9rem', marginBottom: '2px' }}>{stock.symbol}</div>
@@ -71,5 +54,56 @@ export const StockRow = ({ stock, index, activeTab, logo }) => {
                 </div>
             </div>
         </div>
+    );
+};
+
+export const StockLogo = ({ symbol, logoUrl }) => {
+    const [imgSource, setImgSource] = useState(null);
+    const [hasError, setHasError] = useState(false);
+
+    // Clean symbol
+    const cleanSymbol = useMemo(() => symbol.replace('.NS', '').replace('.BO', ''), [symbol]);
+
+    // Determine initial source
+    useEffect(() => {
+        // 1. TRUST THE BACKEND. If we have a logoUrl (Google S2 with verified domain), use it.
+        // It proved to be reliable for ONGC, UPL etc.
+        if (logoUrl) {
+            setImgSource(logoUrl);
+        } else {
+            // 2. Default guess using Google S2
+            setImgSource(`https://www.google.com/s2/favicons?domain=${cleanSymbol.toLowerCase()}.com&sz=128`);
+        }
+        setHasError(false);
+    }, [logoUrl, cleanSymbol]);
+
+    const handleError = () => {
+        // User strictly wants "NO LOGO" (Grey Icon) if the image fails.
+        // Google S2 typically returns a "Globe" icon if the domain is valid but has no favicon, 
+        // which might be acceptable as a "logo". 
+        // If it truly errors out, we show the Grey Building.
+        setHasError(true);
+    };
+
+    if (hasError) {
+        return (
+            <div style={{
+                width: '100%', height: '100%', borderRadius: '8px',
+                backgroundColor: '#2A2A2A', // Grey background
+                color: '#666', // Grey Icon
+                display: 'flex', alignItems: 'center', justifyContent: 'center'
+            }}>
+                <Building2 size={18} />
+            </div>
+        );
+    }
+
+    return (
+        <img
+            src={imgSource}
+            alt={symbol}
+            onError={handleError}
+            style={{ width: '100%', height: '100%', borderRadius: '8px', objectFit: 'contain', backgroundColor: 'rgba(255,255,255,0.05)' }}
+        />
     );
 };

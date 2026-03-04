@@ -22,9 +22,9 @@ def test_report_generation_validates_schema(test_client):
         }
     }
     # Mocking Auth decorator behavior to let request pass to validator
-    with patch('middleware.auth.AuthMiddleware.__call__') as mock_auth:
-        # Simple passthrough mock for decorator
-        mock_auth.side_effect = lambda f: f
+    with patch('middleware.auth.supabase.auth.get_user') as mock_get_user:
+        mock_user = type('MockUser', (), {'id': 'test-uuid', 'user_metadata': {'role': 'user'}})
+        mock_get_user.return_value = type('MockResponse', (), {'user': mock_user})
         
         headers = {"Authorization": "Bearer mock_token"}
         response = test_client.post('/api/v2/reports/generate', json=payload, headers=headers)
@@ -47,8 +47,10 @@ def test_report_generation_accepts_valid_payload(test_client, mock_supabase_depe
         }
     }
     
-    with patch('middleware.auth.AuthMiddleware.__call__') as mock_auth:
-        # Patch the Orchestrator so we don't spin up threads globally in Pytest
+    with patch('middleware.auth.supabase.auth.get_user') as mock_get_user:
+        mock_user = type('MockUser', (), {'id': 'test-uuid', 'user_metadata': {'role': 'user'}})
+        mock_get_user.return_value = type('MockResponse', (), {'user': mock_user})
+        
         with patch('reports.orchestrator.ReportGenerationOrchestrator.initiate_report') as mock_init:
             mock_init.return_value = "mock-uuid-1234"
             
@@ -61,6 +63,5 @@ def test_report_generation_accepts_valid_payload(test_client, mock_supabase_depe
             assert data["job_id"] == "mock-uuid-1234"
 
 def test_report_status_not_found(test_client, mock_supabase_dependency):
-    with patch('middleware.auth.AuthMiddleware.__call__'):
-        # Just asserts that the route mounts properly
+    with patch('middleware.auth.supabase.auth.get_user'):
         assert True

@@ -13,11 +13,15 @@ const NewsWidget = () => {
 
     // Client-side filtering
     const displayNews = (newsData || []).filter(item => {
-        if (activeTab === 'All') return true;
-        // Simple heuristic mapping if type isn't perfect, or exact match
-        if (activeTab === 'Macro') return item.type === 'Macro' || item.title.includes('RBI') || item.title.includes('inflation');
-        if (activeTab === 'Earnings') return item.type === 'Earnings' || item.title.includes('Results') || item.title.includes('Profit');
-        return true; // Default to showing all for 'News' tab or if logic misses, to avoid empty
+
+
+
+        // Strict filtering based on Backend 'type'
+        if (activeTab === 'News') return item.type === 'News';
+        if (activeTab === 'Macro') return item.type === 'Macro';
+        if (activeTab === 'Earnings') return item.type === 'Earnings';
+
+        return true;
     });
 
     if (loading && (!newsData || newsData.length === 0)) {
@@ -85,7 +89,7 @@ const NewsWidget = () => {
                 </div>
             </div>
 
-            <div className="custom-scrollbar" style={{ overflowY: 'auto', flex: 1 }}>
+            <div className="custom-scrollbar" style={{ overflowY: 'auto', flex: 1, minHeight: 0 }}>
                 {displayNews.map((item, idx) => (
                     <NewsItem key={idx} {...item} />
                 ))}

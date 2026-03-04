@@ -31,7 +31,7 @@ const IntelligenceReportPage = () => {
 
     const fetchHistory = async () => {
         try {
-            const res = await fetch('http://localhost:5001/api/report/history');
+            const res = await fetch('http://localhost:5001/api/v2/reports/history');
             const data = await res.json();
             if (data.status === 'success') {
                 setHistory(data.data);
@@ -60,7 +60,7 @@ const IntelligenceReportPage = () => {
                 user_id: "00000000-0000-0000-0000-000000000000" 
             };
 
-            const res = await fetch('http://localhost:5001/api/report/generate', {
+            const res = await fetch('http://localhost:5001/api/v2/reports/generate', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
@@ -93,7 +93,7 @@ const IntelligenceReportPage = () => {
             }
 
             try {
-                const res = await fetch(`http://localhost:5001/api/report/status/${jobId}`);
+                const res = await fetch(`http://localhost:5001/api/v2/reports/status/${jobId}`);
                 const data = await res.json();
 
                 if (data.status === 'completed') {
