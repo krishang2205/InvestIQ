@@ -1,0 +1,62 @@
+name: Security & Vulnerability Scanning
+
+on:
+  schedule:
+    # Run a full infrastructure scan every night at 2am UTC
+    - cron: '0 2 * * *'
+  push:
+    branches: [ "main" ]
+  pull_request:
+    paths:
+      - 'backend/requirements.txt'
+      - 'docker/**'
+      - 'backend/Dockerfile'
+
+jobs:
+  python-bandit-sast:
+    name: AST Source Code Security
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python 3.10
+      uses: actions/setup-python@v4
+      with:
+        python-version: "3.10"
+        
+    - name: Install Bandit SAST Scanner
+      run: pip install bandit
+
+    - name: Execute SAST Pipeline
+      working-directory: backend
+      run: |
+        # Scan for hardcoded passwords, shell injections, or weak crypto
+        bandit -r . -x tests/ -f json -o bandit-results.json || true
+        # Output human readable summary, failing the build on High severity issues
+        bandit -r . -x tests/ -lll
+
+    - name: Archive SAST Summary
+      uses: actions/upload-artifact@v3
+      with:
+        name: bandit-results
+        path: backend/bandit-results.json
+
+  trivy-container-scan:
+    name: Base Image Vulnerability Analysis
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Build Application Container
+      working-directory: docker
+      run: docker-compose -f docker-compose.prod.yml build investiq-api
+      
+    - name: Run Trivy Scanner
+      uses: aquasecurity/trivy-action@master
+      with:
+        image-ref: 'investiq-backend:latest'
+        format: 'table'
+        exit-code: '1' # Fail CD pipeline if CVEs present
+        ignore-unfixed: true
+        vuln-type: 'os,library'
+        severity: 'CRITICAL,HIGH'
