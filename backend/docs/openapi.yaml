@@ -1,0 +1,123 @@
+openapi: 3.0.3
+info:
+  title: InvestIQ Intelligent Reports API
+  description: Core asynchronous background generation API utilizing Multi-Agent LLM architectures.
+  version: 2.1.0
+  contact:
+    name: API Support
+    email: support@investiq.example.com
+servers:
+  - url: https://api.investiq.example.com/api/v2
+    description: Production Server
+  - url: http://localhost:5001/api/v2
+    description: Local Development Server
+tags:
+  - name: Reports
+    description: Core multi-agent financial reporting endpoints
+paths:
+  /reports/generate:
+    post:
+      summary: Initiate an asynchronous report generation pipeline
+      tags:
+        - Reports
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GenerationRequest'
+      responses:
+        '202':
+          description: Job successfully delegated to background queues
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobAcceptedResponse'
+        '400':
+          description: Malformed payload
+        '422':
+          description: Schema validation failed
+        '429':
+          description: Rate limit exceeded
+  /reports/status/{job_id}:
+    get:
+      summary: Poll for the status of an ongoing generation
+      tags:
+        - Reports
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: job_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Current job state
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobStatusResponse'
+        '404':
+          description: Job ID not found
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    GenerationRequest:
+      type: object
+      required:
+        - symbol
+      properties:
+        symbol:
+          type: string
+          example: NVDA
+        preferences:
+          type: object
+          properties:
+            fundamental:
+              type: boolean
+              default: true
+            technical:
+              type: boolean
+              default: true
+            sentiment:
+              type: boolean
+              default: true
+            macro:
+              type: boolean
+              default: false
+    JobAcceptedResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: accepted
+        job_id:
+          type: string
+          format: uuid
+        message:
+          type: string
+    JobStatusResponse:
+      type: object
+      properties:
+        job_id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [pending, processing, completed, failed]
+        report_data:
+          type: object
+          nullable: true
+        error:
+          type: string
+          nullable: true
