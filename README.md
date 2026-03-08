@@ -1,85 +1,50 @@
-# InvestIQ - Intelligent Investment Platform
+# InvestIQ Production Backend V2
 
-InvestIQ is a premium, AI-powered investment intelligence platform designed to help local investors master the market with explainable predictions and institutional-grade analysis.
+InvestIQ is a comprehensive intelligence platform bridging financial APIs with autonomous multi-agent systems via Google Gemini. This repository contains the high-performance, strictly structured backend services responsible for asynchronous report synthesis and observability.
 
-![InvestIQ Hero](./public/hero-preview.png)
-> *Note: Add a screenshot of the hero section here.*
+## Architecture & Domain-Driven Design (DDD)
 
-## 🚀 Project Overview
+The project leverages a robust Application Factory Pattern and enforces **Domain-Driven Design (DDD)** principles to separate technical concerns.
 
-This repository contains the source code for the **InvestIQ Landing Page**, featuring a modern, responsive design with a "Midnight Gold" aesthetic inspired by leading financial platforms.
+Key Modules:
+- **`/reports`**: The primary bounded context for the asynchronous Generation system.
+  - `orchestrator.py`: Resolves dependencies, writes DB jobs, and spans Thread Workers.
+  - `queue/worker.py`: Safe thread pool handling Dead Letter Queues (DLQ).
+  - `cache/report_cache.py`: Idempotent API protection reducing token costs mapping matching SHAs within 24h.
+  - `ingestion/financial_adapter.py`: Strict integration layer for standard market inputs like yfinance.
+- **`/middleware`**: Strict JWT Authorization mechanisms mapping generic UUID scopes.
+- **`/docs`**: Full OpenAPI V3 compliant JSON interfaces mapping available routes.
 
-### Key Features
+## Local Configuration & Bootstrapping
 
--   **Premium UI/UX**: distinctive "Midnight Gold" color theme (`#000000` bg, `#D1C79D` accent).
--   **Dynamic Animations**:
-    -   **Typewriter Effect**: Engaging headline animation in the Hero section.
-    -   **Live Stock Ticker**: Infinite scrolling ticker with real-time Indian market data (NIFTY, SENSEX, etc.).
-    -   **Smart Counters**: "Count-up" animations for key statistics (94% Accuracy, 1M+ Data Points).
-    -   **Scroll Reveal**: Elements fade in and slide up as the user scrolls.
--   **Responsive Layout**: Fully optimized for Desktop, Tablet, and Mobile devices.
--   **Interactive Components**:
-    -   Tabbed Feature Switcher.
-    -   Interactive Pricing Cards with hover effects.
-    -   Smart Search Input.
+We utilize pip requirements for local tooling but mandate standard Docker builds for absolute configuration parity.
 
-## 🛠️ Technology Stack
+1. `pip install -r backend/requirements.txt`
+2. `export SUPABASE_URL=...` (Or populate `.env`)
+3. `flask run --port=5001`
 
--   **Framework**: [React 18](https://reactjs.org/)
--   **Build Tool**: [Vite](https://vitejs.dev/)
--   **Styling**: Vanilla CSS (CSS Modules) for maximum performance and customization.
--   **Icons**: [Lucide React](https://lucide.dev/)
--   **Fonts**: Inter (via Google Fonts)
+### Running the Tests
 
-## 📦 Installation & Setup
-
-1.  **Clone the repository**
-    ```bash
-    git clone https://github.com/yourusername/investiq.git
-    cd investiq
-    ```
-
-2.  **Install dependencies**
-    ```bash
-    npm install
-    ```
-
-3.  **Run Development Server**
-    ```bash
-    npm run dev
-    ```
-    Visit `http://localhost:5173` to view the app.
-
-4.  **Build for Production**
-    ```bash
-    npm run build
-    ```
-    The output will be in the `dist` directory.
-
-## 📂 Project Structure
-
-```
-e:/InvestIQ/
-├── src/
-│   ├── components/      # React Components (Hero, Header, Ticker, etc.)
-│   │   ├── StockTicker.jsx
-│   │   ├── StockTicker.module.css
-│   │   └── ...
-│   ├── App.jsx          # Main Application Component
-│   ├── main.jsx         # Entry Point
-│   └── index.css        # Global Styles & Variables
-├── public/              # Static Assets
-└── package.json         # Dependencies & Scripts
+A comprehensive end-to-end suite using PyTest asserts application health natively.
+```bash
+# Validates both Unit and standard REST endpoints without engaging network calls
+cd backend/
+pytest -v tests/ --cov
 ```
 
-## 🎨 Color Palette
+## Production Docker Deployment
 
-| Color Name       | Hex Code  | Usage                  |
-| ---------------- | --------- | ---------------------- |
-| **Pure Black**   | `#000000` | Backgrounds            |
-| **Champagne Gold**| `#D1C79D` | Accents, Buttons, Text |
-| **Soft Gray**    | `#9CA3AF` | Secondary Text         |
-| **Emerald Green**| `#10B981` | Positive Indicators    |
-| **Rose Red**     | `#EF4444` | Negative Indicators    |
+We explicitly utilize **Multi-stage Docker builds** limiting standard vulnerabilities inside our network bound. 
 
---
+```bash
+# Deploys standard Postgres tracking via Alembic configurations
+cd backend/
+alembic upgrade head
+
+# Initialize the containers mapping Gunicorn onto standard VPC local interfaces
+./scripts/deploy.sh
+```
+
+## Security & Rate Limiting
+
+This system strictly mandates generic API interactions behind a `TokenBucket` algorithm ensuring that we do not overload underlying provider networks. All prompt data passes through `SecuritySanitizer` eliminating arbitrary script execution logic or jailbreak vulnerabilities mapped heavily inside traditional generic AI wrappers.
