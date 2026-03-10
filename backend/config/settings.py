@@ -16,6 +16,7 @@ class AppSettings:
     supabase_url: str
     supabase_key: str
     gemini_api_key: Optional[str]
+    groq_api_key: Optional[str]
     openai_api_key: Optional[str]
     redis_url: str
     max_workers: int
@@ -35,6 +36,7 @@ class AppSettings:
             supabase_url=supa_url or "http://localhost:8000",
             supabase_key=supa_key or "dummy_key",
             gemini_api_key=os.getenv("GEMINI_API_KEY"),
+            groq_api_key=os.getenv("GROQ_API_KEY"),
             openai_api_key=os.getenv("OPENAI_API_KEY"),
             redis_url=os.getenv("REDIS_URL", "redis://localhost:6379/0"),
             max_workers=int(os.getenv("WORKER_THREADS", "5"))
