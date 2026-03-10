@@ -13,7 +13,7 @@ class ReportCacheManager:
     serve the cached JSON immediately instead of wasting LLM API credits.
     """
     
-    def __init__(self, ttl_seconds: int = 86400):
+    def __init__(self, ttl_seconds: int = 600):
         self._local_dev_cache = {}  # Fallback dictionary if Redis is offline
         self.ttl = ttl_seconds
         
