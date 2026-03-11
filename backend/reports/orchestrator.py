@@ -56,21 +56,60 @@ class ReportGenerationOrchestrator:
         try:
             db.table("reports").update({"status": "processing"}).eq("id", job_id).execute()
             
-            # Fetch contextual market data
+            # ── Step 1: Fetch real live market data from yfinance ─────────────
             market_data = financial_ingestion_engine.fetch_market_context(symbol)
             
-            # Formulate the multi-agent context window
-            prompt = PromptRegistry.construct_analysis_prompt(market_data, prefs)
+            # ── Step 2: Enrich context for the LLM prompt ────────────────────
+            # Pass live fundamentals so Gemini's narrative is grounded in reality
+            meta = market_data.get("company_meta", {})
+            fund = market_data.get("fundamentals", {})
+            prompt_context = {
+                "symbol": symbol,
+                "volatility": f"{market_data.get('volatility', 'N/A')}% annualised",
+                "fundamentals": {
+                    "current_price": market_data.get("current_price"),
+                    "currency": meta.get("currency", "USD"),
+                    "exchange": meta.get("exchange"),
+                    "sector": meta.get("sector"),
+                    "industry": meta.get("industry"),
+                    "market_cap_billions": fund.get("market_cap_billions"),
+                    "pe_ratio": fund.get("pe_ratio"),
+                    "pb_ratio": fund.get("pb_ratio"),
+                    "roe_percent": fund.get("roe"),
+                    "profit_margin_percent": fund.get("profit_margin"),
+                    "debt_to_equity": fund.get("debt_to_equity"),
+                    "dividend_yield_percent": fund.get("dividend_yield"),
+                    "52w_high": market_data.get("fifty_two_week_high"),
+                    "52w_low": market_data.get("fifty_two_week_low"),
+                    "50d_avg": market_data.get("fifty_day_avg"),
+                    "200d_avg": market_data.get("two_hundred_day_avg"),
+                    "price_change_pct_today": market_data.get("price_change_pct"),
+                    "beta": fund.get("beta"),
+                    "free_cashflow_billions": fund.get("free_cashflow_billions"),
+                    "employees": meta.get("employees"),
+                    "company_description": meta.get("description", ""),
+                },
+            }
             
-            # Ping AI
-            report_json = llm.generate_json(prompt)
+            # ── Step 3: Build the AI prompt with real grounded context ────────
+            prompt = PromptRegistry.construct_analysis_prompt(prompt_context, prefs)
             
-            # Cache for future incoming requests
+            # ── Step 4: Run Gemini, inject real OHLCV chart data into output ──
+            report_json = llm.generate_json(prompt, market_context=market_data)
+            
+            # ── Step 5: Cache and persist ────────────────────────────────────
             cache_engine.store_report(symbol, prefs, report_json)
             
             db.table("reports").update({
                 "status": "completed",
                 "report_data": report_json
+            }).eq("id", job_id).execute()
+
+        except ConnectionError as ce:
+            # Symbol not found or yfinance failed
+            logger.error(f"Market data fetch failed for {job_id} ({symbol}): {ce}")
+            db.table("reports").update({
+                "status": "failed", "error": str(ce)
             }).eq("id", job_id).execute()
         except Exception as e:
             logger.error(f"Orchestrator pipeline failed for {job_id}: {e}")
