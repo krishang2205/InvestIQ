@@ -36,7 +36,9 @@ export const AuthProvider = ({ children }) => {
             if (event === 'SIGNED_IN' && session?.user) {
                 // Close modal and redirect to dashboard only on explicit sign in
                 setIsAuthModalOpen(false);
-                navigate('/dashboard');
+                if (window.location.pathname === '/') {
+                    navigate('/dashboard');
+                }
             }
             setLoading(false);
         });
