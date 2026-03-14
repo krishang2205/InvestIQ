@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { ArrowLeft, Download, Info, AlertTriangle, ChevronRight } from 'lucide-react';
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
+import '../../styles/PrintClean.css';
 
 const reportStyles = `
   .rv-root { max-width: 1200px; margin: 0 auto; padding: 0 1.5rem 8rem 1.5rem; }
@@ -15,6 +16,18 @@ const reportStyles = `
   .rv-chart-height { height: 380px; }
   .rv-alt-data-grid { display: grid; grid-template-columns: minmax(220px,1fr) 2fr; gap: 2rem; align-items: center; }
   .rv-peers-table th, .rv-peers-table td { padding: 1rem 1.25rem; }
+  
+  @media print {
+    @page { margin: 1cm; size: A4; }
+    body { background: #0a0e14 !important; color: #fff !important; }
+    .rv-root { padding: 0 !important; width: 100% !important; max-width: none !important; }
+    .rv-action-bar, .rv-back-btn, .rv-header-meta span, .rv-interactive-tabs { display: none !important; }
+    .glass-panel { border: 1px solid rgba(255,255,255,0.1) !important; background: rgba(255,255,255,0.03) !important; break-inside: avoid; }
+    * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+    .rv-chart-height { height: 450px !important; }
+    h3 { border-left: 4px solid var(--color-accent) !important; }
+  }
+
   @media (max-width: 900px) {
     .rv-root { padding: 0 1rem 8rem 1rem; }
     .rv-snapshot-grid { grid-template-columns: 1fr; }
@@ -36,6 +49,13 @@ const reportStyles = `
 
 const ReportView = ({ data, onBack }) => {
     const [activeTab, setActiveTab] = useState('1Y');
+
+    const handleDownloadPDF = () => {
+        const originalTitle = document.title;
+        document.title = `InvestIQ_Capstone_Report_${data.header.symbol}_${new Date().toISOString().split('T')[0]}`;
+        window.print();
+        document.title = originalTitle;
+    };
 
     // Helper for Status Pills
     const StatusPill = ({ label, value, type }) => {
@@ -79,8 +99,8 @@ const ReportView = ({ data, onBack }) => {
     const isPositive = priceChange >= 0;
     const changeColor = isPositive ? '#10b981' : '#ef4444'; // Green/Red
     const changePrefix = isPositive ? '+' : '';
-    const currencyLabel = (data.header.exchange && (data.header.exchange.toUpperCase().includes('BSE') || data.header.exchange.toUpperCase().includes('NSE'))) || 
-                          (data.header.symbol && data.header.symbol.toUpperCase().includes('.NS')) ? 'INR' : 'USD';
+    const currencyLabel = 'INR';
+
 
     return (
         <>
@@ -90,7 +110,7 @@ const ReportView = ({ data, onBack }) => {
             {/* 1. TOP HEADER */}
             <div className="rv-header">
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                    <button onClick={onBack} style={{ background: 'none', border: 'none', color: 'var(--color-secondary)', cursor: 'pointer', padding: '0.5rem', borderRadius: '8px' }}>
+                    <button onClick={onBack} className="rv-back-btn" style={{ background: 'none', border: 'none', color: 'var(--color-secondary)', cursor: 'pointer', padding: '0.5rem', borderRadius: '8px' }}>
                         <ArrowLeft size={24} />
                     </button>
                     <div>
@@ -164,7 +184,7 @@ const ReportView = ({ data, onBack }) => {
             )}
 
             {/* 3. EXECUTIVE SUMMARY */}
-            <div style={{ background: 'linear-gradient(180deg, rgba(209, 199, 157, 0.1) 0%, rgba(0,0,0,0) 100%)', padding: '2rem', borderRadius: '16px', marginBottom: '2rem', border: '1px solid var(--color-accent)' }}>
+            <div className="glass-panel" style={{ background: 'linear-gradient(180deg, rgba(209, 199, 157, 0.1) 0%, rgba(0,0,0,0) 100%)', padding: '2rem', borderRadius: '16px', marginBottom: '2rem', border: '1px solid var(--color-accent)' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-around', flexWrap: 'wrap', gap: '1rem', marginBottom: '1.5rem' }}>
                     {data.executiveSummary.status.map(s => <StatusPill key={s.label} {...s} />)}
                 </div>
@@ -179,7 +199,7 @@ const ReportView = ({ data, onBack }) => {
                     
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', marginBottom: '1.5rem' }}>
                         <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem' }}>
-                            <span style={{ fontSize: '3rem', fontWeight: 400, letterSpacing: '-1px', lineHeight: 1 }}>{endPrice.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                            <span style={{ fontSize: '3rem', fontWeight: 400, letterSpacing: '-1px', lineHeight: 1 }}>₹{endPrice.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
                             <span style={{ fontSize: '1.25rem', color: 'var(--color-secondary)', fontWeight: 500 }}>{currencyLabel}</span>
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -191,7 +211,7 @@ const ReportView = ({ data, onBack }) => {
                         </div>
                     </div>
 
-                    <div style={{ display: 'flex', gap: '2rem', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '0.8rem', marginBottom: '1.5rem', overflowX: 'auto' }}>
+                    <div className="rv-interactive-tabs" style={{ display: 'flex', gap: '2rem', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '0.8rem', marginBottom: '1.5rem', overflowX: 'auto' }}>
                         {['1D', '5D', '1M', '6M', 'YTD', '1Y', '5Y', 'Max'].map(tab => (
                             <span key={tab} 
                                 onClick={() => setActiveTab(tab)}
@@ -227,7 +247,7 @@ const ReportView = ({ data, onBack }) => {
                                     contentStyle={{ backgroundColor: '#202124', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '8px', color: '#fff', boxShadow: '0 4px 20px rgba(0,0,0,0.5)' }}
                                     itemStyle={{ color: '#fff', fontWeight: 600, fontSize: '1.1rem' }}
                                     labelStyle={{ color: 'var(--color-secondary)', marginBottom: '0.25rem' }}
-                                    formatter={(value) => [value.toLocaleString(undefined, {minimumFractionDigits: 2}), "Price"]}
+                                    formatter={(value) => [`₹${value.toLocaleString(undefined, {minimumFractionDigits: 2})}`, "Price"]}
                                 />
                                 <Area type="monotone" dataKey="price" stroke={changeColor} strokeWidth={2} fillOpacity={1} fill="url(#colorPriceGF)" activeDot={{ r: 6, fill: '#202124', stroke: changeColor, strokeWidth: 3 }} />
                             </AreaChart>
@@ -242,7 +262,7 @@ const ReportView = ({ data, onBack }) => {
             </div>
 
             {/* 5. VOLATILITY STRIP */}
-            <div style={{ marginBottom: '2.5rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
+            <div className="glass-panel" style={{ marginBottom: '2.5rem', display: 'flex', alignItems: 'center', gap: '1rem', padding: '1rem' }}>
                 <span style={{ width: '100px', fontSize: '0.875rem', fontWeight: 600 }}>Volatility</span>
                 <div style={{ flex: 1, height: '8px', background: '#333', borderRadius: '4px', overflow: 'hidden' }}>
                     <div style={{ width: `${data.volatility.value}%`, height: '100%', background: 'linear-gradient(90deg, #34d399 0%, #facc15 100%)' }}></div>
@@ -521,7 +541,7 @@ const ReportView = ({ data, onBack }) => {
             </div>
 
             {/* 11. ACTION BAR (Sticky Bottom) */}
-            <div style={{
+            <div className="rv-action-bar" style={{
                 position: 'fixed', bottom: 0, left: 0, right: 0,
                 background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(10px)',
                 padding: '1rem 2rem', borderTop: '1px solid var(--glass-border)',
@@ -531,7 +551,7 @@ const ReportView = ({ data, onBack }) => {
                 <button style={{ padding: '0.5rem 1rem', background: 'transparent', border: '1px solid var(--color-secondary)', color: 'var(--color-text)', borderRadius: '8px', cursor: 'pointer' }}>
                     Compare
                 </button>
-                <button style={{ padding: '0.5rem 1rem', background: 'transparent', border: '1px solid var(--color-secondary)', color: 'var(--color-text)', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <button onClick={handleDownloadPDF} style={{ padding: '0.5rem 1rem', background: 'transparent', border: '1px solid var(--color-secondary)', color: 'var(--color-text)', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                     <Download size={16} /> PDF
                 </button>
                 <button style={{
