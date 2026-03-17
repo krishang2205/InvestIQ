@@ -1,8 +1,6 @@
 import React, { useState } from 'react';
 import { ArrowLeft, Download, Info, AlertTriangle, ChevronRight } from 'lucide-react';
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
-import '../../styles/PrintClean.css';
-
 const reportStyles = `
   .rv-root { max-width: 1200px; margin: 0 auto; padding: 0 1.5rem 8rem 1.5rem; }
   .rv-header { display: flex; justify-content: space-between; align-items: center; padding: 1rem 0; border-bottom: 1px solid var(--glass-border); margin-bottom: 2rem; }
@@ -19,13 +17,47 @@ const reportStyles = `
   
   @media print {
     @page { margin: 1cm; size: A4; }
-    body { background: #0a0e14 !important; color: #fff !important; }
-    .rv-root { padding: 0 !important; width: 100% !important; max-width: none !important; }
-    .rv-action-bar, .rv-back-btn, .rv-header-meta span, .rv-interactive-tabs { display: none !important; }
-    .glass-panel { border: 1px solid rgba(255,255,255,0.1) !important; background: rgba(255,255,255,0.03) !important; break-inside: avoid; }
-    * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
-    .rv-chart-height { height: 450px !important; }
-    h3 { border-left: 4px solid var(--color-accent) !important; }
+    
+    /* 1. Global Print Reset */
+    * { background: transparent !important; color: black !important; box-shadow: none !important; -webkit-print-color-adjust: exact !important; }
+    html, body { background: white !important; width: 100% !important; height: auto !important; margin: 0 !important; padding: 0 !important; }
+    
+    /* 2. Hide all non-report elements (Sidebars, Navs, Buttons) */
+    nav, aside, header, .sidebar, .navbar, .rv-action-bar, .rv-back-btn, .rv-interactive-tabs, button { 
+      display: none !important; 
+    }
+    
+    /* 3. Explicitly show the report and its necessary parents */
+    #root, .main-content, .sidebar-layout, .rv-root {
+      display: block !important;
+      visibility: visible !important;
+      background: white !important;
+      width: 100% !important;
+      height: auto !important;
+      padding: 0 !important;
+      margin: 0 !important;
+      position: static !important;
+    }
+
+    /* 4. Card Styling for Printed Reports */
+    .glass-panel { 
+      background: white !important; 
+      color: black !important; 
+      border: 1px solid #111 !important; 
+      margin-bottom: 25px !important;
+      break-inside: avoid !important;
+      padding: 20px !important;
+      border-radius: 0 !important; /* Professional flat look for print */
+    }
+
+    /* 5. Chart & Text Fidelity */
+    .rv-chart-height { height: 400px !important; width: 100% !important; }
+    h1, h2, h3, h4 { color: black !important; border-bottom: none !important; }
+    h3 { border-left: 5px solid black !important; padding-left: 10px !important; margin-top: 20px !important; }
+    .rv-header { border-bottom: 2px solid black !important; padding-bottom: 15px !important; }
+    
+    /* Force specific section visibility */
+    .rv-snapshot-grid, .rv-two-col, .rv-outlook-grid { display: grid !important; }
   }
 
   @media (max-width: 900px) {
