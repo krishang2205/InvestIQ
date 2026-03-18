@@ -384,6 +384,9 @@ knowledge, say "Specific data for this metric isn't available in my current cont
         symbol = report_data.get("header", {}).get("symbol", "the stock")
         system_msg = cls.CHAT_SYSTEM_PROMPT.format(symbol=symbol)
         
+        # Inject Guardrails & Beginner Glossary (Commit 3)
+        system_msg += "\n\n" + cls.get_guardrail_prompt()
+        
         # We pass the report data as a formatted JSON string for RAG accuracy
         report_json_str = json.dumps(report_data, indent=2)
         
@@ -394,3 +397,48 @@ knowledge, say "Specific data for this metric isn't available in my current cont
         )
         
         return system_msg + "\n\n" + user_msg
+
+    # --- NEW: FINANCE GLOSSARY & GUARDRAILS (Commit 3) ---
+
+    FINANCIAL_MENTOR_GLOSSARY = {
+        "P/E Ratio": "Price-to-Earnings. Like a 'price tag' for every $1 of profit. High P/E means expensive (growth expected), Low P/E means cheap (value play).",
+        "Market Cap": "The total market value of the company (Total Shares x Price). Large-Cap is usually safer; Small-Cap is riskier but higher growth.",
+        "ROE": "Return on Equity. How much profit the company generates with the money shareholders have invested. 15%+ is generally good.",
+        "Debt-to-Equity": "How much the company borrows vs. what it owns. Higher than 2.0 can be a red flag for safety.",
+        "FCF": "Free Cash Flow. The actual cash left over after paying all bills and investing in the business. This is what's used to pay dividends.",
+        "Beta": "Market sensitivity. A beta of 1.0 means it moves with the market. >1.5 is volatile (aggressive); <0.8 is defensive (slow).",
+        "Dividend Yield": "The annual dividend payment as a percentage of the stock price. Like interest on a savings account.",
+        "Profit Margin": "What percentage of every dollar earned is kept as profit. High margins usually mean a strong competitive 'moat'."
+    }
+
+    FORBIDDEN_TOPICS = [
+        "cooking", "recipes", "sports", "weather", "politics", "movies", 
+        "celebrities", "coding", "software", "history (non-financial)", 
+        "geography", "travel", "health", "religion", "philosophy"
+    ]
+
+    @classmethod
+    def get_guardrail_prompt(cls) -> str:
+        """
+        Returns the strict guardrail instructions for the Strategic Analyst.
+        """
+        glossary_items = [f"- {k}: {v}" for k, v in cls.FINANCIAL_MENTOR_GLOSSARY.items()]
+        glossary_text = "\n".join(glossary_items)
+        forbidden_text = ", ".join(cls.FORBIDDEN_TOPICS)
+        
+        return f"""
+[DOMAN EXCLUSIVITY - STALINIST GUARDRAILS]
+You are hard-coded to ignore anything outside the realm of Finance and Stock Analysis.
+FORBIDDEN TOPICS: {forbidden_text}.
+If the user mentions these, you must say: "As an InvestIQ Strategic Analyst, I only process 
+financial intelligence and market data. I cannot assist with that topic."
+
+[ANALOGY GLOSSARY - FOR BEGINNERS]
+Use these simplified mental models when explaining metrics:
+{glossary_text}
+
+[MENTAL MODELS FOR ANALYSIS]
+1. 'The Moat': Does the company have a competitive advantage (patents, brand, high margin)?
+2. 'The margin of Safety': Is the price significantly below the intrinsic value?
+3. 'The Cash Cow': Is Free Cash Flow growing faster than net income?
+"""
