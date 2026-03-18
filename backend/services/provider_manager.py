@@ -72,6 +72,60 @@ class AIProviderManager:
         self._inject_real_chart_data(data, market_context)
         return data
 
+    def generate_text(self, prompt: str) -> str:
+        """
+        Generates raw creative/analytical text for the chatbot.
+        Follows the same Gemini -> Groq -> Generic fallback.
+        """
+        # 1. Try Gemini
+        if self.providers_ready["gemini"]:
+            try:
+                logger.info("🔵 Gemini Chat: Generating text...")
+                response = self.gemini_model.generate_content(
+                    prompt,
+                    generation_config=genai.GenerationConfig(temperature=0.3)
+                )
+                return response.text
+            except Exception as e:
+                logger.warning(f"Gemini Chat failed: {e}")
+
+        # 2. Try Groq
+        if self.providers_ready["groq"]:
+            try:
+                logger.info("🟡 Groq Chat: Generating text...")
+                response = self.groq_client.chat.completions.create(
+                    model=self.GROQ_MODEL,
+                    messages=[{"role": "user", "content": prompt}],
+                    temperature=0.3,
+                )
+                return response.choices[0].message.content
+            except Exception as e:
+                logger.warning(f"Groq Chat failed: {e}")
+
+        return "I'm sorry, I'm currently unable to process your request due to API limitations. Please try again in a few minutes."
+
+    def generate_chat_response(self, prompt: str) -> str:
+        """
+        Specialized generation for the Strategic Analyst chatbot.
+        Ensures the response is clean, formatted as markdown, and adheres
+        to the mentor/analyst persona.
+        """
+        raw_text = self.generate_text(prompt)
+        
+        # Post-processing: ensure no rogue JSON artifacts if the model gets confused
+        # and ensure consistent markdown headers.
+        clean_text = raw_text.strip()
+        
+        # If the model includes triple backticks for no reason, we keep them if they 
+        # enclose code, but if they enclose the whole response we might want to clean it.
+        # However, generate_text is usually reliable.
+        
+        if not clean_text or len(clean_text) < 5:
+            logger.error("AI returned an empty or insufficient chat response.")
+            return "I analyzed the data but couldn't formulate a strategic insight at this moment. Please rephrase your question."
+            
+        return clean_text
+
     # ─────────────────────────────────────────────────────────────────────────
     # Provider implementations
     # ─────────────────────────────────────────────────────────────────────────

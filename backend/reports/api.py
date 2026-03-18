@@ -72,3 +72,48 @@ def get_job_status_v2(job_id):
     except Exception as e:
         logger.error(f"Error checking status for {job_id}: {e}")
         return jsonify({"error": "Database retrieval exception"}), 500
+
+@reports_v2_bp.route('/chat', methods=['POST'])
+@rate_limit(limit=10, period=60)
+def chat_with_report():
+    """
+    Conversational AI interface for a generated report.
+    Allows users to ask deep-dive questions and run scenario projections.
+    
+    Payload:
+    {
+        "job_id": "uuid",
+        "message": "What is the debt-to-equity ratio explaining?",
+        "history": "Optional chat history string"
+    }
+    """
+    payload = request.get_json()
+    if not payload or 'job_id' not in payload or 'message' not in payload:
+        return jsonify({"error": "Missing job_id or message in payload"}), 400
+        
+    job_id = payload.get("job_id")
+    message = payload.get("message")
+    history = payload.get("history", "")
+    
+    logger.info(f"Received chat request for Report Job: {job_id}")
+    
+    try:
+        # Delegate to orchestrator for context retrieval and LLM processing
+        response_text = ReportGenerationOrchestrator.handle_chat(
+            job_id=job_id,
+            message=message,
+            history=history
+        )
+        
+        return jsonify({
+            "status": "success",
+            "job_id": job_id,
+            "response": response_text
+        }), 200
+        
+    except ValueError as ve:
+        logger.warning(f"Chat request invalid: {ve}")
+        return jsonify({"error": str(ve)}), 404
+    except Exception as e:
+        logger.error(f"Chat processing failed for {job_id}: {e}")
+        return jsonify({"error": "An internal error occurred during chat processing"}), 500

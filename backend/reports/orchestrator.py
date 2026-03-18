@@ -117,3 +117,59 @@ class ReportGenerationOrchestrator:
                 "status": "failed", "error": str(e)
             }).eq("id", job_id).execute()
             raise e
+
+    @staticmethod
+    def handle_chat(job_id: str, message: str, history: str = "") -> str:
+        """
+        Processes a chat message by retrieving the associated report data
+        and using the LLM provider to generate a grounded response.
+        
+        Args:
+            job_id: The unique ID of the previously generated report.
+            message: The user's question or scenario projection request.
+            history: Previous chat context for stateful conversation.
+            
+        Returns:
+            str: The AI-generated response text.
+            
+        Raises:
+            ValueError: If the report job doesn't exist or isn't completed.
+        """
+        db = report_di.get_db_client()
+        llm = report_di.get_llm_manager()
+        
+        logger.debug(f"Retrieving report context for chat session: {job_id}")
+        
+        # 1. Fetch the original report data from Supabase/DB
+        res = db.table("reports").select("report_data, status, symbol").eq("id", job_id).execute()
+        
+        if not res.data:
+            raise ValueError(f"Report Job {job_id} not found.")
+            
+        record = res.data[0]
+        if record["status"] != "completed":
+            raise ValueError(f"Report Job {job_id} is in status '{record['status']}'. Chat is only available for completed reports.")
+            
+        report_data = record.get("report_data")
+        symbol = record.get("symbol")
+        
+        if not report_data:
+            logger.error(f"Report data missing for completed job {job_id}")
+            raise ValueError("Report data is missing from the record.")
+
+        # 2. Build the chat-specific prompt using our PromptRegistry
+        # This injects the report JSON and history into the Strategic Analyst persona
+        chat_prompt = PromptRegistry.construct_chat_prompt(
+            report_data=report_data,
+            message=message,
+            history=history
+        )
+        
+        logger.info(f"Generating chat response for {symbol} (Job: {job_id})")
+        
+        # 3. Use the AI provider manager to get a response
+        # Note: We use the general generation method but since the prompt has 
+        # instructions for prose/markdown, we expect a string response.
+        response = llm.generate_chat_response(chat_prompt)
+        
+        return response
