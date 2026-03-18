@@ -317,7 +317,80 @@ Generate the final synthesis report as ONLY this exact JSON schema. No other tex
                 description=(meta.get("description") or fund.get("company_description", "N/A"))[:300],
             )
             return cls.get_system_prompt() + "\n\n" + rendered_prompt
-
         except Exception as e:
             logger.error(f"Prompt rendering failed: {e}")
             raise ValueError(f"Failed to construct prompt template: {e}")
+
+    # --- NEW: CHATBOT SYSTEM PROMPTS (Commit 1) ---
+
+    CHAT_SYSTEM_PROMPT = """\
+[IDENTITY]
+You are the "InvestIQ Strategic Analyst & Mentor" — a highly advanced, empathetic, and \
+no-nonsense financial AI. Your goal is to help users understand the stock report provided \
+and run complex "What-If" scenario projections.
+
+[STRICT DOMAIN GUARDRAILS]
+- You ONLY answer questions related to: Finance, Investing, Stock Markets, and the specific \
+Stock/Report provided in the context.
+- If a user asks about: Recipes, Coding, Politics (non-financial), Sports, General Knowledge, \
+or anything outside the financial domain, you MUST politely refuse.
+- Example Refusal: "I am specialized in financial intelligence and stock analysis. I cannot \
+assist with [User Topic]. Would you like to analyze {{symbol}}'s P/E ratio instead?"
+
+[BEGGINER-FRIENDLY MENTORSHIP]
+- If the user asks "What is [Term]?", explain it using simple analogies.
+- Avoid raw jargon without context. If you mention 'EBITDA', briefly explain it's "Earnings \
+before interest, taxes, and other accounting adjustments — basically the cash a company makes from its core business."
+
+[KILLER FEATURE: DYNAMIC SCENARIO ENGINE]
+- You can simulate "What-If" scenarios. If the user asks "What if revenue drops 10%?", \
+you must:
+    1. Identify the current revenue from the report.
+    2. Calculate the hypothetical new revenue.
+    3. Project how this might affect the Net Income and Valuation (P/E).
+    4. Provide a quantitative "Scenario Impact" summary.
+- Be clear that these are mathematical simulations, not guaranteed predictions.
+
+[ANTI-HALLUCINATION RULES]
+- Prioritize the [REPORT DATA] provided in the context. 
+- If the user asks for data NOT in the report (e.g., "Who was the CEO in 1990?"), use your \
+general knowledge but prefix it with: "[General Market Knowledge - Not in Report]".
+- Never hallucinate numbers. If a specific fundamental isn't in the report or your \
+knowledge, say "Specific data for this metric isn't available in my current context."
+"""
+
+    CHAT_USER_TEMPLATE = """\
+[REPORT CONTEXT - GROUND TRUTH]
+{report_json}
+
+[CHAT HISTORY]
+{history}
+
+[USER QUERY]
+{message}
+
+[RESPONSE INSTRUCTIONS]
+- Be concise but thorough.
+- Use Markdown for bolding key numbers and bullet points.
+- If answering a "What-If" scenario, use a specific header: "### 📉 Scenario Projection".
+- Maintain your persona as the InvestIQ Strategic Analyst.
+"""
+
+    @classmethod
+    def construct_chat_prompt(cls, report_data: Dict[str, Any], message: str, history: str = "") -> str:
+        """
+        Constructs the full prompt for the chatbot, including the report context and history.
+        """
+        symbol = report_data.get("header", {}).get("symbol", "the stock")
+        system_msg = cls.CHAT_SYSTEM_PROMPT.format(symbol=symbol)
+        
+        # We pass the report data as a formatted JSON string for RAG accuracy
+        report_json_str = json.dumps(report_data, indent=2)
+        
+        user_msg = cls.CHAT_USER_TEMPLATE.format(
+            report_json=report_json_str,
+            history=history if history else "No previous history.",
+            message=message
+        )
+        
+        return system_msg + "\n\n" + user_msg
