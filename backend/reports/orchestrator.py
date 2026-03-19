@@ -47,6 +47,42 @@ class ScenarioModel:
             logger.warning(f"Scenario projection math failed: {e}")
             return {"error": "Could not calculate scenario impact."}
 
+    @staticmethod
+    def simulate_peer_rerating(current_pe: float, peer_average_pe: float) -> Dict[str, Any]:
+        """
+        Calculates the price impact if the stock rerates to the industry average.
+        """
+        upside = ((peer_average_pe / current_pe) - 1) * 100
+        return {
+            "analysis": "Peer Multiple Alignment",
+            "current_pe": current_pe,
+            "peer_avg_pe": peer_average_pe,
+            "implied_upside": f"{round(upside, 2)}%",
+            "verdict": "Undervalued" if upside > 0 else "Overvalued"
+        }
+
+    @staticmethod
+    def dividend_sustainability_check(fcf_billions: float, div_yield_pct: float, mcap_billions: float) -> str:
+        """
+        Analyzes if Free Cash Flow can cover the current dividend payout.
+        """
+        estimated_payout = (div_yield_pct / 100) * mcap_billions
+        coverage_ratio = fcf_billions / estimated_payout if estimated_payout > 0 else 100
+        
+        if coverage_ratio > 2.0:
+            return "Strong: Dividend is well-covered by Free Cash Flow (2x+ coverage)."
+        elif coverage_ratio > 1.0:
+            return "Adequate: Dividend is covered, but with limited room for growth."
+        else:
+            return "At Risk: Payout exceeds Free Cash Flow. Sustainability is questionable."
+
+    @staticmethod
+    def calculate_sector_compression(current_price: float, compression_pct: float) -> float:
+        """
+        Simulates a sector-wide 'multiple compression' event (e.g. bear market).
+        """
+        return round(current_price * (1 - (compression_pct / 100)), 2)
+
 class ReportGenerationOrchestrator:
     """
     The Core Application Service (Use-Case Interactor) for the bounds of Report Generation.
