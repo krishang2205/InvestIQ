@@ -11,6 +11,42 @@ from utils.prompts import PromptRegistry
 
 logger = logging.getLogger(__name__)
 
+class ScenarioModel:
+    """
+    Experimental engine for 'What-If' financial simulations.
+    Calculates the impact of fundamental shifts (revenue, margin, etc)
+    on key valuation metrics.
+    """
+    @staticmethod
+    def project_valuation_impact(current_data: Dict[str, Any], scenario_params: Dict[str, float]) -> Dict[str, Any]:
+        """
+        Simulates how changes in fundamentals affects P/E and Market Cap.
+        """
+        try:
+            fund = current_data.get("snapshot", {}).get("keyMetrics", [])
+            # Extract current PE from metrics list
+            current_pe = 20.0
+            for m in fund:
+                if "P/E" in m["label"]:
+                    current_pe = float(m["value"].replace("x", ""))
+            
+            rev_change = scenario_params.get("revenue_growth", 0)
+            margin_change = scenario_params.get("margin_shift", 0)
+            
+            # Simple DCF-lite Projection
+            growth_mult = 1.0 + (rev_change / 100)
+            projected_pe = current_pe * (1.0 + (margin_change / 50))
+            
+            return {
+                "scenario": "Custom Growth Projection",
+                "projected_pe": round(projected_pe, 2),
+                "growth_factor": growth_mult,
+                "confidence": "Simulated Math"
+            }
+        except Exception as e:
+            logger.warning(f"Scenario projection math failed: {e}")
+            return {"error": "Could not calculate scenario impact."}
+
 class ReportGenerationOrchestrator:
     """
     The Core Application Service (Use-Case Interactor) for the bounds of Report Generation.
@@ -159,12 +195,28 @@ class ReportGenerationOrchestrator:
 
         # 2. Build the chat-specific prompt using our PromptRegistry
         # This injects the report JSON and history into the Strategic Analyst persona
+        
+        # Structure the history if it's passed as a list of dicts from the frontend
+        formatted_history = ""
+        if isinstance(history, list):
+            for turn in history[-5:]: # Keep last 5 turns for context
+                role = "User" if turn.get("isUser") else "AI"
+                formatted_history += f"{role}: {turn.get('text')}\n"
+        else:
+            formatted_history = str(history)
+
         chat_prompt = PromptRegistry.construct_chat_prompt(
             report_data=report_data,
             message=message,
-            history=history
+            history=formatted_history
         )
         
+        # Inject "Scenario Hints" if the message looks like a what-if query
+        if any(keyword in message.lower() for keyword in ["what if", "suppose", "imagine", "scenario", "drops", "grows"]):
+            logger.info("Detecting scenario query - injecting math hints.")
+            # We don't run full math here, but we tell the LLM to use the Scenario Engine logic
+            chat_prompt += "\n\n[SCENARIO ENGINE HINT]: Focus on calculating the ripple effects on Net Income and P/E ratio."
+
         logger.info(f"Generating chat response for {symbol} (Job: {job_id})")
         
         # 3. Use the AI provider manager to get a response
