@@ -110,21 +110,34 @@ class AIProviderManager:
         Ensures the response is clean, formatted as markdown, and adheres
         to the mentor/analyst persona.
         """
-        raw_text = self.generate_text(prompt)
+        from reports.exceptions import ChatProcessingError
         
-        # Post-processing: ensure no rogue JSON artifacts if the model gets confused
-        # and ensure consistent markdown headers.
-        clean_text = raw_text.strip()
-        
-        # If the model includes triple backticks for no reason, we keep them if they 
-        # enclose code, but if they enclose the whole response we might want to clean it.
-        # However, generate_text is usually reliable.
-        
-        if not clean_text or len(clean_text) < 5:
-            logger.error("AI returned an empty or insufficient chat response.")
-            return "I analyzed the data but couldn't formulate a strategic insight at this moment. Please rephrase your question."
+        try:
+            logger.debug("Attempting to generate strategic chat response...")
+            raw_text = self.generate_text(prompt)
             
-        return clean_text
+            if not raw_text or len(raw_text.strip()) < 5:
+                logger.error("AI returned an empty or insufficient chat response.")
+                raise ChatProcessingError("Received empty response from the AI Analyst.")
+            
+            # Post-processing: ensure no rogue JSON artifacts if the model gets confused
+            clean_text = raw_text.strip()
+            
+            # Remove rogue markdown code blocks if the AI accidentally wrapped prose
+            if clean_text.startswith("```"):
+                lines = clean_text.split("\n")
+                if lines[0].startswith("```") and lines[-1].startswith("```"):
+                    logger.info("Stripping markdown code fences from prose response.")
+                    clean_text = "\n".join(lines[1:-1])
+
+            logger.info("✅ Strategic chat response generated successfully.")
+            return clean_text
+            
+        except Exception as e:
+            logger.error(f"Chat generation failed: {e}")
+            if isinstance(e, ChatProcessingError):
+                raise e
+            raise ChatProcessingError(f"Generation failure: {str(e)}")
 
     # ─────────────────────────────────────────────────────────────────────────
     # Provider implementations
