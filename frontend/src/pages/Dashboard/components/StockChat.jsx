@@ -220,8 +220,64 @@ const StockChat = ({ jobId, symbol }) => {
   }, [messages]);
 
   const handleSendMessage = async (text = inputValue) => {
-    if (!text.trim() || isLoading) return;
-    // Implementation in next commit
+    if (!text || !text.trim() || isLoading) return;
+
+    const userMessage = {
+      id: Date.now(),
+      text: text.trim(),
+      isUser: true,
+      timestamp: new Date().toLocaleTimeString()
+    };
+
+    setMessages(prev => [...prev, userMessage]);
+    setInputValue('');
+    setIsLoading(true);
+
+    try {
+      // Prepare history for the backend (excluding current message)
+      const chatHistory = messages.map(m => ({
+        text: m.text,
+        isUser: m.isUser
+      }));
+
+      const response = await fetch('/api/v2/reports/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          job_id: jobId,
+          message: text.trim(),
+          history: chatHistory
+        })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to get response');
+      }
+
+      const botMessage = {
+        id: Date.now() + 1,
+        text: data.response,
+        isUser: false,
+        isScenario: text.toLowerCase().includes('what if') || text.toLowerCase().includes('scenario'),
+        timestamp: new Date().toLocaleTimeString()
+      };
+
+      setMessages(prev => [...prev, botMessage]);
+    } catch (error) {
+      console.error('Chat Error:', error);
+      const errorMessage = {
+        id: Date.now() + 2,
+        text: "I'm having trouble connecting to the Strategic AI. Please check your connection and try again.",
+        isUser: false,
+        isError: true,
+        timestamp: new Date().toLocaleTimeString()
+      };
+      setMessages(prev => [...prev, errorMessage]);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
