@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Search, Check } from 'lucide-react';
 
 const MOCK_STOCKS = [
@@ -15,21 +15,68 @@ const MOCK_STOCKS = [
     { symbol: 'TATAMOTORS', name: 'Tata Motors Ltd', sector: 'Automotive' },
 ];
 
+// ✅ same normalize logic as your page (duplicated here for safety)
+const normalizeSymbol = (raw, exchange = "NSE") => {
+    const s = (raw || "").toString().toUpperCase().trim();
+    if (!s) return "";
+    if (s.includes(".")) return s;
+    const cleaned = s.split(":").pop().trim();
+    if (exchange === "BSE") return `${cleaned}.BO`;
+    return `${cleaned}.NS`;
+};
+
 const StockSearch = ({ onSelect }) => {
     const [query, setQuery] = useState('');
     const [isOpen, setIsOpen] = useState(false);
     const [selected, setSelected] = useState(null);
 
-    const filteredStocks = MOCK_STOCKS.filter(s =>
-        s.symbol.toLowerCase().includes(query.toLowerCase()) ||
-        s.name.toLowerCase().includes(query.toLowerCase())
-    );
+    const filteredStocks = useMemo(() => {
+        const q = query.toLowerCase().trim();
+        if (!q) return MOCK_STOCKS;
+        return MOCK_STOCKS.filter(s =>
+            s.symbol.toLowerCase().includes(q) ||
+            s.name.toLowerCase().includes(q)
+        );
+    }, [query]);
 
     const handleSelect = (stock) => {
-        setSelected(stock);
-        setQuery(`${stock.symbol} - ${stock.name}`);
+        const exchange = stock.exchange || "NSE";
+        const ticker = stock.ticker || normalizeSymbol(stock.symbol, exchange);
+
+        const enriched = {
+            ...stock,
+            exchange,
+            ticker,     // ✅ normalized (HINDUNILVR.NS)
+            symbol: stock.symbol?.toUpperCase?.() || stock.symbol
+        };
+
+        setSelected(enriched);
+        setQuery(`${enriched.symbol} - ${enriched.name || enriched.symbol}`);
         setIsOpen(false);
-        onSelect(stock);
+
+        onSelect(enriched); // ✅ parent now always has ticker
+    };
+
+    // ✅ Allow user to type any symbol and press Enter to select it
+    const handleEnter = (e) => {
+        if (e.key !== "Enter") return;
+
+        const raw = query.trim();
+        if (!raw) return;
+
+        // user may type: "HINDUNILVR", "HINDUNILVR.NS", "NSE:HINDUNILVR"
+        const symbolOnly = raw.toUpperCase().split("-")[0].trim();
+        const cleaned = symbolOnly.split(":").pop().trim();
+
+        // build a fallback "custom" stock
+        const custom = {
+            symbol: cleaned,
+            name: cleaned,          // unknown
+            sector: '—',
+            exchange: "NSE",
+        };
+
+        handleSelect(custom);
     };
 
     return (
@@ -38,10 +85,11 @@ const StockSearch = ({ onSelect }) => {
                 <Search className="text-gray-400" size={20} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', zIndex: 10 }} />
                 <input
                     type="text"
-                    placeholder="Search stock (e.g., RELIANCE)..."
+                    placeholder="Search stock (e.g., RELIANCE or HINDUNILVR.NS)..."
                     value={query}
                     onChange={(e) => { setQuery(e.target.value); setIsOpen(true); }}
                     onFocus={() => setIsOpen(true)}
+                    onKeyDown={handleEnter}  // ✅ Enter selects typed symbol
                     className="glass-panel"
                     style={{
                         width: '100%',
@@ -124,7 +172,9 @@ const StockSearch = ({ onSelect }) => {
                             {selected?.symbol === stock.symbol && <Check size={16} color="var(--color-accent)" />}
                         </div>
                     )) : (
-                        <div style={{ padding: '1rem', textAlign: 'center', color: 'var(--color-secondary)' }}>No stocks found</div>
+                        <div style={{ padding: '1rem', textAlign: 'center', color: 'var(--color-secondary)' }}>
+                            No stocks found. Press <b>Enter</b> to use “{query}”.
+                        </div>
                     )}
                 </div>
             )}
