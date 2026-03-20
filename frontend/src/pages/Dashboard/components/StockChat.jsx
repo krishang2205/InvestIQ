@@ -219,6 +219,26 @@ const StockChat = ({ jobId, symbol }) => {
     scrollToBottom();
   }, [messages]);
 
+  const clearChat = () => {
+    setMessages([{
+      id: Date.now(),
+      text: `Chat cleared. Ready for new analysis on ${symbol}.`,
+      isUser: false
+    }]);
+  };
+
+  // Simple Markdown-lite parser for financial reports
+  const MarkdownText = ({ text }) => {
+    // 1. Bold numbers and percentages
+    let processed = text.replace(/(\d+\.?\d*%?|\₹\d+[\d,]*\.?\d*)/g, '<strong>$1</strong>');
+    // 2. Bold headers like ###
+    processed = processed.replace(/^### (.*$)/gm, '<h3 class="text-lg font-bold mt-4 mb-2">$1</h3>');
+    // 3. Bullet points
+    processed = processed.replace(/^- (.*$)/gm, '<li class="ml-4 mb-1">$1</li>');
+    
+    return <div dangerouslySetInnerHTML={{ __html: processed }} />;
+  };
+
   const handleSendMessage = async (text = inputValue) => {
     if (!text || !text.trim() || isLoading) return;
 
@@ -289,17 +309,25 @@ const StockChat = ({ jobId, symbol }) => {
             <Sparkles size={20} className="text-indigo-400" />
             <span>Ask InvestIQ Strategic AI</span>
           </div>
-          <div className="flex items-center gap-2 text-xs text-gray-400">
-            <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
-            Agent Online: {symbol} Context Active
+          <div className="flex items-center gap-4">
+            <button 
+              onClick={clearChat}
+              className="text-xs text-gray-400 hover:text-white transition-colors flex items-center gap-1"
+            >
+              Clear History
+            </button>
+            <div className="flex items-center gap-2 text-xs text-gray-400">
+              <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+              Agent Online: {symbol} Context Active
+            </div>
           </div>
         </div>
 
         <div className="chat-messages">
           {messages.map((msg) => (
-            <div key={msg.id} className={`message-wrapper ${msg.isUser ? 'user' : 'bot'}`}>
+            <div key={msg.id} className={`message-wrapper ${msg.isUser ? 'user' : 'bot'} ${msg.isError ? 'opacity-70' : ''}`}>
               <div className={`avatar ${msg.isUser ? 'user' : 'bot'}`}>
-                {msg.isUser ? <User size={18} /> : <Zap size={18} />}
+                {msg.isUser ? <User size={18} /> : (msg.isError ? <AlertCircle size={18} className="text-red-400" /> : <Zap size={18} />)}
               </div>
               <div className="flex flex-col">
                 {msg.isScenario && (
@@ -308,7 +336,12 @@ const StockChat = ({ jobId, symbol }) => {
                     <span>Scenario Projection</span>
                   </div>
                 )}
-                <div className="message-bubble">{msg.text}</div>
+                <div className="message-bubble">
+                  {msg.isUser ? msg.text : <MarkdownText text={msg.text} />}
+                </div>
+                <div className={`text-[10px] mt-1 ${msg.isUser ? 'text-right' : ''} text-gray-500`}>
+                  {msg.timestamp}
+                </div>
               </div>
             </div>
           ))}
