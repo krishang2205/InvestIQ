@@ -17,6 +17,7 @@ class AppSettings:
     supabase_key: str
     gemini_api_key: Optional[str]
     groq_api_key: Optional[str]
+    xai_api_key: Optional[str]
     openai_api_key: Optional[str]
     redis_url: str
     max_workers: int
@@ -37,6 +38,7 @@ class AppSettings:
             supabase_key=supa_key or "dummy_key",
             gemini_api_key=os.getenv("GEMINI_API_KEY"),
             groq_api_key=os.getenv("GROQ_API_KEY"),
+            xai_api_key=os.getenv("XAI_API_KEY") or os.getenv("GROQ_API_KEY") if os.getenv("GROQ_API_KEY", "").startswith("xai-") else None,
             openai_api_key=os.getenv("OPENAI_API_KEY"),
             redis_url=os.getenv("REDIS_URL", "redis://localhost:6379/0"),
             max_workers=int(os.getenv("WORKER_THREADS", "5"))

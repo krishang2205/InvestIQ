@@ -20,10 +20,13 @@ class AIProviderManager:
     """
     GROQ_MODEL = "llama-3.3-70b-versatile"
     GEMINI_MODEL = "gemini-flash-latest"
+    XAI_MODEL = "grok-2-1212"
+    
     def __init__(self):
         self.gemini_key = conf.gemini_api_key
         self.groq_key   = conf.groq_api_key
-        self.providers_ready = {"gemini": False, "groq": False}
+        self.xai_key    = conf.xai_api_key
+        self.providers_ready = {"gemini": False, "groq": False, "xai": False}
         self._configure_providers()
 
     def _configure_providers(self):
@@ -40,7 +43,7 @@ class AIProviderManager:
             logger.warning("GEMINI_API_KEY not set — Gemini disabled.")
 
         # ── Groq ─────────────────────────────────────────────────────────────
-        if self.groq_key:
+        if self.groq_key and not self.groq_key.startswith("xai-"):
             try:
                 self.groq_client = Groq(api_key=self.groq_key)
                 self.providers_ready["groq"] = True
@@ -50,20 +53,40 @@ class AIProviderManager:
         else:
             logger.warning("GROQ_API_KEY not set — Groq disabled.")
 
+        # ── xAI (OpenAI Compatible) ──────────────────────────────────────────
+        if self.xai_key:
+            try:
+                from openai import OpenAI
+                self.xai_client = OpenAI(
+                    api_key=self.xai_key,
+                    base_url="https://api.x.ai/v1",
+                )
+                self.providers_ready["xai"] = True
+                logger.info(f"✅ xAI provider ready ({self.XAI_MODEL})")
+            except Exception as e:
+                logger.error(f"xAI init failed: {e}")
+        else:
+            logger.warning("XAI_API_KEY not set — xAI disabled.")
+
     # ─────────────────────────────────────────────────────────────────────────
     # Public interface
     # ─────────────────────────────────────────────────────────────────────────
     def generate_json(self, prompt: str, market_context: dict = None) -> dict:
         """
         Attempts each provider in order:
-          Gemini → Groq → Mock
+          Gemini → Groq → xAI → Mock
         Injects real yfinance chart data into the result.
         """
         data = self._try_gemini(prompt)
+        
         if data is None:
             data = self._try_groq(prompt)
+            
         if data is None:
-            logger.error("All AI providers failed — serving mock report.")
+            data = self._try_xai(prompt, is_json=True)
+            
+        if data is None:
+            logger.error("All AI providers (Gemini, Groq, xAI) failed — serving mock report.")
             data = self._fallback_generate()
         else:
             # ── SECONDARY AI VERIFICATION PASS (Anti-Hallucination) ──
@@ -74,8 +97,8 @@ class AIProviderManager:
 
     def generate_text(self, prompt: str) -> str:
         """
-        Generates raw creative/analytical text for the chatbot.
-        Follows the same Gemini -> Groq -> Generic fallback.
+        Generates raw text for the chatbot.
+        Cascade: Gemini -> Groq -> xAI -> Fallback
         """
         # 1. Try Gemini
         if self.providers_ready["gemini"]:
@@ -101,22 +124,36 @@ class AIProviderManager:
                 return response.choices[0].message.content
             except Exception as e:
                 logger.warning(f"Groq Chat failed: {e}")
+        
+        # 3. Try xAI
+        if self.providers_ready["xai"]:
+            try:
+                logger.info("🟢 xAI Chat: Generating text...")
+                response = self.xai_client.chat.completions.create(
+                    model=self.XAI_MODEL,
+                    messages=[{"role": "user", "content": prompt}],
+                    temperature=0.3,
+                )
+                return response.choices[0].message.content
+            except Exception as e:
+                logger.warning(f"xAI Chat failed: {e}")
 
-        return "I'm sorry, I'm currently unable to process your request due to API limitations. Please try again in a few minutes."
+        return "I'm sorry, I'm currently unable to process your request due to API limitations across all providers. Please verify your API keys in the dashboard."
 
     def generate_chat_response(self, prompt: str) -> str:
         """
         Specialized generation for the Strategic Analyst chatbot.
-        Prioritizes Groq for ultra-low latency (~200-500ms) to ensure
-        a snappy conversational experience.
+        Prioritizes Groq/xAI for ultra-low latency.
         """
         from reports.exceptions import ChatProcessingError
         
         try:
             logger.debug("Attempting to generate strategic chat response...")
             
-            # --- Speed Optimization: Try Groq First for Chat ---
+            # --- Speed Optimization: Try Snappy Providers First for Chat ---
             raw_text = None
+            
+            # Try Groq (Fastest)
             if self.providers_ready["groq"]:
                 try:
                     logger.info("🟡 Groq Chat: Prioritizing speed...")
@@ -127,18 +164,31 @@ class AIProviderManager:
                     )
                     raw_text = response.choices[0].message.content
                 except Exception as e:
-                    logger.warning(f"Groq Chat failed: {e}")
+                    logger.warning(f"Groq Chat speed-path failed: {e}")
 
-            # Fallback to Gemini if Groq failed or wasn't ready
+            # Try xAI (Fast Fallback)
+            if not raw_text and self.providers_ready["xai"]:
+                try:
+                    logger.info("🟢 xAI Chat: Faster fallback...")
+                    response = self.xai_client.chat.completions.create(
+                        model=self.XAI_MODEL,
+                        messages=[{"role": "user", "content": prompt}],
+                        temperature=0.3,
+                    )
+                    raw_text = response.choices[0].message.content
+                except Exception as e:
+                    logger.warning(f"xAI Chat speed-path failed: {e}")
+
+            # Fallback to Gemini if snappy ones failed
             if not raw_text:
-                logger.info("🔵 Gemini Chat: Falling back from Groq...")
+                logger.info("🔵 Gemini Chat: Falling back from speed-optimized providers...")
                 raw_text = self.generate_text(prompt)
             
             if not raw_text or len(raw_text.strip()) < 5:
                 logger.error("AI returned an empty or insufficient chat response.")
                 raise ChatProcessingError("Received empty response from the AI Analyst.")
             
-            # Post-processing: ensure no rogue JSON artifacts
+            # Post-processing
             clean_text = raw_text.strip()
             
             # Remove rogue markdown code blocks
@@ -172,7 +222,11 @@ class AIProviderManager:
             logger.info("✅ Gemini succeeded.")
             return data
         except Exception as e:
-            logger.warning(f"Gemini failed ({type(e).__name__}): {str(e)[:120]} — trying Groq...")
+            msg = str(e).lower()
+            if "429" in msg or "quota" in msg or "exhausted" in msg:
+                logger.error("🔴 Gemini Rate Limit/Quota Reached (429) — triggering instant failover.")
+            else:
+                logger.warning(f"Gemini failed ({type(e).__name__}): {str(e)[:120]} — trying fallbacks...")
             return None
 
     def _try_groq(self, prompt: str) -> Optional[dict]:
@@ -181,17 +235,8 @@ class AIProviderManager:
         try:
             logger.info("🟡 Trying Groq (Llama-3.3-70b)...")
             system_msg = (
-                "You are an elite institutional-grade financial analysis AI with the depth of a "
-                "Goldman Sachs quant analyst. Your ONLY output must be a single valid JSON object "
-                "matching the exact schema provided — no markdown fences, no explanation text, no "
-                "truncation. Every field in the schema MUST be populated with rich, specific, "
-                "multi-sentence analysis grounded in the real financial data provided. "
-                "Proprietary alpha fields must contain quantitative INTEGER scores (not strings). "
-                "peerComparison must list at least 4 real competitors with accurate data. "
-                "technicalSignals must list at least 4 signals. "
-                "riskSignals must list at least 5 specific risk factors. "
-                "All text fields must be at least 2-3 sentences of expert analysis. "
-                "NEVER truncate the JSON. Output the COMPLETE object."
+                "You are an elite institutional-grade financial analysis AI. Your ONLY output must be a single valid JSON object "
+                "matching the exact schema provided — no markdown fences, no explanation text."
             )
             response = self.groq_client.chat.completions.create(
                 model=self.GROQ_MODEL,
