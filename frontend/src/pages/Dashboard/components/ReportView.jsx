@@ -575,6 +575,23 @@ const ReportView = ({ data, onBack }) => {
                 <p>Regulatory Awareness: Data is based on historical patterns and AI analysis.</p>
             </div>
 
+            {/* Strategic AI Intelligence Section */}
+            <div className="mt-12 mb-8" id="ai-chat-section">
+                <div className="flex items-center gap-3 mb-6">
+                    <div className="w-10 h-10 rounded-xl bg-indigo-500/20 flex items-center justify-center border border-indigo-500/30">
+                        <Sparkles size={22} className="text-indigo-400" />
+                    </div>
+                    <div>
+                        <h2 className="text-2xl font-bold text-white mb-1">Strategic AI Intelligence</h2>
+                        <p className="text-gray-400 text-sm">Interactive mentor and scenario engine grounded in this report's findings.</p>
+                    </div>
+                </div>
+                
+                <div style={{ background: 'transparent', border: 'none' }}>
+                  <StockChat jobId={data.job_id || data.id} symbol={data.header.symbol} />
+                </div>
+            </div>
+
             {/* 11. ACTION BAR (Sticky Bottom) */}
             <div className="rv-action-bar" style={{
                 position: 'fixed', bottom: 0, left: 0, right: 0,
