@@ -98,7 +98,8 @@ const IntelligenceReportPage = () => {
 
                 if (data.status === 'completed') {
                     clearInterval(pollIntervalRef.current);
-                    setReportData(data.report_data);
+                    // Inject job_id for the chat context
+                    setReportData({ ...data.report_data, job_id: jobId });
                     setIsGenerating(false);
                     fetchHistory();
                 } else if (data.status === 'failed') {
@@ -122,8 +123,8 @@ const IntelligenceReportPage = () => {
         setError(null);
     };
 
-    const loadHistoricalReport = (data) => {
-        if (data) setReportData(data);
+    const loadHistoricalReport = (data, id) => {
+        if (data) setReportData({ ...data, job_id: id });
     };
 
     if (reportData) {
@@ -275,7 +276,7 @@ const IntelligenceReportPage = () => {
                                 </div>
                             </div>
                             {item.status === 'completed' && (
-                                <button onClick={() => loadHistoricalReport(item.report_data)} style={{
+                                <button onClick={() => loadHistoricalReport(item.report_data, item.id)} style={{
                                     background: 'none',
                                     color: 'var(--color-accent)',
                                     padding: '0.5rem',

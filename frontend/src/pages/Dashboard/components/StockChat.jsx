@@ -338,8 +338,8 @@ const StockChat = ({ jobId, symbol }) => {
     try {
       const chatHistory = messages.map(m => ({ text: m.text, isUser: m.isUser }));
 
-      // Note: Proxy in vite.config.js handles routing to http://localhost:5001
-      const response = await fetch('/api/v2/reports/chat', {
+      // Note: Using absolute URL to match IntelligenceReportPage.jsx pattern
+      const response = await fetch('http://localhost:5001/api/v2/reports/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
