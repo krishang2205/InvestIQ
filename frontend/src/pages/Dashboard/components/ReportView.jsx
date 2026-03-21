@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
-import { ArrowLeft, Download, Info, AlertTriangle, ChevronRight } from 'lucide-react';
+import { ArrowLeft, Download, Info, AlertTriangle, ChevronRight, Sparkles } from 'lucide-react';
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
+import StockChat from './StockChat';
+
+// ... (existing styles)
 const reportStyles = `
   .rv-root { max-width: 1200px; margin: 0 auto; padding: 0 1.5rem 8rem 1.5rem; }
   .rv-header { display: flex; justify-content: space-between; align-items: center; padding: 1rem 0; border-bottom: 1px solid var(--glass-border); margin-bottom: 2rem; }
