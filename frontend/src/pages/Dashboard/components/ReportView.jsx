@@ -613,6 +613,9 @@ const ReportView = ({ data, onBack }) => {
                 <button onClick={handleDownloadPDF} style={{ padding: '0.5rem 1rem', background: 'transparent', border: '1px solid var(--color-secondary)', color: 'var(--color-text)', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                     <Download size={16} /> PDF
                 </button>
+                <button onClick={scrollToChat} style={{ padding: '0.5rem 1.5rem', background: 'rgba(99, 102, 241, 0.1)', border: '1px solid rgba(99, 102, 241, 0.3)', color: '#818cf8', borderRadius: '8px', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <Sparkles size={16} /> Strategic AI
+                </button>
                 <button style={{
                     padding: '0.5rem 1.5rem', background: 'var(--color-accent)', border: 'none',
                     color: 'var(--color-bg)', borderRadius: '8px', fontWeight: 600, cursor: 'pointer',
