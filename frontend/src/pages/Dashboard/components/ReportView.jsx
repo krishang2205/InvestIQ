@@ -582,22 +582,8 @@ const ReportView = ({ data, onBack }) => {
                 <p>Regulatory Awareness: Data is based on historical patterns and AI analysis.</p>
             </div>
 
-            {/* Strategic AI Intelligence Section */}
-            <div className="mt-12 mb-8" id="ai-chat-section">
-                <div className="flex items-center gap-3 mb-6">
-                    <div className="w-10 h-10 rounded-xl bg-indigo-500/20 flex items-center justify-center border border-indigo-500/30">
-                        <Sparkles size={22} className="text-indigo-400" />
-                    </div>
-                    <div>
-                        <h2 className="text-2xl font-bold text-white mb-1">Strategic AI Intelligence</h2>
-                        <p className="text-gray-400 text-sm">Interactive mentor and scenario engine grounded in this report's findings.</p>
-                    </div>
-                </div>
-                
-                <div style={{ background: 'transparent', border: 'none' }}>
-                  <StockChat jobId={data.job_id || data.id} symbol={data.header.symbol} />
-                </div>
-            </div>
+            {/* Floating Strategic AI Intelligence */}
+            <StockChat jobId={data.job_id || data.id} symbol={data.header.symbol} />
 
             {/* 11. ACTION BAR (Sticky Bottom) */}
             <div className="rv-action-bar" style={{
@@ -613,7 +599,13 @@ const ReportView = ({ data, onBack }) => {
                 <button onClick={handleDownloadPDF} style={{ padding: '0.5rem 1rem', background: 'transparent', border: '1px solid var(--color-secondary)', color: 'var(--color-text)', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                     <Download size={16} /> PDF
                 </button>
-                <button onClick={scrollToChat} style={{ padding: '0.5rem 1.5rem', background: 'rgba(99, 102, 241, 0.1)', border: '1px solid rgba(99, 102, 241, 0.3)', color: '#818cf8', borderRadius: '8px', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <button 
+                    onClick={() => {
+                        const chatToggle = document.querySelector('.chat-toggle-btn');
+                        if (chatToggle) chatToggle.click();
+                    }} 
+                    style={{ padding: '0.5rem 1.5rem', background: 'rgba(99, 102, 241, 0.1)', border: '1px solid rgba(99, 102, 241, 0.3)', color: '#818cf8', borderRadius: '8px', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+                >
                     <Sparkles size={16} /> Strategic AI
                 </button>
                 <button style={{
