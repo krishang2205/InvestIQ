@@ -8,7 +8,7 @@ const chatStyles = `
 
   .stock-chat-widget {
     position: fixed;
-    bottom: 100px;
+    bottom: 110px;
     right: 30px;
     width: 420px;
     height: 600px;
@@ -46,7 +46,7 @@ const chatStyles = `
 
   .chat-toggle-btn {
     position: fixed;
-    bottom: 25px;
+    bottom: 30px;
     right: 30px;
     width: 56px;
     height: 56px;

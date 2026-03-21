@@ -600,34 +600,4 @@ const ReportView = ({ data, onBack }) => {
                 display: 'flex',
                 alignItems: 'center',
                 gap: '1.5rem',
-                zIndex: 100,
-                boxShadow: '0 10px 30px rgba(0,0,0,0.5)'
-            }}>
-                <button onClick={onBack} style={{ padding: '0.5rem 1rem', background: 'transparent', border: 'none', color: 'var(--color-secondary)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <ArrowLeft size={16} /> Back
-                </button>
-                <button onClick={handleDownloadPDF} style={{ padding: '0.5rem 1rem', background: 'transparent', border: '1px solid var(--glass-border)', color: 'var(--color-primary)', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <Download size={16} /> PDF
-                </button>
-                <div style={{ width: '1px', height: '20px', background: 'var(--glass-border)' }}></div>
-                <button style={{
-                    padding: '0.65rem 1.5rem',
-                    background: 'var(--color-accent)',
-                    color: '#000',
-                    borderRadius: '10px',
-                    fontWeight: 700,
-                    fontSize: '0.9rem',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.5rem'
-                }}>
-                    View Outlook <ChevronRight size={16} />
-                </button>
-            </div>
-        </div>
-        </>
-    );
-};
-
 export default ReportView;
