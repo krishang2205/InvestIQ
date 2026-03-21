@@ -588,30 +588,39 @@ const ReportView = ({ data, onBack }) => {
             {/* 11. ACTION BAR (Sticky Bottom) */}
             <div className="rv-action-bar" style={{
                 position: 'fixed', bottom: 0, left: 0, right: 0,
-                background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(10px)',
-                padding: '1rem 2rem', borderTop: '1px solid var(--glass-border)',
-                display: 'flex', justifyContent: 'flex-end', gap: '1rem',
-                zIndex: 100
+                position: 'fixed',
+                bottom: '2rem',
+                left: '50%',
+                transform: 'translateX(-50%)',
+                background: 'rgba(10, 10, 10, 0.8)',
+                backdropFilter: 'blur(16px)',
+                border: '1px solid var(--glass-border)',
+                borderRadius: '16px',
+                padding: '0.75rem 1.5rem',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '1.5rem',
+                zIndex: 100,
+                boxShadow: '0 10px 30px rgba(0,0,0,0.5)'
             }}>
-                <button style={{ padding: '0.5rem 1rem', background: 'transparent', border: '1px solid var(--color-secondary)', color: 'var(--color-text)', borderRadius: '8px', cursor: 'pointer' }}>
-                    Compare
+                <button onClick={onBack} style={{ padding: '0.5rem 1rem', background: 'transparent', border: 'none', color: 'var(--color-secondary)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <ArrowLeft size={16} /> Back
                 </button>
-                <button onClick={handleDownloadPDF} style={{ padding: '0.5rem 1rem', background: 'transparent', border: '1px solid var(--color-secondary)', color: 'var(--color-text)', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <button onClick={handleDownloadPDF} style={{ padding: '0.5rem 1rem', background: 'transparent', border: '1px solid var(--glass-border)', color: 'var(--color-primary)', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                     <Download size={16} /> PDF
                 </button>
-                <button 
-                    onClick={() => {
-                        const chatToggle = document.querySelector('.chat-toggle-btn');
-                        if (chatToggle) chatToggle.click();
-                    }} 
-                    style={{ padding: '0.5rem 1.5rem', background: 'rgba(99, 102, 241, 0.1)', border: '1px solid rgba(99, 102, 241, 0.3)', color: '#818cf8', borderRadius: '8px', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
-                >
-                    <Sparkles size={16} /> Strategic AI
-                </button>
+                <div style={{ width: '1px', height: '20px', background: 'var(--glass-border)' }}></div>
                 <button style={{
-                    padding: '0.5rem 1.5rem', background: 'var(--color-accent)', border: 'none',
-                    color: 'var(--color-bg)', borderRadius: '8px', fontWeight: 600, cursor: 'pointer',
-                    display: 'flex', alignItems: 'center', gap: '0.5rem'
+                    padding: '0.65rem 1.5rem',
+                    background: 'var(--color-accent)',
+                    color: '#000',
+                    borderRadius: '10px',
+                    fontWeight: 700,
+                    fontSize: '0.9rem',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem'
                 }}>
                     View Outlook <ChevronRight size={16} />
                 </button>
