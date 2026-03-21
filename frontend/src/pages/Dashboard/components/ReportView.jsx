@@ -92,6 +92,13 @@ const ReportView = ({ data, onBack }) => {
         document.title = originalTitle;
     };
 
+    const scrollToChat = () => {
+        const chatSection = document.getElementById('ai-chat-section');
+        if (chatSection) {
+            chatSection.scrollIntoView({ behavior: 'smooth' });
+        }
+    };
+
     // Helper for Status Pills
     const StatusPill = ({ label, value, type }) => {
         const colors = {

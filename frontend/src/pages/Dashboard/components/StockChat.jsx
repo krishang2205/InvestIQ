@@ -197,6 +197,31 @@ const chatStyles = `
     0%, 80%, 100% { transform: scale(0); }
     40% { transform: scale(1); }
   }
+
+  @media (max-width: 768px) {
+    .stock-chat-container {
+      height: 500px;
+      margin-top: 2rem;
+      border-radius: 16px;
+    }
+    .chat-header {
+      padding: 1rem 1.25rem;
+    }
+    .chat-messages {
+      padding: 1.25rem;
+      gap: 1rem;
+    }
+    .message-wrapper {
+      max-width: 92%;
+    }
+    .chat-input-area {
+      padding: 1rem 1.25rem;
+    }
+    .action-chip {
+      padding: 0.4rem 0.75rem;
+      font-size: 0.75rem;
+    }
+  }
 `;
 
 const StockChat = ({ jobId, symbol }) => {
