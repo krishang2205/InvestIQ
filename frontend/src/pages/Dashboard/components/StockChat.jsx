@@ -222,6 +222,42 @@ const chatStyles = `
       font-size: 0.75rem;
     }
   }
+
+  .scenario-banner {
+    background: linear-gradient(90deg, rgba(99, 102, 241, 0.15), rgba(168, 85, 247, 0.15));
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 16px;
+    padding: 1.25rem;
+    margin-bottom: 2rem;
+    display: flex;
+    gap: 1rem;
+    align-items: flex-start;
+  }
+
+  .scenario-banner-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    background: rgba(99, 102, 241, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #818cf8;
+    flex-shrink: 0;
+  }
+
+  .scenario-banner-content h4 {
+    color: #fff;
+    font-size: 0.9rem;
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+  }
+
+  .scenario-banner-content p {
+    color: #9ca3af;
+    font-size: 0.8rem;
+    line-height: 1.4;
+  }
 `;
 
 const StockChat = ({ jobId, symbol }) => {
@@ -349,6 +385,18 @@ const StockChat = ({ jobId, symbol }) => {
         </div>
 
         <div className="chat-messages">
+          <div className="scenario-banner">
+            <div className="scenario-banner-icon">
+              <Zap size={22} />
+            </div>
+            <div className="scenario-banner-content">
+              <h4>What-If Scenario Engine Active</h4>
+              <p>
+                Try asking: "What if revenue grows by 20%?" or "Suppose margins drop to 8%?" 
+                I'll simulate the impact on valuation and price targets.
+              </p>
+            </div>
+          </div>
           {messages.map((msg) => (
             <div key={msg.id} className={`message-wrapper ${msg.isUser ? 'user' : 'bot'} ${msg.isError ? 'opacity-70' : ''}`}>
               <div className={`avatar ${msg.isUser ? 'user' : 'bot'}`}>
