@@ -9,7 +9,7 @@ const chatStyles = `
   .stock-chat-widget {
     position: fixed;
     bottom: 100px;
-    left: 30px;
+    right: 30px;
     width: 420px;
     height: 600px;
     border-radius: 20px;
@@ -22,7 +22,7 @@ const chatStyles = `
     z-index: 1000;
     overflow: hidden;
     transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
-    transform-origin: bottom left;
+    transform-origin: bottom right;
     opacity: 0;
     transform: scale(0.95) translateY(20px);
     pointer-events: none;
@@ -38,8 +38,8 @@ const chatStyles = `
   .chat-mesh-glow {
     position: absolute;
     top: 0; left: 0; right: 0; bottom: 0;
-    background: radial-gradient(circle at 0% 0%, rgba(209, 199, 157, 0.08) 0%, transparent 50%),
-                radial-gradient(circle at 100% 100%, rgba(209, 199, 157, 0.03) 0%, transparent 50%);
+    background: radial-gradient(circle at 100% 0%, rgba(209, 199, 157, 0.08) 0%, transparent 50%),
+                radial-gradient(circle at 0% 100%, rgba(209, 199, 157, 0.03) 0%, transparent 50%);
     pointer-events: none;
     z-index: 0;
   }
@@ -47,7 +47,7 @@ const chatStyles = `
   .chat-toggle-btn {
     position: fixed;
     bottom: 25px;
-    left: 30px;
+    right: 30px;
     width: 56px;
     height: 56px;
     border-radius: 14px;
