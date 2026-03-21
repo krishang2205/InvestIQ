@@ -107,27 +107,44 @@ class AIProviderManager:
     def generate_chat_response(self, prompt: str) -> str:
         """
         Specialized generation for the Strategic Analyst chatbot.
-        Ensures the response is clean, formatted as markdown, and adheres
-        to the mentor/analyst persona.
+        Prioritizes Groq for ultra-low latency (~200-500ms) to ensure
+        a snappy conversational experience.
         """
         from reports.exceptions import ChatProcessingError
         
         try:
             logger.debug("Attempting to generate strategic chat response...")
-            raw_text = self.generate_text(prompt)
+            
+            # --- Speed Optimization: Try Groq First for Chat ---
+            raw_text = None
+            if self.providers_ready["groq"]:
+                try:
+                    logger.info("🟡 Groq Chat: Prioritizing speed...")
+                    response = self.groq_client.chat.completions.create(
+                        model=self.GROQ_MODEL,
+                        messages=[{"role": "user", "content": prompt}],
+                        temperature=0.3,
+                    )
+                    raw_text = response.choices[0].message.content
+                except Exception as e:
+                    logger.warning(f"Groq Chat failed: {e}")
+
+            # Fallback to Gemini if Groq failed or wasn't ready
+            if not raw_text:
+                logger.info("🔵 Gemini Chat: Falling back from Groq...")
+                raw_text = self.generate_text(prompt)
             
             if not raw_text or len(raw_text.strip()) < 5:
                 logger.error("AI returned an empty or insufficient chat response.")
                 raise ChatProcessingError("Received empty response from the AI Analyst.")
             
-            # Post-processing: ensure no rogue JSON artifacts if the model gets confused
+            # Post-processing: ensure no rogue JSON artifacts
             clean_text = raw_text.strip()
             
-            # Remove rogue markdown code blocks if the AI accidentally wrapped prose
+            # Remove rogue markdown code blocks
             if clean_text.startswith("```"):
                 lines = clean_text.split("\n")
                 if lines[0].startswith("```") and lines[-1].startswith("```"):
-                    logger.info("Stripping markdown code fences from prose response.")
                     clean_text = "\n".join(lines[1:-1])
 
             logger.info("✅ Strategic chat response generated successfully.")
