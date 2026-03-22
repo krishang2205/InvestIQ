@@ -5,3 +5,6 @@ flask-cors
 yfinance
 flask-caching
 pandas
+requests-cache
+requests-ratelimiter
+pyrate-limiter

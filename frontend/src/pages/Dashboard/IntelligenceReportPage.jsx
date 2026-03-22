@@ -1,15 +1,15 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { FileText, Sparkles, Download, Loader2 } from 'lucide-react';
 import StockSearch from './components/StockSearch';
 import ReportScope from './components/ReportScope';
 import AnalysisPreferences from './components/AnalysisPreferences';
-import ReportView from './components/ReportView';
-import { MOCK_REPORT_DATA } from './data/mockReportData';
 
 const IntelligenceReportPage = () => {
+    const navigate = useNavigate();
+
     const [selectedStock, setSelectedStock] = useState(null);
     const [isGenerating, setIsGenerating] = useState(false);
-    const [reportData, setReportData] = useState(null);
     const [credits, setCredits] = useState(3);
     const [preferences, setPreferences] = useState({
         fundamental: true,
@@ -22,31 +22,36 @@ const IntelligenceReportPage = () => {
         setPreferences(prev => ({ ...prev, [id]: !prev[id] }));
     };
 
-    const handleGenerate = () => {
-        if (credits <= 0) return;
+    const handleGenerate = async () => {
+        if (!selectedStock || credits <= 0) return;
 
-        setIsGenerating(true);
-        // Simulate API call with preferences
-        console.log('Generating with:', preferences);
-        setTimeout(() => {
-            setIsGenerating(false);
+        try {
+            setIsGenerating(true);
+
+            const symbol =
+                selectedStock.symbol ||
+                selectedStock.ticker ||
+                selectedStock.code ||
+                selectedStock.name;
+
+            if (!symbol) {
+                throw new Error('No stock symbol found');
+            }
+
             setCredits(prev => prev - 1);
-            // In a real app, we would fetch data here. 
-            // For now, we use the mock data mirroring the user's template
-            setReportData(MOCK_REPORT_DATA);
-            console.log('Report generated!');
-        }, 3000);
-    };
 
-    const handleBack = () => {
-        setReportData(null);
-        setSelectedStock(null);
+            navigate(`/dashboard/intelligence-reports/${encodeURIComponent(symbol)}`, {
+                state: {
+                    selectedStock,
+                    preferences
+                }
+            });
+        } catch (error) {
+            console.error('Failed to generate report:', error);
+        } finally {
+            setIsGenerating(false);
+        }
     };
-
-    // If report is generated, show the Report View
-    if (reportData) {
-        return <ReportView data={reportData} onBack={handleBack} />;
-    }
 
     return (
         <>
@@ -60,51 +65,61 @@ const IntelligenceReportPage = () => {
                     </p>
                 </div>
 
-                {/* Credit Badge */}
-                <div className="glass-panel" style={{
-                    padding: '0.5rem 1rem',
-                    borderRadius: '20px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.5rem',
-                    marginBottom: '0.5rem',
-                    border: credits > 0 ? '1px solid var(--color-accent)' : '1px solid var(--color-risk-high)'
-                }}>
-                    <Sparkles size={16} color={credits > 0 ? "var(--color-accent)" : "var(--color-risk-high)"} />
+                <div
+                    className="glass-panel"
+                    style={{
+                        padding: '0.5rem 1rem',
+                        borderRadius: '20px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.5rem',
+                        marginBottom: '0.5rem',
+                        border: credits > 0 ? '1px solid var(--color-accent)' : '1px solid var(--color-risk-high)'
+                    }}
+                >
+                    <Sparkles size={16} color={credits > 0 ? 'var(--color-accent)' : 'var(--color-risk-high)'} />
                     <span style={{ fontWeight: 600, color: 'var(--color-primary)' }}>{credits}</span>
                     <span style={{ fontSize: '0.875rem', color: 'var(--color-secondary)' }}>credits left</span>
                 </div>
             </div>
 
-            <div className="glass-panel" style={{
-                padding: '3rem',
-                borderRadius: '16px',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                minHeight: '400px',
-                textAlign: 'center',
-                border: '1px dashed var(--color-accent)',
-                background: 'linear-gradient(180deg, rgba(209, 199, 157, 0.05) 0%, rgba(0,0,0,0) 100%)'
-            }}>
-                <div style={{
-                    width: '80px',
-                    height: '80px',
-                    borderRadius: '50%',
-                    backgroundColor: 'var(--color-accent-glow)',
+            <div
+                className="glass-panel"
+                style={{
+                    padding: '3rem',
+                    borderRadius: '16px',
                     display: 'flex',
+                    flexDirection: 'column',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    color: 'var(--color-accent)',
-                    marginBottom: '1.5rem'
-                }}>
+                    minHeight: '400px',
+                    textAlign: 'center',
+                    border: '1px dashed var(--color-accent)',
+                    background: 'linear-gradient(180deg, rgba(209, 199, 157, 0.05) 0%, rgba(0,0,0,0) 100%)'
+                }}
+            >
+                <div
+                    style={{
+                        width: '80px',
+                        height: '80px',
+                        borderRadius: '50%',
+                        backgroundColor: 'var(--color-accent-glow)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: 'var(--color-accent)',
+                        marginBottom: '1.5rem'
+                    }}
+                >
                     <Sparkles size={40} />
                 </div>
 
                 <h2 style={{ fontSize: '1.5rem', fontWeight: 600, marginBottom: '1rem' }}>
-                    {selectedStock ? `Analyze ${selectedStock.name}` : 'Generate New Report'}
+                    {selectedStock
+                        ? `Analyze ${selectedStock.name || selectedStock.symbol || selectedStock.ticker}`
+                        : 'Generate New Report'}
                 </h2>
+
                 <p style={{ color: 'var(--color-secondary)', maxWidth: '400px', marginBottom: '2rem' }}>
                     {selectedStock
                         ? 'Customize your analysis preferences below.'
@@ -121,22 +136,27 @@ const IntelligenceReportPage = () => {
                 )}
 
                 {selectedStock && (
-                    <button style={{
-                        padding: '0.875rem 2rem',
-                        backgroundColor: (isGenerating || credits <= 0) ? 'var(--color-surface-hover)' : 'var(--color-accent)',
-                        color: (isGenerating || credits <= 0) ? 'var(--color-secondary)' : 'var(--color-bg)',
-                        fontWeight: 600,
-                        fontSize: '1rem',
-                        borderRadius: '12px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '0.5rem',
-                        transition: 'all 0.2s',
-                        cursor: (isGenerating || credits <= 0) ? 'not-allowed' : 'pointer',
-                        marginTop: '1rem',
-                        minWidth: '200px',
-                        justifyContent: 'center'
-                    }}
+                    <button
+                        style={{
+                            padding: '0.875rem 2rem',
+                            backgroundColor: (isGenerating || credits <= 0)
+                                ? 'var(--color-surface-hover)'
+                                : 'var(--color-accent)',
+                            color: (isGenerating || credits <= 0)
+                                ? 'var(--color-secondary)'
+                                : 'var(--color-bg)',
+                            fontWeight: 600,
+                            fontSize: '1rem',
+                            borderRadius: '12px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.5rem',
+                            transition: 'all 0.2s',
+                            cursor: (isGenerating || credits <= 0) ? 'not-allowed' : 'pointer',
+                            marginTop: '1rem',
+                            minWidth: '200px',
+                            justifyContent: 'center'
+                        }}
                         onClick={handleGenerate}
                         disabled={isGenerating || credits <= 0}
                     >
@@ -167,36 +187,46 @@ const IntelligenceReportPage = () => {
                 <h3 style={{ fontSize: '1.25rem', fontWeight: 600, marginBottom: '1.5rem' }}>Recent Reports</h3>
                 <div style={{ display: 'grid', gap: '1rem' }}>
                     {[1, 2, 3].map((i) => (
-                        <div key={i} className="glass-panel" style={{
-                            padding: '1.5rem',
-                            borderRadius: '12px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'space-between'
-                        }}>
+                        <div
+                            key={i}
+                            className="glass-panel"
+                            style={{
+                                padding: '1.5rem',
+                                borderRadius: '12px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'space-between'
+                            }}
+                        >
                             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                                <div style={{
-                                    padding: '0.75rem',
-                                    borderRadius: '8px',
-                                    backgroundColor: 'rgba(255,255,255,0.05)',
-                                    color: 'var(--color-secondary)'
-                                }}>
+                                <div
+                                    style={{
+                                        padding: '0.75rem',
+                                        borderRadius: '8px',
+                                        backgroundColor: 'rgba(255,255,255,0.05)',
+                                        color: 'var(--color-secondary)'
+                                    }}
+                                >
                                     <FileText size={20} />
                                 </div>
                                 <div>
                                     <p style={{ fontWeight: 500 }}>Portfolio Analysis - Q{3 - i + 1} 2025</p>
-                                    <p style={{ fontSize: '0.875rem', color: 'var(--color-secondary)' }}>Generated on Oct {10 + i}, 2025</p>
+                                    <p style={{ fontSize: '0.875rem', color: 'var(--color-secondary)' }}>
+                                        Generated on Oct {10 + i}, 2025
+                                    </p>
                                 </div>
                             </div>
-                            <button style={{
-                                background: 'none',
-                                color: 'var(--color-accent)',
-                                padding: '0.5rem',
-                                borderRadius: '8px',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '0.5rem'
-                            }}>
+                            <button
+                                style={{
+                                    background: 'none',
+                                    color: 'var(--color-accent)',
+                                    padding: '0.5rem',
+                                    borderRadius: '8px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '0.5rem'
+                                }}
+                            >
                                 <Download size={18} />
                                 Download
                             </button>

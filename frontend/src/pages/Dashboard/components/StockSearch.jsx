@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Search, Check } from 'lucide-react';
 
 const MOCK_STOCKS = [
@@ -20,27 +20,67 @@ const StockSearch = ({ onSelect }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [selected, setSelected] = useState(null);
 
-    const filteredStocks = MOCK_STOCKS.filter(s =>
-        s.symbol.toLowerCase().includes(query.toLowerCase()) ||
-        s.name.toLowerCase().includes(query.toLowerCase())
-    );
+    // ⭐ Improved ranking logic
+    const filteredStocks = useMemo(() => {
+        const q = query.toLowerCase().trim();
+
+        if (!q) return [];
+
+        return MOCK_STOCKS
+            .map(stock => {
+                const symbol = stock.symbol.toLowerCase();
+                const name = stock.name.toLowerCase();
+
+                let score = 999;
+
+                if (symbol === q) score = 1;
+                else if (symbol.startsWith(q)) score = 2;
+                else if (name.startsWith(q)) score = 3;
+                else if (symbol.includes(q)) score = 4;
+                else if (name.includes(q)) score = 5;
+
+                return { ...stock, score };
+            })
+            .filter(s => s.score < 999)
+            .sort((a, b) => a.score - b.score)
+            .slice(0, 8);
+    }, [query]);
 
     const handleSelect = (stock) => {
         setSelected(stock);
         setQuery(`${stock.symbol} - ${stock.name}`);
         setIsOpen(false);
-        onSelect(stock);
+
+        // ✅ IMPORTANT: Send correct structure
+        onSelect({
+            symbol: stock.symbol,
+            name: stock.name
+        });
     };
 
     return (
         <div style={{ position: 'relative', width: '100%', maxWidth: '600px', margin: '0 auto' }}>
             <div style={{ position: 'relative' }}>
-                <Search className="text-gray-400" size={20} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', zIndex: 10 }} />
+                <Search
+                    size={20}
+                    style={{
+                        position: 'absolute',
+                        left: '1rem',
+                        top: '50%',
+                        transform: 'translateY(-50%)',
+                        zIndex: 10,
+                        color: '#9ca3af'
+                    }}
+                />
+
                 <input
                     type="text"
                     placeholder="Search stock (e.g., RELIANCE)..."
                     value={query}
-                    onChange={(e) => { setQuery(e.target.value); setIsOpen(true); }}
+                    onChange={(e) => {
+                        setQuery(e.target.value);
+                        setIsOpen(true);
+                    }}
                     onFocus={() => setIsOpen(true)}
                     className="glass-panel"
                     style={{
@@ -56,10 +96,11 @@ const StockSearch = ({ onSelect }) => {
                 />
             </div>
 
-            {/* Trending Suggestions - Only show when input is empty */}
+            {/* Trending */}
             {!query && (
                 <div style={{ marginTop: '1rem', display: 'flex', gap: '0.5rem', flexWrap: 'wrap', justifyContent: 'center' }}>
-                    <span style={{ fontSize: '0.875rem', color: 'var(--color-secondary)', display: 'flex', alignItems: 'center' }}>Trending:</span>
+                    <span style={{ fontSize: '0.875rem', color: 'var(--color-secondary)' }}>Trending:</span>
+
                     {MOCK_STOCKS.slice(0, 4).map(stock => (
                         <button
                             key={stock.symbol}
@@ -71,16 +112,7 @@ const StockSearch = ({ onSelect }) => {
                                 padding: '0.25rem 0.75rem',
                                 color: 'var(--color-secondary)',
                                 fontSize: '0.75rem',
-                                cursor: 'pointer',
-                                transition: 'all 0.2s'
-                            }}
-                            onMouseEnter={(e) => {
-                                e.currentTarget.style.borderColor = 'var(--color-accent)';
-                                e.currentTarget.style.color = 'var(--color-accent)';
-                            }}
-                            onMouseLeave={(e) => {
-                                e.currentTarget.style.borderColor = 'var(--glass-border)';
-                                e.currentTarget.style.color = 'var(--color-secondary)';
+                                cursor: 'pointer'
                             }}
                         >
                             {stock.symbol}
@@ -89,6 +121,7 @@ const StockSearch = ({ onSelect }) => {
                 </div>
             )}
 
+            {/* Dropdown */}
             {isOpen && query && (
                 <div className="glass-panel" style={{
                     position: 'absolute',
@@ -111,20 +144,28 @@ const StockSearch = ({ onSelect }) => {
                                 justifyContent: 'space-between',
                                 alignItems: 'center',
                                 borderRadius: '8px',
-                                transition: 'background 0.2s',
                                 color: 'var(--color-primary)'
                             }}
                             onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.05)'}
                             onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                         >
                             <div>
-                                <span style={{ fontWeight: 700, marginRight: '0.5rem' }}>{stock.symbol}</span>
-                                <span style={{ color: 'var(--color-secondary)' }}>{stock.name}</span>
+                                <span style={{ fontWeight: 700, marginRight: '0.5rem' }}>
+                                    {stock.symbol}
+                                </span>
+                                <span style={{ color: 'var(--color-secondary)' }}>
+                                    {stock.name}
+                                </span>
                             </div>
-                            {selected?.symbol === stock.symbol && <Check size={16} color="var(--color-accent)" />}
+
+                            {selected?.symbol === stock.symbol && (
+                                <Check size={16} color="var(--color-accent)" />
+                            )}
                         </div>
                     )) : (
-                        <div style={{ padding: '1rem', textAlign: 'center', color: 'var(--color-secondary)' }}>No stocks found</div>
+                        <div style={{ padding: '1rem', textAlign: 'center', color: 'var(--color-secondary)' }}>
+                            No stocks found
+                        </div>
                     )}
                 </div>
             )}
