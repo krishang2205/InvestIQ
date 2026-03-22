@@ -569,35 +569,19 @@ const ReportView = ({ data, onBack }) => {
                 <div style={{ padding: '1.5rem', background: 'rgba(59, 130, 246, 0.1)', borderRadius: '12px', border: '1px solid rgba(59, 130, 246, 0.2)' }}>
                     <span style={{ fontSize: '0.75rem', fontWeight: 700, letterSpacing: '1px', color: '#60a5fa', textTransform: 'uppercase', display: 'block', marginBottom: '0.5rem' }}>Tactical View (0-3 Months)</span>
                     <p style={{ fontSize: '0.9rem', lineHeight: '1.6' }}>{data.outlook.shortTerm}</p>
-                </div>
-                <div style={{ padding: '1.5rem', background: 'rgba(16, 185, 129, 0.1)', borderRadius: '12px', border: '1px solid rgba(16, 185, 129, 0.2)' }}>
-                    <span style={{ fontSize: '0.75rem', fontWeight: 700, letterSpacing: '1px', color: '#34d399', textTransform: 'uppercase', display: 'block', marginBottom: '0.5rem' }}>Structural View (12+ Months)</span>
-                    <p style={{ fontSize: '0.9rem', lineHeight: '1.6' }}>{data.outlook.longTerm}</p>
-                </div>
+                    fontWeight: 700,
+                    fontSize: '0.9rem',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem'
+                }}>
+                    View Outlook <ChevronRight size={16} />
+                </button>
             </div>
+        </div>
+        </>
+    );
+};
 
-            {/* 13. COMPLIANCE */}
-            <div style={{ textAlign: 'center', fontSize: '0.75rem', color: 'var(--color-secondary)', margin: '4rem 0' }}>
-                <p>This report is for informational purposes only. InvestIQ does not provide investment advice.</p>
-                <p>Regulatory Awareness: Data is based on historical patterns and AI analysis.</p>
-            </div>
-
-            {/* Floating Strategic AI Intelligence */}
-            <StockChat jobId={data.job_id || data.id} symbol={data.header.symbol} />
-
-            {/* 11. ACTION BAR (Sticky Bottom) */}
-            <div className="rv-action-bar" style={{
-                position: 'fixed', bottom: 0, left: 0, right: 0,
-                position: 'fixed',
-                bottom: '2rem',
-                left: '50%',
-                transform: 'translateX(-50%)',
-                background: 'rgba(10, 10, 10, 0.8)',
-                backdropFilter: 'blur(16px)',
-                border: '1px solid var(--glass-border)',
-                borderRadius: '16px',
-                padding: '0.75rem 1.5rem',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '1.5rem',
 export default ReportView;
