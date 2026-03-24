@@ -77,13 +77,96 @@ class PortfolioService:
         # DELETE FROM transactions WHERE id = ?
         return True
 
-    def get_portfolio_metadata(self, portfolio_id: str) -> Optional[Dict[str, Any]]:
+    def get_holdings(self, portfolio_id: str, transactions: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         """
-        Retrieves basic info about the portfolio.
+        Processes a list of transactions to derive the current state of holdings.
+        Calculates weighted average cost, total quantity, and current unrealized P&L.
         """
-        # SELECT * FROM portfolios WHERE id = ?
+        holdings_map = {}
+        
+        for tx in transactions:
+            symbol = tx["symbol"]
+            qty = Decimal(str(tx["quantity"]))
+            price = Decimal(str(tx["price"]))
+            tx_type = tx["transaction_type"].lower()
+
+            if symbol not in holdings_map:
+                holdings_map[symbol] = {
+                    "ticker": symbol,
+                    "qty": Decimal("0"),
+                    "total_cost": Decimal("0"),
+                    "avg_price": Decimal("0"),
+                    "transactions_count": 0
+                }
+
+            h = holdings_map[symbol]
+            h["transactions_count"] += 1
+
+            if tx_type == "buy":
+                # Average Cost = (Old Total Cost + New Cost) / New Total Qty
+                h["total_cost"] += (qty * price)
+                h["qty"] += qty
+                if h["qty"] > 0:
+                    h["avg_price"] = h["total_cost"] / h["qty"]
+            elif tx_type == "sell":
+                # Selling reduces quantity but theoretically preserves the average cost 
+                # for the remaining shares in a simple FIFO/WAC model.
+                h["qty"] -= qty
+                # We deduct from total cost based on the average price to maintain consistency
+                h["total_cost"] = h["qty"] * h["avg_price"]
+                
+                # Check for short positions (not usually recommended for retail long-term)
+                if h["qty"] < 0:
+                    print(f"Warning: Negative inventory for {symbol}. Short selling detected.")
+
+        # Filter out closed positions (qty = 0)
+        active_holdings = [h for h in holdings_map.values() if h["qty"] > 0]
+        
+        # Calculate Total Portfolio Value (Cost Basis) for weights
+        total_p_cost = sum(h["total_cost"] for h in active_holdings)
+        
+        # Final Format for Frontend
+        final_holdings = []
+        for h in active_holdings:
+            # Type casting to float for JSON serialization later
+            weight = (h["total_cost"] / total_p_cost * 100) if total_p_cost > 0 else 0
+            
+            final_holdings.append({
+                "ticker": h["ticker"],
+                "qty": float(h["qty"]),
+                "avg_price": float(h["avg_price"]),
+                "weight": round(float(weight), 2),
+                "total_invested": float(h["total_cost"])
+            })
+
+        return sorted(final_holdings, key=lambda x: x["weight"], reverse=True)
+
+    def calculate_unrealized_pnl(self, holdings: List[Dict[str, Any]], current_prices: Dict[str, float]) -> Dict[str, Any]:
+        """
+        Merges current holdings with live market prices to calculate unrealized gains.
+        """
+        total_current_value = Decimal("0")
+        total_invested_value = Decimal("0")
+        
+        for h in holdings:
+            symbol = h["ticker"]
+            ltp = Decimal(str(current_prices.get(symbol, h["avg_price"])))
+            
+            current_val = Decimal(str(h["qty"])) * ltp
+            invested_val = Decimal(str(h["total_invested"]))
+            
+            h["ltp"] = float(ltp)
+            h["current_value"] = float(current_val)
+            h["pnl"] = float(current_val - invested_val)
+            h["pnl_percent"] = float(((current_val / invested_val) - 1) * 100) if invested_val > 0 else 0
+            
+            total_current_value += current_val
+            total_invested_value += invested_val
+            
         return {
-            "id": portfolio_id,
-            "name": "Wealth Builder",
-            "risk_profile": "Moderate"
+            "holdings": holdings,
+            "total_current_value": float(total_current_value),
+            "total_invested_value": float(total_invested_value),
+            "total_pnl": float(total_current_value - total_invested_value),
+            "total_pnl_percent": float(((total_current_value / total_invested_value) - 1) * 100) if total_invested_value > 0 else 0
         }
