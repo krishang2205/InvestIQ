@@ -56,16 +56,16 @@ class FinancialDataAdapter:
                 "pe_ratio": info.get("trailingPE") or info.get("forwardPE"),
                 "forward_pe": info.get("forwardPE"),
                 "pb_ratio": info.get("priceToBook"),
-                "market_cap_billions": round((info.get("marketCap") or 0) / 1e9, 2),
-                "revenue_ttm_billions": round((info.get("totalRevenue") or 0) / 1e9, 2),
-                "net_income_billions": round((info.get("netIncomeToCommon") or 0) / 1e9, 2),
+                "market_cap_billions": round(float(info.get("marketCap") or 0) / 1e9, 2),
+                "revenue_ttm_billions": round(float(info.get("totalRevenue") or 0) / 1e9, 2),
+                "net_income_billions": round(float(info.get("netIncomeToCommon") or 0) / 1e9, 2),
                 "earnings_per_share": info.get("trailingEps") or info.get("forwardEps"),
-                "dividend_yield": round(info.get("dividendYield") or 0, 2),
-                "roe": round((info.get("returnOnEquity") or 0) * 100, 2),
-                "roa": round((info.get("returnOnAssets") or 0) * 100, 2),
-                "profit_margin": round((info.get("profitMargins") or 0) * 100, 2),
+                "dividend_yield": round(float(info.get("dividendYield") or 0), 2),
+                "roe": round(float(info.get("returnOnEquity") or 0) * 100, 2),
+                "roa": round(float(info.get("returnOnAssets") or 0) * 100, 2),
+                "profit_margin": round(float(info.get("profitMargins") or 0) * 100, 2),
                 "debt_to_equity": info.get("debtToEquity"),
-                "free_cashflow_billions": round((info.get("freeCashflow") or 0) / 1e9, 2),
+                "free_cashflow_billions": round(float(info.get("freeCashflow") or 0) / 1e9, 2),
                 "beta": info.get("beta"),
             }
 
@@ -135,7 +135,7 @@ class FinancialDataAdapter:
                 "chart_data": chart_data,         # Real 1Y OHLCV for chart injection
                 "news": recent_news,              # Top 5 latest news articles
                 "sentiment_score": 0.0,            # Placeholder; overridden by AI
-                "volatility": self._compute_volatility(chart_data),
+                "volatility": float(self._compute_volatility(chart_data)),
             }
 
         except ValueError as ve:
@@ -166,8 +166,13 @@ class FinancialDataAdapter:
             "NESTLEIND", "ULTRACEMCO", "TECHM", "POWERGRID", "NTPC",
             "HCLTECH", "ADANIENT", "ADANIPORTS", "TATAMOTORS", "TATASTEEL",
             "ONGC", "BPCL", "IOC", "COALINDIA", "ITC", "BHARTIARTL",
+            "TMPV", "TMCV",
         }
-        if symbol in indian_hints:
+        if symbol == "TATAMOTORS":
+            logger.info("Handling legacy TATAMOTORS ticker: remapping to TMPV.NS (Passenger Vehicles successor)")
+            return "TMPV.NS"
+
+        if symbol in indian_hints or symbol in {"TMPV", "TMCV"}:
             return f"{symbol}.NS"
 
         # Default: return as-is and let yfinance handle it
@@ -186,7 +191,11 @@ class FinancialDataAdapter:
 
             chart_data = []
             for date_idx, row in hist.iterrows():
-                date_str = date_idx.strftime("%b %d, %Y") if hasattr(date_idx, 'strftime') else str(date_idx)[:10]
+                if hasattr(date_idx, 'strftime'):
+                    date_str = date_idx.strftime("%b %d, %Y")
+                else:
+                    date_str = str(date_idx)[:10]
+
                 chart_data.append({
                     "date": date_str,
                     "price": round(float(row["Close"]), 2),
