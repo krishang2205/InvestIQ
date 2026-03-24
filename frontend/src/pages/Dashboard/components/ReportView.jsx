@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
-import { ArrowLeft, Download, Info, AlertTriangle, ChevronRight } from 'lucide-react';
+import { ArrowLeft, Download, Info, AlertTriangle, ChevronRight, Sparkles } from 'lucide-react';
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
+import StockChat from './StockChat';
+
+// ... (existing styles)
 const reportStyles = `
   .rv-root { max-width: 1200px; margin: 0 auto; padding: 0 1.5rem 8rem 1.5rem; }
   .rv-header { display: flex; justify-content: space-between; align-items: center; padding: 1rem 0; border-bottom: 1px solid var(--glass-border); margin-bottom: 2rem; }
@@ -87,6 +90,13 @@ const ReportView = ({ data, onBack }) => {
         document.title = `InvestIQ_Capstone_Report_${data.header.symbol}_${new Date().toISOString().split('T')[0]}`;
         window.print();
         document.title = originalTitle;
+    };
+
+    const scrollToChat = () => {
+        const chatSection = document.getElementById('ai-chat-section');
+        if (chatSection) {
+            chatSection.scrollIntoView({ behavior: 'smooth' });
+        }
     };
 
     // Helper for Status Pills
@@ -572,6 +582,9 @@ const ReportView = ({ data, onBack }) => {
                 <p>Regulatory Awareness: Data is based on historical patterns and AI analysis.</p>
             </div>
 
+            {/* Floating Strategic AI Intelligence */}
+            <StockChat jobId={data.job_id || data.id} symbol={data.header.symbol} />
+
             {/* 11. ACTION BAR (Sticky Bottom) */}
             <div className="rv-action-bar" style={{
                 position: 'fixed', bottom: 0, left: 0, right: 0,
@@ -585,6 +598,15 @@ const ReportView = ({ data, onBack }) => {
                 </button>
                 <button onClick={handleDownloadPDF} style={{ padding: '0.5rem 1rem', background: 'transparent', border: '1px solid var(--color-secondary)', color: 'var(--color-text)', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                     <Download size={16} /> PDF
+                </button>
+                <button 
+                    onClick={() => {
+                        const chatToggle = document.querySelector('.chat-toggle-btn');
+                        if (chatToggle) chatToggle.click();
+                    }} 
+                    style={{ padding: '0.5rem 1.5rem', background: 'rgba(99, 102, 241, 0.1)', border: '1px solid rgba(99, 102, 241, 0.3)', color: '#818cf8', borderRadius: '8px', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+                >
+                    <Sparkles size={16} /> Strategic AI
                 </button>
                 <button style={{
                     padding: '0.5rem 1.5rem', background: 'var(--color-accent)', border: 'none',

@@ -317,7 +317,128 @@ Generate the final synthesis report as ONLY this exact JSON schema. No other tex
                 description=(meta.get("description") or fund.get("company_description", "N/A"))[:300],
             )
             return cls.get_system_prompt() + "\n\n" + rendered_prompt
-
         except Exception as e:
             logger.error(f"Prompt rendering failed: {e}")
             raise ValueError(f"Failed to construct prompt template: {e}")
+
+    # --- NEW: CHATBOT SYSTEM PROMPTS (Commit 1) ---
+
+    CHAT_SYSTEM_PROMPT = """\
+[IDENTITY]
+You are the "InvestIQ Strategic Analyst & Mentor" — a highly advanced, empathetic, and \
+no-nonsense financial AI. Your goal is to help users understand the stock report provided \
+and run complex "What-If" scenario projections.
+
+[STRICT DOMAIN GUARDRAILS]
+- You ONLY answer questions related to: Finance, Investing, Stock Markets, and the specific \
+Stock/Report provided in the context.
+- If a user asks about: Recipes, Coding, Politics (non-financial), Sports, General Knowledge, \
+or anything outside the financial domain, you MUST politely refuse.
+- Example Refusal: "I am specialized in financial intelligence and stock analysis. I cannot \
+assist with [User Topic]. Would you like to analyze {{symbol}}'s P/E ratio instead?"
+
+[BEGGINER-FRIENDLY MENTORSHIP]
+- If the user asks "What is [Term]?", explain it using simple analogies.
+- Avoid raw jargon without context. If you mention 'EBITDA', briefly explain it's "Earnings \
+before interest, taxes, and other accounting adjustments — basically the cash a company makes from its core business."
+
+[KILLER FEATURE: DYNAMIC SCENARIO ENGINE]
+- You can simulate "What-If" scenarios. If the user asks "What if revenue drops 10%?", \
+you must:
+    1. Identify the current revenue from the report.
+    2. Calculate the hypothetical new revenue.
+    3. Project how this might affect the Net Income and Valuation (P/E).
+    4. Provide a quantitative "Scenario Impact" summary.
+- Be clear that these are mathematical simulations, not guaranteed predictions.
+
+[ANTI-HALLUCINATION RULES]
+- Prioritize the [REPORT DATA] provided in the context. 
+- If the user asks for data NOT in the report (e.g., "Who was the CEO in 1990?"), use your \
+general knowledge but prefix it with: "[General Market Knowledge - Not in Report]".
+- Never hallucinate numbers. If a specific fundamental isn't in the report or your \
+knowledge, say "Specific data for this metric isn't available in my current context."
+"""
+
+    CHAT_USER_TEMPLATE = """\
+[REPORT CONTEXT - GROUND TRUTH]
+{report_json}
+
+[CHAT HISTORY]
+{history}
+
+[USER QUERY]
+{message}
+
+[RESPONSE INSTRUCTIONS]
+- Be concise but thorough.
+- Use Markdown for bolding key numbers and bullet points.
+- If answering a "What-If" scenario, use a specific header: "### 📉 Scenario Projection".
+- Maintain your persona as the InvestIQ Strategic Analyst.
+"""
+
+    @classmethod
+    def construct_chat_prompt(cls, report_data: Dict[str, Any], message: str, history: str = "") -> str:
+        """
+        Constructs the full prompt for the chatbot, including the report context and history.
+        """
+        symbol = report_data.get("header", {}).get("symbol", "the stock")
+        system_msg = cls.CHAT_SYSTEM_PROMPT.format(symbol=symbol)
+        
+        # Inject Guardrails & Beginner Glossary (Commit 3)
+        system_msg += "\n\n" + cls.get_guardrail_prompt()
+        
+        # We pass the report data as a formatted JSON string for RAG accuracy
+        report_json_str = json.dumps(report_data, indent=2)
+        
+        user_msg = cls.CHAT_USER_TEMPLATE.format(
+            report_json=report_json_str,
+            history=history if history else "No previous history.",
+            message=message
+        )
+        
+        return system_msg + "\n\n" + user_msg
+
+    # --- NEW: FINANCE GLOSSARY & GUARDRAILS (Commit 3) ---
+
+    FINANCIAL_MENTOR_GLOSSARY = {
+        "P/E Ratio": "Price-to-Earnings. Like a 'price tag' for every $1 of profit. High P/E means expensive (growth expected), Low P/E means cheap (value play).",
+        "Market Cap": "The total market value of the company (Total Shares x Price). Large-Cap is usually safer; Small-Cap is riskier but higher growth.",
+        "ROE": "Return on Equity. How much profit the company generates with the money shareholders have invested. 15%+ is generally good.",
+        "Debt-to-Equity": "How much the company borrows vs. what it owns. Higher than 2.0 can be a red flag for safety.",
+        "FCF": "Free Cash Flow. The actual cash left over after paying all bills and investing in the business. This is what's used to pay dividends.",
+        "Beta": "Market sensitivity. A beta of 1.0 means it moves with the market. >1.5 is volatile (aggressive); <0.8 is defensive (slow).",
+        "Dividend Yield": "The annual dividend payment as a percentage of the stock price. Like interest on a savings account.",
+        "Profit Margin": "What percentage of every dollar earned is kept as profit. High margins usually mean a strong competitive 'moat'."
+    }
+
+    FORBIDDEN_TOPICS = [
+        "cooking", "recipes", "sports", "weather", "politics", "movies", 
+        "celebrities", "coding", "software", "history (non-financial)", 
+        "geography", "travel", "health", "religion", "philosophy"
+    ]
+
+    @classmethod
+    def get_guardrail_prompt(cls) -> str:
+        """
+        Returns the strict guardrail instructions for the Strategic Analyst.
+        """
+        glossary_items = [f"- {k}: {v}" for k, v in cls.FINANCIAL_MENTOR_GLOSSARY.items()]
+        glossary_text = "\n".join(glossary_items)
+        forbidden_text = ", ".join(cls.FORBIDDEN_TOPICS)
+        
+        return f"""
+[DOMAN EXCLUSIVITY - STALINIST GUARDRAILS]
+You are hard-coded to ignore anything outside the realm of Finance and Stock Analysis.
+FORBIDDEN TOPICS: {forbidden_text}.
+If the user mentions these, you must say: "As an InvestIQ Strategic Analyst, I only process 
+financial intelligence and market data. I cannot assist with that topic."
+
+[ANALOGY GLOSSARY - FOR BEGINNERS]
+Use these simplified mental models when explaining metrics:
+{glossary_text}
+
+[MENTAL MODELS FOR ANALYSIS]
+1. 'The Moat': Does the company have a competitive advantage (patents, brand, high margin)?
+2. 'The margin of Safety': Is the price significantly below the intrinsic value?
+3. 'The Cash Cow': Is Free Cash Flow growing faster than net income?
+"""

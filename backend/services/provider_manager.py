@@ -72,6 +72,90 @@ class AIProviderManager:
         self._inject_real_chart_data(data, market_context)
         return data
 
+    def generate_text(self, prompt: str) -> str:
+        """
+        Generates raw creative/analytical text for the chatbot.
+        Follows the same Gemini -> Groq -> Generic fallback.
+        """
+        # 1. Try Gemini
+        if self.providers_ready["gemini"]:
+            try:
+                logger.info("🔵 Gemini Chat: Generating text...")
+                response = self.gemini_model.generate_content(
+                    prompt,
+                    generation_config=genai.GenerationConfig(temperature=0.3)
+                )
+                return response.text
+            except Exception as e:
+                logger.warning(f"Gemini Chat failed: {e}")
+
+        # 2. Try Groq
+        if self.providers_ready["groq"]:
+            try:
+                logger.info("🟡 Groq Chat: Generating text...")
+                response = self.groq_client.chat.completions.create(
+                    model=self.GROQ_MODEL,
+                    messages=[{"role": "user", "content": prompt}],
+                    temperature=0.3,
+                )
+                return response.choices[0].message.content
+            except Exception as e:
+                logger.warning(f"Groq Chat failed: {e}")
+
+        return "I'm sorry, I'm currently unable to process your request due to API limitations. Please try again in a few minutes."
+
+    def generate_chat_response(self, prompt: str) -> str:
+        """
+        Specialized generation for the Strategic Analyst chatbot.
+        Prioritizes Groq for ultra-low latency (~200-500ms) to ensure
+        a snappy conversational experience.
+        """
+        from reports.exceptions import ChatProcessingError
+        
+        try:
+            logger.debug("Attempting to generate strategic chat response...")
+            
+            # --- Speed Optimization: Try Groq First for Chat ---
+            raw_text = None
+            if self.providers_ready["groq"]:
+                try:
+                    logger.info("🟡 Groq Chat: Prioritizing speed...")
+                    response = self.groq_client.chat.completions.create(
+                        model=self.GROQ_MODEL,
+                        messages=[{"role": "user", "content": prompt}],
+                        temperature=0.3,
+                    )
+                    raw_text = response.choices[0].message.content
+                except Exception as e:
+                    logger.warning(f"Groq Chat failed: {e}")
+
+            # Fallback to Gemini if Groq failed or wasn't ready
+            if not raw_text:
+                logger.info("🔵 Gemini Chat: Falling back from Groq...")
+                raw_text = self.generate_text(prompt)
+            
+            if not raw_text or len(raw_text.strip()) < 5:
+                logger.error("AI returned an empty or insufficient chat response.")
+                raise ChatProcessingError("Received empty response from the AI Analyst.")
+            
+            # Post-processing: ensure no rogue JSON artifacts
+            clean_text = raw_text.strip()
+            
+            # Remove rogue markdown code blocks
+            if clean_text.startswith("```"):
+                lines = clean_text.split("\n")
+                if lines[0].startswith("```") and lines[-1].startswith("```"):
+                    clean_text = "\n".join(lines[1:-1])
+
+            logger.info("✅ Strategic chat response generated successfully.")
+            return clean_text
+            
+        except Exception as e:
+            logger.error(f"Chat generation failed: {e}")
+            if isinstance(e, ChatProcessingError):
+                raise e
+            raise ChatProcessingError(f"Generation failure: {str(e)}")
+
     # ─────────────────────────────────────────────────────────────────────────
     # Provider implementations
     # ─────────────────────────────────────────────────────────────────────────
