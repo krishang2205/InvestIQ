@@ -21,11 +21,12 @@ class AIProviderManager:
     GROQ_MODEL = "llama-3.3-70b-versatile"
     GEMINI_MODEL = "gemini-flash-latest"
     XAI_MODEL = "grok-2-1212"
-    
+
     def __init__(self):
         self.gemini_key = conf.gemini_api_key
         self.groq_key   = conf.groq_api_key
-        self.xai_key    = conf.xai_api_key
+        # Detect if Groq key is actually an xAI key
+        self.xai_key    = conf.xai_api_key or (self.groq_key if self.groq_key and self.groq_key.startswith("xai-") else None)
         self.providers_ready = {"gemini": False, "groq": False, "xai": False}
         self._configure_providers()
 
@@ -39,8 +40,6 @@ class AIProviderManager:
                 logger.info(f"✅ Gemini provider ready ({self.GEMINI_MODEL})")
             except Exception as e:
                 logger.error(f"Gemini init failed: {e}")
-        else:
-            logger.warning("GEMINI_API_KEY not set — Gemini disabled.")
 
         # ── Groq ─────────────────────────────────────────────────────────────
         if self.groq_key and not self.groq_key.startswith("xai-"):
@@ -50,8 +49,6 @@ class AIProviderManager:
                 logger.info(f"✅ Groq provider ready ({self.GROQ_MODEL})")
             except Exception as e:
                 logger.error(f"Groq init failed: {e}")
-        else:
-            logger.warning("GROQ_API_KEY not set — Groq disabled.")
 
         # ── xAI (OpenAI Compatible) ──────────────────────────────────────────
         if self.xai_key:
@@ -65,8 +62,6 @@ class AIProviderManager:
                 logger.info(f"✅ xAI provider ready ({self.XAI_MODEL})")
             except Exception as e:
                 logger.error(f"xAI init failed: {e}")
-        else:
-            logger.warning("XAI_API_KEY not set — xAI disabled.")
 
     # ─────────────────────────────────────────────────────────────────────────
     # Public interface
@@ -75,7 +70,6 @@ class AIProviderManager:
         """
         Attempts each provider in order:
           Gemini → Groq → xAI → Mock
-        Injects real yfinance chart data into the result.
         """
         data = self._try_gemini(prompt)
         
@@ -95,116 +89,48 @@ class AIProviderManager:
         self._inject_real_chart_data(data, market_context)
         return data
 
-    def generate_text(self, prompt: str) -> str:
+    def generate_text(self, system_prompt: str, user_message: str, history: list = None) -> str:
         """
-        Generates raw text for the chatbot.
-        Cascade: Gemini -> Groq -> xAI -> Fallback
+        Generates a plain text response for a chat interface.
         """
-        # 1. Try Gemini
+        # Try Gemini first
         if self.providers_ready["gemini"]:
             try:
-                logger.info("🔵 Gemini Chat: Generating text...")
-                response = self.gemini_model.generate_content(
-                    prompt,
-                    generation_config=genai.GenerationConfig(temperature=0.3)
-                )
+                # Format history for Gemini
+                # Gemini expects [{"role": "user"|"model", "parts": [...]}]
+                gemini_history = []
+                if history:
+                    for h in history:
+                        role = "user" if h["role"] == "user" else "model"
+                        gemini_history.append({"role": role, "parts": [h["content"]]})
+                
+                chat = self.gemini_model.start_chat(history=gemini_history)
+                # Combine system prompt with user message for simpler stateless call or use system_instruction if available
+                full_prompt = f"{system_prompt}\n\nUser Question: {user_message}"
+                response = chat.send_message(full_prompt)
                 return response.text
             except Exception as e:
-                logger.warning(f"Gemini Chat failed: {e}")
+                logger.warning(f"Gemini text gen failed: {e}")
 
-        # 2. Try Groq
+        # Try Groq as fallback
         if self.providers_ready["groq"]:
             try:
-                logger.info("🟡 Groq Chat: Generating text...")
+                messages = [{"role": "system", "content": system_prompt}]
+                if history:
+                    messages.extend(history)
+                messages.append({"role": "user", "content": user_message})
+                
                 response = self.groq_client.chat.completions.create(
                     model=self.GROQ_MODEL,
-                    messages=[{"role": "user", "content": prompt}],
-                    temperature=0.3,
+                    messages=messages,
+                    temperature=0.7,
                 )
                 return response.choices[0].message.content
             except Exception as e:
-                logger.warning(f"Groq Chat failed: {e}")
-        
-        # 3. Try xAI
-        if self.providers_ready["xai"]:
-            try:
-                logger.info("🟢 xAI Chat: Generating text...")
-                response = self.xai_client.chat.completions.create(
-                    model=self.XAI_MODEL,
-                    messages=[{"role": "user", "content": prompt}],
-                    temperature=0.3,
-                )
-                return response.choices[0].message.content
-            except Exception as e:
-                logger.warning(f"xAI Chat failed: {e}")
+                logger.warning(f"Groq text gen failed: {e}")
 
-        return "I'm sorry, I'm currently unable to process your request due to API limitations across all providers. Please verify your API keys in the dashboard."
-
-    def generate_chat_response(self, prompt: str) -> str:
-        """
-        Specialized generation for the Strategic Analyst chatbot.
-        Prioritizes Groq/xAI for ultra-low latency.
-        """
-        from reports.exceptions import ChatProcessingError
-        
-        try:
-            logger.debug("Attempting to generate strategic chat response...")
-            
-            # --- Speed Optimization: Try Snappy Providers First for Chat ---
-            raw_text = None
-            
-            # Try Groq (Fastest)
-            if self.providers_ready["groq"]:
-                try:
-                    logger.info("🟡 Groq Chat: Prioritizing speed...")
-                    response = self.groq_client.chat.completions.create(
-                        model=self.GROQ_MODEL,
-                        messages=[{"role": "user", "content": prompt}],
-                        temperature=0.3,
-                    )
-                    raw_text = response.choices[0].message.content
-                except Exception as e:
-                    logger.warning(f"Groq Chat speed-path failed: {e}")
-
-            # Try xAI (Fast Fallback)
-            if not raw_text and self.providers_ready["xai"]:
-                try:
-                    logger.info("🟢 xAI Chat: Faster fallback...")
-                    response = self.xai_client.chat.completions.create(
-                        model=self.XAI_MODEL,
-                        messages=[{"role": "user", "content": prompt}],
-                        temperature=0.3,
-                    )
-                    raw_text = response.choices[0].message.content
-                except Exception as e:
-                    logger.warning(f"xAI Chat speed-path failed: {e}")
-
-            # Fallback to Gemini if snappy ones failed
-            if not raw_text:
-                logger.info("🔵 Gemini Chat: Falling back from speed-optimized providers...")
-                raw_text = self.generate_text(prompt)
-            
-            if not raw_text or len(raw_text.strip()) < 5:
-                logger.error("AI returned an empty or insufficient chat response.")
-                raise ChatProcessingError("Received empty response from the AI Analyst.")
-            
-            # Post-processing
-            clean_text = raw_text.strip()
-            
-            # Remove rogue markdown code blocks
-            if clean_text.startswith("```"):
-                lines = clean_text.split("\n")
-                if lines[0].startswith("```") and lines[-1].startswith("```"):
-                    clean_text = "\n".join(lines[1:-1])
-
-            logger.info("✅ Strategic chat response generated successfully.")
-            return clean_text
-            
-        except Exception as e:
-            logger.error(f"Chat generation failed: {e}")
-            if isinstance(e, ChatProcessingError):
-                raise e
-            raise ChatProcessingError(f"Generation failure: {str(e)}")
+        # Final fallback
+        return "I'm sorry, I'm having trouble connecting to my brain right now. Please try again in a moment."
 
     # ─────────────────────────────────────────────────────────────────────────
     # Provider implementations
@@ -223,7 +149,7 @@ class AIProviderManager:
             return data
         except Exception as e:
             msg = str(e).lower()
-            if "429" in msg or "quota" in msg or "exhausted" in msg:
+            if "429" in msg or "quota" in msg:
                 logger.error("🔴 Gemini Rate Limit/Quota Reached (429) — triggering instant failover.")
             else:
                 logger.warning(f"Gemini failed ({type(e).__name__}): {str(e)[:120]} — trying fallbacks...")
@@ -246,14 +172,48 @@ class AIProviderManager:
                 ],
                 response_format={"type": "json_object"},
                 temperature=0.2,
-                max_tokens=32000,
             )
             raw = response.choices[0].message.content
             data = json.loads(raw)
-            logger.info("✅ Groq (Llama-3.3-70b) succeeded.")
+            logger.info("✅ Groq succeeded.")
             return data
         except Exception as e:
-            logger.warning(f"Groq failed ({type(e).__name__}): {str(e)[:120]} — falling back to mock...")
+            logger.warning(f"Groq failed: {str(e)[:120]} — trying remaining fallbacks...")
+            return None
+
+    def _try_xai(self, prompt: str, is_json: bool = False) -> Optional[dict]:
+        if not self.providers_ready["xai"]:
+            return None
+        try:
+            logger.info(f"🟢 Trying xAI ({self.XAI_MODEL})...")
+            system_msg = "You are a financial analyst. "
+            if is_json:
+                system_msg += "Your ONLY output must be a single valid JSON object matching the requested schema."
+            
+            response = self.xai_client.chat.completions.create(
+                model=self.XAI_MODEL,
+                messages=[
+                    {"role": "system", "content": system_msg},
+                    {"role": "user", "content": prompt}
+                ],
+                temperature=0.2,
+            )
+            raw = response.choices[0].message.content
+            
+            if is_json:
+                # Basic JSON extraction
+                if "```json" in raw:
+                    raw = raw.split("```json")[1].split("```")[0].strip()
+                elif "```" in raw:
+                    raw = raw.split("```")[1].split("```")[0].strip()
+                
+                data = json.loads(raw)
+                logger.info("✅ xAI succeeded.")
+                return data
+            
+            return raw # String response
+        except Exception as e:
+            logger.warning(f"xAI failed: {str(e)[:120]}")
             return None
 
 

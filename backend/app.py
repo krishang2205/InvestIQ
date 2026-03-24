@@ -25,6 +25,28 @@ app.register_blueprint(reports_v2_bp)
 def home():
     return jsonify({"message": "InvestIQ Backend is active!"})
 
+@app.route('/api/v2/debug/providers')
+def debug_providers():
+    from reports.dependencies import report_di, MOCK_REPORTS_DB
+    llm = report_di.get_llm_manager()
+    
+    # Get latest 3 reports
+    recent_reports = []
+    for job_id, record in list(MOCK_REPORTS_DB.items())[-3:]:
+        recent_reports.append({
+            "job_id": job_id,
+            "symbol": record.get("symbol"),
+            "status": record.get("status"),
+            "has_real_data": "Mock" not in str(record.get("report_data", {}).get("header", {}).get("company", ""))
+        })
+        
+    return jsonify({
+        "providers_ready": llm.providers_ready,
+        "gemini_key_set": bool(llm.gemini_key),
+        "recent_reports": recent_reports,
+        "db_size": len(MOCK_REPORTS_DB)
+    })
+
 # Catch-all simple error handler
 @app.errorhandler(500)
 def server_error(e):

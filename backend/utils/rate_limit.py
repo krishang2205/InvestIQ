@@ -38,31 +38,20 @@ class RateLimiter:
             return True
         return False
 
-# Store limiters by (limit, period) to avoid redundant instances
-_limiters = {}
+# Global ratelimiter instance (e.g. 10 requests per minute)
+global_limiter = RateLimiter(capacity=10, refill_rate_per_sec=10/60.0)
 
-def rate_limit(limit: int = 10, period: int = 60, limit_type: str = "ip"):
-    """
-    Enhanced rate limiting decorator that supports per-route capacity.
-    Example: @rate_limit(limit=5, period=10)
-    """
-    key_limiter = (limit, period)
-    if key_limiter not in _limiters:
-        _limiters[key_limiter] = RateLimiter(capacity=limit, refill_rate_per_sec=limit/float(period))
-        
-    limiter = _limiters[key_limiter]
-
+def rate_limit(limit_type="ip"):
     def decorator(f):
         @wraps(f)
         def wrapped(*args, **kwargs):
-            # Key by IP or Auth token
-            identifier = request.remote_addr if limit_type == "ip" else request.headers.get("Authorization", "anonymous")
+            key = request.remote_addr if limit_type == "ip" else request.headers.get("Authorization", "anonymous")
             
-            if not limiter.consume(identifier):
-                logger.warning(f"Rate limit exceeded for {identifier} on {request.path}")
+            if not global_limiter.consume(key):
+                logger.warning(f"Rate limit exceeded for {key}")
                 return jsonify({
                     "error": "Rate limit exceeded. Please try again later.",
-                    "retry_after": period 
+                    "retry_after": 60 
                 }), 429
                 
             return f(*args, **kwargs)

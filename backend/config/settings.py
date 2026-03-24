@@ -1,7 +1,11 @@
 import os
 import logging
+from dotenv import load_dotenv
 from dataclasses import dataclass
 from typing import Optional
+
+# Load environment variables from .env file
+load_dotenv()
 
 logger = logging.getLogger(__name__)
 
@@ -30,7 +34,6 @@ class AppSettings:
         
         if not supa_url or not supa_key:
             logger.critical("FATAL: Supabase credentials are not set in the environment.")
-            # In a real app we might raise, but we allow graceful degradation for dev
             
         settings = cls(
             environment=env,

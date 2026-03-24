@@ -74,46 +74,50 @@ def get_job_status_v2(job_id):
         return jsonify({"error": "Database retrieval exception"}), 500
 
 @reports_v2_bp.route('/chat', methods=['POST'])
-@rate_limit(limit=10, period=60)
 def chat_with_report():
-    """
-    Conversational AI interface for a generated report.
-    Allows users to ask deep-dive questions and run scenario projections.
-    
-    Payload:
-    {
-        "job_id": "uuid",
-        "message": "What is the debt-to-equity ratio explaining?",
-        "history": "Optional chat history string"
-    }
-    """
     payload = request.get_json()
-    if not payload or 'job_id' not in payload or 'message' not in payload:
-        return jsonify({"error": "Missing job_id or message in payload"}), 400
-        
     job_id = payload.get("job_id")
     message = payload.get("message")
-    history = payload.get("history", "")
+    history = payload.get("history", [])
+
+    if not job_id or not message:
+        return jsonify({"error": "Missing job_id or message"}), 400
+
+    from reports.dependencies import report_di, MOCK_REPORTS_DB
+    from services.chat_service import ChatService
     
-    logger.info(f"Received chat request for Report Job: {job_id}")
-    
+    report = MOCK_REPORTS_DB.get(job_id)
+    if not report or report.get("status") != "completed":
+        return jsonify({"error": "Report not found or not ready"}), 404
+
     try:
-        # Delegate to orchestrator for context retrieval and LLM processing
-        response_text = ReportGenerationOrchestrator.handle_chat(
-            job_id=job_id,
-            message=message,
-            history=history
-        )
-        
-        return jsonify({
-            "status": "success",
-            "job_id": job_id,
-            "response": response_text
-        }), 200
-        
-    except ValueError as ve:
-        logger.warning(f"Chat request invalid: {ve}")
-        return jsonify({"error": str(ve)}), 404
+        chat_service = ChatService(report_di.get_llm_manager())
+        response = chat_service.process_chat(message, history, report.get("report_data"))
+        return jsonify({"response": response}), 200
     except Exception as e:
-        logger.error(f"Chat processing failed for {job_id}: {e}")
-        return jsonify({"error": "An internal error occurred during chat processing"}), 500
+        logger.error(f"Chat error: {e}")
+        return jsonify({"error": str(e)}), 500
+
+@reports_v2_bp.route('/simulate', methods=['POST'])
+def simulate_catalyst():
+    payload = request.get_json()
+    job_id = payload.get("job_id")
+    catalyst = payload.get("catalyst")
+
+    if not job_id or not catalyst:
+        return jsonify({"error": "Missing job_id or catalyst"}), 400
+
+    from reports.dependencies import report_di, MOCK_REPORTS_DB
+    from services.chat_service import ChatService
+    
+    report = MOCK_REPORTS_DB.get(job_id)
+    if not report or report.get("status") != "completed":
+        return jsonify({"error": "Report not found or not ready"}), 404
+
+    try:
+        chat_service = ChatService(report_di.get_llm_manager())
+        result = chat_service.simulate_catalyst(catalyst, report.get("report_data"))
+        return jsonify(result), 200
+    except Exception as e:
+        logger.error(f"Simulation error: {e}")
+        return jsonify({"error": str(e)}), 500

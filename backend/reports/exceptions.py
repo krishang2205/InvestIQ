@@ -36,8 +36,3 @@ class InvalidAnalysisPreferenceError(ReportDomainException):
     """Raised when user requests an analysis dimension that is disabled or invalid."""
     def __init__(self, message: str = "The requested analysis preference is invalid.", payload=None):
         super().__init__(message, status_code=400, payload=payload)
-
-class ChatProcessingError(ReportDomainException):
-    """Raised when the conversational AI fails to process a strategic query."""
-    def __init__(self, message: str = "The AI Strategic Analyst failed to process your chat request.", payload=None):
-        super().__init__(message, status_code=500, payload=payload)

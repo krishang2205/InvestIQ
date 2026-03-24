@@ -1,9 +1,7 @@
 import React, { useState } from 'react';
-import { ArrowLeft, Download, Info, AlertTriangle, ChevronRight, Sparkles } from 'lucide-react';
+import { ArrowLeft, Download, Info, AlertTriangle, ChevronRight, MessageSquare, Sparkles, Zap, ShieldAlert } from 'lucide-react';
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
-import StockChat from './StockChat';
-
-// ... (existing styles)
+import AIChatBot from './AIChatBot';
 const reportStyles = `
   .rv-root { max-width: 1200px; margin: 0 auto; padding: 0 1.5rem 8rem 1.5rem; }
   .rv-header { display: flex; justify-content: space-between; align-items: center; padding: 1rem 0; border-bottom: 1px solid var(--glass-border); margin-bottom: 2rem; }
@@ -82,21 +80,15 @@ const reportStyles = `
   }
 `;
 
-const ReportView = ({ data, onBack }) => {
+const ReportView = ({ data, onBack, jobId }) => {
     const [activeTab, setActiveTab] = useState('1Y');
+    const [isChatOpen, setIsChatOpen] = useState(false);
 
     const handleDownloadPDF = () => {
         const originalTitle = document.title;
         document.title = `InvestIQ_Capstone_Report_${data.header.symbol}_${new Date().toISOString().split('T')[0]}`;
         window.print();
         document.title = originalTitle;
-    };
-
-    const scrollToChat = () => {
-        const chatSection = document.getElementById('ai-chat-section');
-        if (chatSection) {
-            chatSection.scrollIntoView({ behavior: 'smooth' });
-        }
     };
 
     // Helper for Status Pills
@@ -569,16 +561,168 @@ const ReportView = ({ data, onBack }) => {
                 <div style={{ padding: '1.5rem', background: 'rgba(59, 130, 246, 0.1)', borderRadius: '12px', border: '1px solid rgba(59, 130, 246, 0.2)' }}>
                     <span style={{ fontSize: '0.75rem', fontWeight: 700, letterSpacing: '1px', color: '#60a5fa', textTransform: 'uppercase', display: 'block', marginBottom: '0.5rem' }}>Tactical View (0-3 Months)</span>
                     <p style={{ fontSize: '0.9rem', lineHeight: '1.6' }}>{data.outlook.shortTerm}</p>
-                    fontWeight: 700,
-                    fontSize: '0.9rem',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.5rem'
+                </div>
+                <div style={{ padding: '1.5rem', background: 'rgba(16, 185, 129, 0.1)', borderRadius: '12px', border: '1px solid rgba(16, 185, 129, 0.2)' }}>
+                    <span style={{ fontSize: '0.75rem', fontWeight: 700, letterSpacing: '1px', color: '#34d399', textTransform: 'uppercase', display: 'block', marginBottom: '0.5rem' }}>Structural View (12+ Months)</span>
+                    <p style={{ fontSize: '0.9rem', lineHeight: '1.6' }}>{data.outlook.longTerm}</p>
+                </div>
+            </div>
+
+            {/* 13. COMPLIANCE */}
+            <div style={{ textAlign: 'center', fontSize: '0.75rem', color: 'var(--color-secondary)', margin: '4rem 0' }}>
+                <p>This report is for informational purposes only. InvestIQ does not provide investment advice.</p>
+                <p>Regulatory Awareness: Data is based on historical patterns and AI analysis.</p>
+            </div>
+
+            {/* 11. ACTION BAR (Sticky Bottom) */}
+            <div className="rv-action-bar" style={{
+                position: 'fixed', bottom: 0, left: 0, right: 0,
+                background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(10px)',
+                padding: '1rem 2rem', borderTop: '1px solid var(--glass-border)',
+                display: 'flex', justifyContent: 'flex-end', gap: '1rem',
+                zIndex: 100
+            }}>
+                <button style={{ padding: '0.5rem 1rem', background: 'transparent', border: '1px solid var(--color-secondary)', color: 'var(--color-text)', borderRadius: '8px', cursor: 'pointer' }}>
+                    Compare
+                </button>
+                <button onClick={handleDownloadPDF} style={{ padding: '0.5rem 1rem', background: 'transparent', border: '1px solid var(--color-secondary)', color: 'var(--color-text)', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <Download size={16} /> PDF
+                </button>
+                <button style={{
+                    padding: '0.5rem 1.5rem', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--glass-border)',
+                    color: 'var(--color-primary)', borderRadius: '8px', fontWeight: 600, cursor: 'pointer',
+                    display: 'flex', alignItems: 'center', gap: '0.5rem'
                 }}>
                     View Outlook <ChevronRight size={16} />
                 </button>
             </div>
+            
+            {/* --- KIMS AI INTELLIGENCE LAYER (NON-TRADITIONAL UI) --- */}
+            <div style={{ 
+                marginTop: '8rem', 
+                padding: '6rem 0',
+                position: 'relative',
+                width: '100%',
+                overflow: 'hidden',
+                textAlign: 'center'
+            }} className="animate-fade-up">
+                
+                {/* Neural Background - Liquid Orbs */}
+                <div style={{ position: 'absolute', top: '0', left: '10%', width: '600px', height: '600px', background: 'radial-gradient(circle, rgba(209, 199, 157, 0.05) 0%, rgba(0,0,0,0) 70%)', filter: 'blur(80px)', zIndex: -1 }}></div>
+                <div style={{ position: 'absolute', bottom: '0', right: '10%', width: '500px', height: '500px', background: 'radial-gradient(circle, rgba(96, 165, 250, 0.03) 0%, rgba(0,0,0,0) 70%)', filter: 'blur(80px)', zIndex: -1 }}></div>
+
+                {/* Direct Text Branding */}
+                <div style={{ position: 'relative', zIndex: 1 }}>
+                    <div style={{ 
+                        display: 'inline-block', 
+                        fontSize: '0.75rem', 
+                        fontWeight: 900, 
+                        letterSpacing: '5px', 
+                        color: 'var(--color-accent)', 
+                        textTransform: 'uppercase',
+                        marginBottom: '1.5rem',
+                        opacity: 0.8
+                    }}>
+                        Intelligence Layer 01
+                    </div>
+                    
+                    <h1 style={{ 
+                        fontSize: 'clamp(3rem, 8vw, 6rem)', 
+                        fontWeight: 950, 
+                        lineHeight: 0.9, 
+                        letterSpacing: '-3px',
+                        margin: '0 auto 2rem',
+                        maxWidth: '900px',
+                        background: 'linear-gradient(180deg, #fff 40%, rgba(255,255,255,0.1) 100%)',
+                        WebkitBackgroundClip: 'text',
+                        WebkitTextFillColor: 'transparent',
+                        filter: 'drop-shadow(0 10px 20px rgba(0,0,0,0.5))'
+                    }}>
+                        PREDICT <br/> THE UNSEEN.
+                    </h1>
+
+                    <p style={{ 
+                        fontSize: '1.25rem', 
+                        color: 'var(--color-secondary)', 
+                        maxWidth: '800px', 
+                        margin: '0 auto 4rem',
+                        lineHeight: 1.6,
+                        fontWeight: 400
+                    }}>
+                        Still navigating the complexity? <span style={{ color: 'var(--color-accent)', fontWeight: 700 }}>KIMS AI</span> is here to bridge the gap. <br/>
+                        Stop searching for answers. Start gaining conviction. Our intelligence layer decodes the hidden catalysts within this report to provide high-conviction clarity—instantly.
+                    </p>
+
+                    {/* Liquid Portal Button */}
+                    <div style={{ position: 'relative', display: 'inline-block' }}>
+                        <div style={{ 
+                            position: 'absolute', inset: -10, 
+                            background: 'var(--color-accent-glow)', 
+                            filter: 'blur(20px)', opacity: 0.5, 
+                            borderRadius: '20px',
+                            animation: 'pulse 3s infinite'
+                        }}></div>
+                        <button 
+                            onClick={() => setIsChatOpen(true)}
+                            style={{
+                                position: 'relative',
+                                padding: '1.25rem 4rem', 
+                                background: '#fff',
+                                border: 'none', 
+                                color: '#000', 
+                                borderRadius: '14px', 
+                                fontWeight: 900, 
+                                cursor: 'pointer',
+                                fontSize: '1.2rem',
+                                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                                boxShadow: '0 10px 30px rgba(255,255,255,0.2)'
+                            }}
+                            onMouseEnter={(e) => {
+                                e.currentTarget.style.transform = 'translateY(-5px) scale(1.02)';
+                                e.currentTarget.style.boxShadow = '0 20px 50px rgba(255,255,255,0.3)';
+                            }}
+                            onMouseLeave={(e) => {
+                                e.currentTarget.style.transform = 'translateY(0) scale(1)';
+                                e.currentTarget.style.boxShadow = '0 10px 30px rgba(255,255,255,0.2)';
+                            }}
+                        >
+                            CONSULT KIMS AI
+                        </button>
+                    </div>
+
+                    {/* Developer Signature Strip */}
+                    <div style={{ 
+                        marginTop: '6rem', 
+                        display: 'flex', 
+                        justifyContent: 'center', 
+                        alignItems: 'center',
+                        gap: '2rem'
+                    }}>
+                        <div style={{ height: '1px', width: '60px', background: 'rgba(255,255,255,0.1)' }}></div>
+                        <div style={{ 
+                            fontSize: '0.8rem', 
+                            fontWeight: 700, 
+                            color: 'rgba(255,255,255,0.3)',
+                            textTransform: 'uppercase',
+                            letterSpacing: '2px',
+                            display: 'flex',
+                            gap: '1.5rem'
+                        }}>
+                            <span>DARJI. K</span>
+                            <span>JINGAR. I</span>
+                            <span>DIXIT. M</span>
+                        </div>
+                        <div style={{ height: '1px', width: '60px', background: 'rgba(255,255,255,0.1)' }}></div>
+                    </div>
+                </div>
+            </div>
+
+            <AIChatBot 
+                isOpen={isChatOpen} 
+                onClose={() => setIsChatOpen(false)} 
+                reportData={data} 
+                jobId={jobId} 
+            />
         </div>
         </>
     );

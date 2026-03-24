@@ -19,6 +19,7 @@ const IntelligenceReportPage = () => {
         sentiment: true,
         macro: false
     });
+    const [activeJobId, setActiveJobId] = useState(null);
 
     const pollIntervalRef = useRef(null);
 
@@ -74,6 +75,7 @@ const IntelligenceReportPage = () => {
             const jobId = data.job_id;
             setLoadingStage('Processing Multi-Agent Synthesis...');
             setCredits(prev => prev - 1);
+            setActiveJobId(jobId);
             startPolling(jobId);
         } catch (err) {
             setError(err.message);
@@ -98,8 +100,7 @@ const IntelligenceReportPage = () => {
 
                 if (data.status === 'completed') {
                     clearInterval(pollIntervalRef.current);
-                    // Inject job_id for the chat context
-                    setReportData({ ...data.report_data, job_id: jobId });
+                    setReportData(data.report_data);
                     setIsGenerating(false);
                     fetchHistory();
                 } else if (data.status === 'failed') {
@@ -121,14 +122,18 @@ const IntelligenceReportPage = () => {
         setReportData(null);
         setSelectedStock(null);
         setError(null);
+        setActiveJobId(null);
     };
 
-    const loadHistoricalReport = (data, id) => {
-        if (data) setReportData({ ...data, job_id: id });
+    const loadHistoricalReport = (item) => {
+        if (item.report_data) {
+            setReportData(item.report_data);
+            setActiveJobId(item.id);
+        }
     };
 
     if (reportData) {
-        return <ReportView data={reportData} onBack={handleBack} />;
+        return <ReportView data={reportData} onBack={handleBack} jobId={activeJobId} />;
     }
 
     return (
@@ -276,7 +281,7 @@ const IntelligenceReportPage = () => {
                                 </div>
                             </div>
                             {item.status === 'completed' && (
-                                <button onClick={() => loadHistoricalReport(item.report_data, item.id)} style={{
+                                <button onClick={() => loadHistoricalReport(item)} style={{
                                     background: 'none',
                                     color: 'var(--color-accent)',
                                     padding: '0.5rem',
