@@ -58,6 +58,52 @@ class PortfolioIntelligence:
             "recovery_estimate_months": 12 if scenario == "covid_2020" else 24
         } if total_invested > 0 else {}
 
+    def calculate_xirr(self, cash_flows: List[Dict[str, Any]], current_value: float) -> float:
+        """
+        Calculates the internal rate of return (XIRR) for the portfolio.
+        Uses the Newton-Raphson method to solve for IRR:
+        sum(Ci / (1 + r)^((Di - D0) / 365)) = 0
+        """
+        # Prepare cash flows: negative for buys, positive for sells and current value
+        flows = []
+        for cf in cash_flows:
+            # tx_date should be a datetime object or ISO string
+            date_obj = datetime.fromisoformat(cf["date"]) if isinstance(cf["date"], str) else cf["date"]
+            amount = -abs(cf["amount"]) if cf["type"] == "buy" else abs(cf["amount"])
+            flows.append((date_obj, amount))
+            
+        # Add the terminal value (as if we sold everything today)
+        flows.append((datetime.now(), current_value))
+        
+        if not flows or len(flows) < 2:
+            return 0.0
+
+        def xnpv(rate, flows):
+            d0 = flows[0][0]
+            return sum([f[1] / (1 + rate)**((f[0] - d0).days / 365.0) for f in flows])
+
+        def xnpv_derivative(rate, flows):
+            d0 = flows[0][0]
+            return sum([- (f[1] * (f[0] - d0).days / 365.0) / (1 + rate)**((f[0] - d0).days / 365.0 + 1) for f in flows])
+
+        # Iterative solver (Newton-Raphson)
+        rate = 0.1 # Initial guess 10%
+        for _ in range(100):
+            try:
+                f_val = xnpv(rate, flows)
+                f_prime = xnpv_derivative(rate, flows)
+                
+                if abs(f_prime) < 1e-9: break
+                
+                new_rate = rate - (f_val / f_prime)
+                if abs(new_rate - rate) < 1e-6:
+                    return round(new_rate * 100, 2)
+                rate = new_rate
+            except (OverflowError, ZeroDivisionError):
+                break
+                
+        return round(rate * 100, 2)
+
     def get_tax_friction_estimate(self, total_pnl: float) -> Dict[str, Any]:
         """
         Estimates the 'Real Net Profit' after Indian LTCG/STCG and brokerage.
