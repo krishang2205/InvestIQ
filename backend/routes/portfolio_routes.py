@@ -1,9 +1,11 @@
 from flask import Blueprint, jsonify, request
 from services.portfolio_service import PortfolioService
+from services.portfolio_intelligence import PortfolioIntelligence
 from datetime import datetime
 
 portfolio_bp = Blueprint('portfolio', __name__, url_prefix='/api/portfolio')
 portfolio_service = PortfolioService()
+portfolio_intel = PortfolioIntelligence(portfolio_service)
 
 # Mock storage for development (mimics DB behavior)
 TEMP_PORTFOLIO_DB = {
@@ -92,3 +94,62 @@ def add_transaction():
         return jsonify({"error": str(ve)}), 400
     except Exception as e:
         return jsonify({"error": "Internal server error"}), 500
+
+@portfolio_bp.route('/intelligence', methods=['GET'])
+def get_portfolio_intelligence():
+    """
+    Returns the AI-driven 'Problem-Solution' metrics for the user.
+    Includes Stress Test, Alpha Divergence, and Tax Friction.
+    """
+    try:
+        holdings = portfolio_service.get_holdings(
+            TEMP_PORTFOLIO_DB["default_id"], 
+            TEMP_PORTFOLIO_DB["transactions"]
+        )
+        # Mock current prices for integration
+        current_prices = {"RELIANCE": 2950.0, "TCS": 4100.0}
+        report = portfolio_service.calculate_unrealized_pnl(holdings, current_prices)
+        
+        # Calculate Intelligence Metrics
+        stress_results = portfolio_intel.simulate_stress_test(report["holdings"])
+        alpha_data = portfolio_intel.get_herd_divergence_score(report["holdings"])
+        tax_data = portfolio_intel.get_tax_friction_estimate(report["holdings"])
+        doctor_summary = portfolio_intel.get_portfolio_doctor_summary(report["holdings"])
+        
+        return jsonify({
+            "doctor_summary": doctor_summary,
+            "stress_test": stress_results,
+            "alpha_divergence": alpha_data,
+            "tax_friction": tax_data,
+            "alpha_score": alpha_data["score"],
+            "resilience_score": stress_results.get("resilience_score", 0),
+            "net_gain_post_tax": tax_data["net_capital_gain"]
+        })
+    except Exception as e:
+        return jsonify({"error": f"Intelligence Engine Error: {str(e)}"}), 500
+
+@portfolio_bp.route('/analytics/xirr', methods=['GET'])
+def get_portfolio_xirr():
+    """
+    Calculates the precise XIRR for the current portfolio.
+    """
+    try:
+        # Convert transactions to cash flow format
+        cash_flows = []
+        for tx in TEMP_PORTFOLIO_DB["transactions"]:
+            cash_flows.append({
+                "date": tx["transaction_date"],
+                "amount": float(tx["quantity"] * tx["price"]),
+                "type": tx["transaction_type"]
+            })
+            
+        current_value = 15542050.0 # Mock current portfolio value
+        xirr_val = portfolio_intel.calculate_xirr(cash_flows, current_value)
+        
+        return jsonify({
+            "xirr": xirr_val,
+            "benchmark_xirr": 14.2, # Nifty 50 average
+            "alpha": round(xirr_val - 14.2, 2)
+        })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
