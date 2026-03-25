@@ -42,8 +42,14 @@ def get_portfolio_summary():
             TEMP_PORTFOLIO_DB["default_id"], 
             TEMP_PORTFOLIO_DB["transactions"]
         )
-        # Mock current prices for initial summary
-        current_prices = {"RELIANCE": 2950.0, "TCS": 4100.0}
+        
+        # 1. Get all unique symbols
+        symbols = [h["ticker"] for h in holdings]
+        
+        # 2. Fetch Live Prices
+        current_prices = portfolio_service.get_live_prices(symbols)
+        
+        # 3. Calculate Unrealized PnL
         report = portfolio_service.calculate_unrealized_pnl(holdings, current_prices)
         
         return jsonify({
@@ -67,8 +73,13 @@ def get_portfolio_holdings():
             TEMP_PORTFOLIO_DB["default_id"], 
             TEMP_PORTFOLIO_DB["transactions"]
         )
-        # Using mock prices for now; later this integrates with market_data service
-        current_prices = {"RELIANCE": 2950.0, "TCS": 4100.0}
+        # 1. Get all unique symbols
+        symbols = [h["ticker"] for h in holdings]
+        
+        # 2. Fetch Live Prices
+        current_prices = portfolio_service.get_live_prices(symbols)
+        
+        # 3. Calculate Unrealized PnL
         report = portfolio_service.calculate_unrealized_pnl(holdings, current_prices)
         
         return jsonify(report["holdings"])

@@ -3,6 +3,8 @@ from datetime import datetime
 from typing import List, Dict, Any, Optional
 from decimal import Decimal
 
+from services.market_data import MarketDataService
+
 class PortfolioService:
     """
     PortfolioService handles the core business logic for managing user portfolios
@@ -11,9 +13,24 @@ class PortfolioService:
     """
 
     def __init__(self, db_session=None):
-        # In a real app, we would inject a database session here.
-        # For now, we interact via the schema and potentially a mock DB for logic testing.
         self.db = db_session
+        self.market_data = MarketDataService()
+
+    def get_live_prices(self, symbols: List[str]) -> Dict[str, float]:
+        """
+        Fetches the Latest Traded Price (LTP) for a list of symbols.
+        Uses the shared MarketDataService to ensure consistency across the app.
+        """
+        prices = {}
+        for symbol in symbols:
+            try:
+                # Assuming market_data.get_quote() returns a dict with 'price'
+                quote = self.market_data.get_quote(symbol)
+                prices[symbol] = float(quote.get("price", 0))
+            except Exception:
+                # Fallback to a zero price if provider fails
+                prices[symbol] = 0.0
+        return prices
 
     def create_portfolio(self, user_id: str, name: str = "Primary Portfolio") -> Dict[str, Any]:
         """
