@@ -38,25 +38,77 @@ class PortfolioIntelligence:
     def simulate_stress_test(self, holdings: List[Dict[str, Any]], scenario: str = "covid_2020") -> Dict[str, Any]:
         """
         Simulates how the current portfolio would have performed in historical crashes.
+        Provides both numerical impact and an AI-driven behavioral warning.
         """
         scenarios = {
-            "covid_2020": {"impact": -0.35, "label": "2020 COVID Crash"},
-            "lehman_2008": {"impact": -0.55, "label": "2008 Financial Crisis"},
-            "inflation_2022": {"impact": -0.15, "label": "2022 Tech Sell-off"}
+            "covid_2020": {
+                "impact": -0.35, 
+                "label": "2020 COVID Crash",
+                "narrative": "A rapid liquidity shock where everything correlated to 1.0 except Gold and Pharma."
+            },
+            "lehman_2008": {
+                "impact": -0.55, 
+                "label": "2008 Financial Crisis",
+                "narrative": "A prolonged banking-led collapse; credit markets froze and realty took a decade to recover."
+            },
+            "inflation_2022": {
+                "impact": -0.18, 
+                "label": "2022 Rate Hike Regime",
+                "narrative": "Growth stocks with high P/E were punished as the cost of capital rose globally."
+            },
+            "dotcom_2000": {
+                "impact": -0.45,
+                "label": "2000 Tech Bubble",
+                "narrative": "Pure valuation bubble; tech-heavy portfolios lost 80% of their peak value."
+            }
         }
         
         selected = scenarios.get(scenario, scenarios["covid_2020"])
-        
-        # Calculate potential loss
         total_invested = sum(h.get("total_invested", 0) for h in holdings)
-        potential_loss = total_invested * selected["impact"]
+        
+        if total_invested <= 0:
+            return {"error": "No holdings found for simulation."}
+
+        # Sector-specific adjustments (More realistic simulation)
+        adjusted_impact = selected["impact"]
+        for h in holdings:
+            sector = h.get("sector", "").lower()
+            if scenario == "covid_2020" and sector in ["pharma", "fmcg"]:
+                adjusted_impact += 0.05 # Defensive boost
+            elif scenario == "inflation_2022" and sector == "it":
+                adjusted_impact -= 0.05 # Growth-tech penalty
+
+        potential_loss = total_invested * adjusted_impact
         
         return {
             "scenario": selected["label"],
-            "impact_percent": selected["impact"] * 100,
-            "potential_value_drop": round(potential_loss, 2),
-            "recovery_estimate_months": 12 if scenario == "covid_2020" else 24
-        } if total_invested > 0 else {}
+            "base_impact": round(selected["impact"] * 100, 1),
+            "adjusted_impact": round(adjusted_impact * 100, 1),
+            "potential_value_drop": round(float(potential_loss), 2),
+            "ai_insight": selected["narrative"],
+            "resilience_score": round(100 + (adjusted_impact * 100)) # 0-100 scale
+        }
+
+    def get_portfolio_doctor_summary(self, holdings: List[Dict[str, Any]]) -> str:
+        """
+        Generates a quick text summary (AI-style) based on concentration and sector risk.
+        To be replaced by real LLM call in the final commit.
+        """
+        if not holdings: return "No data available."
+        
+        top_holding = holdings[0]
+        concentration = top_holding["weight"]
+        
+        summary = f"Your portfolio is heavily anchored by {top_holding['ticker']} ({concentration}%). "
+        
+        if concentration > 30:
+            summary += "WARNING: High single-stock risk. A 10% drop in this ticker wipes out your entire annual target."
+        elif concentration > 15:
+            summary += "Moderate concentration detected. Ensure you have high conviction in this leader."
+        else:
+            summary += "Excellent diversification. No single asset dominates your risk profile."
+            
+        return summary
 
     def calculate_xirr(self, cash_flows: List[Dict[str, Any]], current_value: float) -> float:
         """
