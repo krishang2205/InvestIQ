@@ -156,24 +156,60 @@ class PortfolioIntelligence:
                 
         return round(rate * 100, 2)
 
-    def get_tax_friction_estimate(self, total_pnl: float) -> Dict[str, Any]:
+    def get_tax_friction_estimate(self, holdings: List[Dict[str, Any]]) -> Dict[str, Any]:
         """
-        Estimates the 'Real Net Profit' after Indian LTCG/STCG and brokerage.
+        Calculates the real-world friction of exiting the current portfolio positions.
+        Considers Indian Income Tax rules:
+        - STCG (Short Term Capital Gains): 15% if held < 12 months.
+        - LTCG (Long Term Capital Gains): 10% if held > 12 months (after 1L exemption).
+        - Plus 4% Health & Education Cess.
         """
-        if total_pnl <= 0:
-            return {"tax_impact": 0, "net_pnl": total_pnl}
-            
-        # Simplified Indian Tax Logic
-        # LTCG > 1 year = 10% after 1L exemption
-        # STCG < 1 year = 15%
-        avg_tax_rate = 0.12 # Weighted blend for mock purposes
+        total_stcg = Decimal("0")
+        total_ltcg = Decimal("0")
+        total_brokerage = Decimal("0")
         
-        tax_amount = total_pnl * avg_tax_rate
-        brokerage_estimate = total_pnl * 0.002 # 20 bps
+        current_time = datetime.now()
+        
+        for h in holdings:
+            pnl = Decimal(str(h.get("pnl", 0)))
+            if pnl <= 0: continue
+            
+            # Mocking 'days_held' for simulation
+            # In production, this would come from the 'transactions' table join
+            days_held = h.get("days_held", 400) # Default to LTCG for demo
+            
+            # Standard Equity Brokerage (approx 0.05% or flat 20)
+            brokerage = Decimal(str(h["current_value"])) * Decimal("0.0005")
+            total_brokerage += brokerage
+            
+            if days_held < 365:
+                total_stcg += pnl
+            else:
+                total_ltcg += pnl
+
+        # Apply Tax Rates
+        tax_stcg = total_stcg * Decimal("0.15")
+        
+        # LTCG has 1 Lakh exemption (cumulative across all stocks)
+        taxable_ltcg = max(Decimal("0"), total_ltcg - Decimal("100000"))
+        tax_ltcg = taxable_ltcg * Decimal("0.10")
+        
+        base_tax = tax_stcg + tax_ltcg
+        cess = base_tax * Decimal("0.04") # 4% Cess
+        
+        total_tax = base_tax + cess
         
         return {
-            "estimated_tax": round(tax_amount, 2),
-            "estimated_brokerage": round(brokerage_estimate, 2),
-            "total_friction": round(tax_amount + brokerage_estimate, 2),
-            "net_profit": round(total_pnl - tax_amount - brokerage_estimate, 2)
+            "breakdown": {
+                "stcg_taxable": float(total_stcg),
+                "ltcg_taxable": float(total_ltcg),
+                "stcg_tax": float(tax_stcg),
+                "ltcg_tax": float(tax_ltcg),
+                "cess": float(cess)
+            },
+            "total_tax_estimated": float(total_tax),
+            "brokerage_fees": float(total_brokerage),
+            "total_friction": float(total_tax + total_brokerage),
+            "net_capital_gain": float(sum(Decimal(str(h.get("pnl", 0))) for h in holdings) - total_tax - total_brokerage),
+            "friction_ratio_percent": float((total_tax + total_brokerage) / sum(Decimal(str(h.get("pnl", 0))) for h in holdings) * 100) if any(h.get("pnl", 0) > 0 for h in holdings) else 0
         }
