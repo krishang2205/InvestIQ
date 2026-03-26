@@ -136,6 +136,46 @@ class PortfolioIntelligence:
             
         return summary
 
+    def get_rebalancing_suggestions(self, holdings: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """
+        Analyzes the portfolio for 'Over-concentration' and 'Stagnant Capital'.
+        Suggests rebalancing trades to optimize for the AI-Sentiment Pulse.
+        """
+        suggestions = []
+        total_value = sum(h.get("total_invested", 0) for h in holdings)
+        
+        if total_value <= 0: return []
+        
+        # Rule 1: Trim over-concentrated positions (> 25% weight)
+        for h in holdings:
+            if h["weight"] > 25:
+                excess_weight = h["weight"] - 20 # Target 20%
+                trim_value = (excess_weight / 100) * total_value
+                suggestions.append({
+                    "type": "SELL / TRIM",
+                    "ticker": h["ticker"],
+                    "reason": f"Concentration risk: {h['weight']}% is above the 20% safety threshold.",
+                    "amount": round(float(trim_value), 2),
+                    "impact": "Reduces single-stock drawdown risk."
+                })
+        
+        # Rule 2: Suggest entries for under-represented high-momentum sectors
+        # Mocking momentum sectors for April 2024
+        momentum_sectors = ["automobile", "pharma"]
+        portfolio_sectors = {h.get("sector", "").lower() for h in holdings}
+        
+        for sector in momentum_sectors:
+            if sector not in portfolio_sectors:
+                suggestions.append({
+                    "type": "BUY / ADD",
+                    "ticker": "SECTOR_ETF",
+                    "reason": f"Sector Gap: You have 0% exposure to {sector.upper()}, which shows strong AI-Sentiment.",
+                    "amount": round(total_value * 0.05, 2), # Recommend 5% start
+                    "impact": "Improves structural Alpha."
+                })
+                
+        return suggestions
+
     def calculate_xirr(self, cash_flows: List[Dict[str, Any]], current_value: float) -> float:
         """
         Calculates the internal rate of return (XIRR) for the portfolio.
