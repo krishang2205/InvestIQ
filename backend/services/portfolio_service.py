@@ -86,13 +86,60 @@ class PortfolioService:
         # Logic for writing to database would go here
         return transaction
 
-    def delete_transaction(self, transaction_id: str) -> bool:
+    def record_daily_nav(self, portfolio_id: str, date_str: str = None) -> Dict[str, Any]:
         """
-        Removes a transaction record. In a production environment, 
-        this would also trigger a recalculation of the holding's average cost.
+        Calculates the Net Asset Value (NAV) of the portfolio and records it.
+        This enables the 'Performance Chart' on the Portfolio Hero.
         """
-        # DELETE FROM transactions WHERE id = ?
-        return True
+        if not date_str:
+            date_str = datetime.now().strftime("%Y-%m-%d")
+            
+        # 1. Get Holdings
+        # In mock mode, we use the TEMP_DB; in prod, we'd query SQL
+        from routes.portfolio_routes import TEMP_PORTFOLIO_DB
+        holdings = self.get_holdings(portfolio_id, TEMP_PORTFOLIO_DB["transactions"])
+        
+        # 2. Get Live Prices
+        symbols = [h["ticker"] for h in holdings]
+        prices = self.get_live_prices(symbols)
+        
+        # 3. Calculate Total Value
+        report = self.calculate_unrealized_pnl(holdings, prices)
+        nav_value = report["total_current_value"]
+        invested = report["total_invested_value"]
+        
+        snapshot = {
+            "portfolio_id": portfolio_id,
+            "nav_date": date_str,
+            "total_value": float(nav_value),
+            "invested_value": float(invested),
+            "pnl": float(nav_value - invested)
+        }
+        
+        # SQL: INSERT INTO daily_nav (...) VALUES (...) ON CONFLICT UPDATE
+        return snapshot
+
+    def get_performance_history(self, portfolio_id: str, days: int = 30) -> List[Dict[str, Any]]:
+        """
+        Retrieves historical NAV data for Recharts integration.
+        """
+        # Mocking 30 days of data for the 'Growth Chart'
+        history = []
+        base_value = 1000000.0
+        for i in range(days, 0, -1):
+            date_offset = datetime.now().timestamp() - (i * 86400)
+            date_str = datetime.fromtimestamp(date_offset).strftime("%Y-%m-%d")
+            
+            # Simulate a 15% annual growth with some daily noise
+            daily_return = (0.15 / 365) + (random.uniform(-0.01, 0.012))
+            base_value *= (1 + daily_return)
+            
+            history.append({
+                "date": date_str,
+                "value": round(base_value, 2),
+                "pnl": round(base_value - 1000000.0, 2)
+            })
+        return history
 
     def get_holdings(self, portfolio_id: str, transactions: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         """
