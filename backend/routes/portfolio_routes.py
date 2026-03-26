@@ -1,11 +1,13 @@
 from flask import Blueprint, jsonify, request
 from services.portfolio_service import PortfolioService
 from services.portfolio_intelligence import PortfolioIntelligence
+from services.ai_doctor_service import PortfolioDoctorService
 from datetime import datetime
 
 portfolio_bp = Blueprint('portfolio', __name__, url_prefix='/api/portfolio')
 portfolio_service = PortfolioService()
 portfolio_intel = PortfolioIntelligence(portfolio_service)
+portfolio_doctor = PortfolioDoctorService(portfolio_intel)
 
 # Mock storage for development (mimics DB behavior)
 TEMP_PORTFOLIO_DB = {
@@ -125,13 +127,18 @@ def get_portfolio_intelligence():
         stress_results = portfolio_intel.simulate_stress_test(report["holdings"])
         alpha_data = portfolio_intel.get_herd_divergence_score(report["holdings"])
         tax_data = portfolio_intel.get_tax_friction_estimate(report["holdings"])
-        doctor_summary = portfolio_intel.get_portfolio_doctor_summary(report["holdings"])
+        rebalance_data = portfolio_intel.get_rebalancing_suggestions(report["holdings"])
+        
+        # 4. Generate AI Doctor Health Check
+        health_check = portfolio_doctor.generate_health_check(report)
         
         return jsonify({
-            "doctor_summary": doctor_summary,
+            "doctor_summary": health_check["diagnosis"],
+            "doctor_note": health_check,
             "stress_test": stress_results,
             "alpha_divergence": alpha_data,
             "tax_friction": tax_data,
+            "rebalancing": rebalance_data,
             "alpha_score": alpha_data["score"],
             "resilience_score": stress_results.get("resilience_score", 0),
             "net_gain_post_tax": tax_data["net_capital_gain"]
