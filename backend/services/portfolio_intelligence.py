@@ -14,25 +14,51 @@ class PortfolioIntelligence:
 
     def get_herd_divergence_score(self, holdings: List[Dict[str, Any]]) -> Dict[str, Any]:
         """
-        Calculates how much the portfolio differs from the Nifty 50.
-        A higher score means more 'Unique Alpha' potential.
+        Calculates the 'Uniqueness Index' relative to the Nifty 50.
+        Uses sector weightings to detect 'Market Mirroring'.
         """
-        # Mock benchmark data for demonstration
-        NIFTY_50_TOP = ["RELIANCE", "TCS", "HDFCBANK", "ICICIBANK", "INFY"]
+        # Benchmark weights (approximate for April 2024)
+        BENCHMARK_SECTORS = {
+            "financial_services": 33.5,
+            "it": 13.8,
+            "oil_gas_fuels": 11.2,
+            "fmcg": 9.4,
+            "automobile": 6.2
+        }
         
-        overlap_count = 0
-        total_holdings = len(holdings)
+        # 1. Calculate Portfolio Sector Weights
+        portfolio_sectors = {}
+        total_value = sum(h.get("total_invested", 0) for h in holdings)
         
+        if total_value <= 0:
+            return {"score": 100, "label": "Blank Slate"}
+
         for h in holdings:
-            if h["ticker"] in NIFTY_50_TOP:
-                overlap_count += 1
+            sector = h.get("sector", "others").lower()
+            weight = (h["total_invested"] / total_value) * 100
+            portfolio_sectors[sector] = portfolio_sectors.get(sector, 0) + weight
+            
+        # 2. Compare Weights (Mean Squared Error style divergence)
+        divergence_sum = 0
+        for sector, b_weight in BENCHMARK_SECTORS.items():
+            p_weight = portfolio_sectors.get(sector, 0)
+            divergence_sum += abs(p_weight - b_weight)
+            
+        # 3. Normalize to a 0-100 score
+        # A perfectly mirrored portfolio would have near 0 divergence
+        # An entirely different portfolio would have ~70+
+        uniqueness_score = min(100, divergence_sum * 1.5)
         
-        divergence = 100 - ((overlap_count / total_holdings) * 100) if total_holdings > 0 else 100
-        
+        # 4. Final Narrative
+        label = "True Alpha Seeker" if uniqueness_score > 60 else "Market Passenger"
+        if uniqueness_score < 25:
+            label = "Index Shadow"
+            
         return {
-            "score": round(divergence, 1),
-            "label": "High Alpha" if divergence > 70 else "Market Mirror",
-            "message": f"Your portfolio is {round(divergence)}% unique compared to major indices."
+            "score": round(float(uniqueness_score), 1),
+            "label": label,
+            "sector_overlap": {s: round(float(portfolio_sectors.get(s, 0)), 1) for s in BENCHMARK_SECTORS},
+            "insight": f"Your portfolio is {round(float(uniqueness_score))}% decoupled from the Nifty 50 benchmark."
         }
 
     def simulate_stress_test(self, holdings: List[Dict[str, Any]], scenario: str = "covid_2020") -> Dict[str, Any]:
