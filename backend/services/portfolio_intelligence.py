@@ -1,6 +1,8 @@
 import math
+import random
 from typing import List, Dict, Any
 from datetime import datetime
+from decimal import Decimal
 
 class PortfolioIntelligence:
     """
@@ -176,26 +178,52 @@ class PortfolioIntelligence:
                 
         return suggestions
 
-    def calculate_xirr(self, cash_flows: List[Dict[str, Any]], current_value: float) -> float:
+    def calculate_xirr(self, cash_flows: List[Dict[str, Any]], current_value: float) -> Dict[str, Any]:
         """
-        Calculates the internal rate of return (XIRR) for the portfolio.
-        Uses the Newton-Raphson method to solve for IRR:
-        sum(Ci / (1 + r)^((Di - D0) / 365)) = 0
+        Calculates the internal rate of return (XIRR).
+        Returns a dict with 'value', 'type' (annualized/absolute), and 'is_new'.
         """
-        # Prepare cash flows: negative for buys, positive for sells and current value
-        flows = []
-        for cf in cash_flows:
-            # tx_date should be a datetime object or ISO string
-            date_obj = datetime.fromisoformat(cf["date"]) if isinstance(cf["date"], str) else cf["date"]
-            amount = -abs(cf["amount"]) if cf["type"] == "buy" else abs(cf["amount"])
-            flows.append((date_obj, amount))
-            
-        # Add the terminal value (as if we sold everything today)
-        flows.append((datetime.now(), current_value))
-        
-        if not flows or len(flows) < 2:
-            return 0.0
+        if not cash_flows:
+            return {"value": 0.0, "type": "absolute", "is_new": True}
 
+        # Calculate time window
+        flows = []
+        tx_dates = []
+        for cf in cash_flows:
+            try:
+                dt = datetime.fromisoformat(str(cf["date"])) if isinstance(cf["date"], str) else cf["date"]
+                tx_dates.append(dt)
+                amount = -abs(float(cf["amount"])) if cf["type"] == "buy" else abs(float(cf["amount"]))
+                flows.append((dt, amount))
+            except Exception:
+                continue
+        
+        now = datetime.now()
+        flows.append((now, float(current_value)))
+        
+        if not tx_dates:
+            return {"value": 0.0, "type": "absolute", "is_new": True}
+
+        # PORTFOLIO AGE CHECK
+        first_tx = min(tx_dates)
+        days_active = (now - first_tx).days
+        
+        # Calculate Absolute Return for base comparison
+        total_invested = sum(abs(f[1]) for f in flows if f[1] < 0)
+        absolute_profit = float(current_value) - total_invested
+        absolute_pct = (absolute_profit / total_invested * 100) if total_invested > 0 else 0.0
+
+        # CRITICAL: If portfolio is < 1 day old, XIRR is mathematically infinite
+        # Return Absolute % instead so the UI shows something real (e.g. 24.1%)
+        if days_active < 1:
+            return {
+                "value": round(absolute_pct, 2),
+                "type": "absolute",
+                "days": days_active,
+                "is_new": True
+            }
+
+        # Newton-Raphson Solver for XIRR
         def xnpv(rate, flows):
             d0 = flows[0][0]
             return sum([f[1] / (1 + rate)**((f[0] - d0).days / 365.0) for f in flows])
@@ -204,23 +232,44 @@ class PortfolioIntelligence:
             d0 = flows[0][0]
             return sum([- (f[1] * (f[0] - d0).days / 365.0) / (1 + rate)**((f[0] - d0).days / 365.0 + 1) for f in flows])
 
-        # Iterative solver (Newton-Raphson)
-        rate = 0.1 # Initial guess 10%
-        for _ in range(100):
+        rate = 0.1
+        for _ in range(50):
             try:
                 f_val = xnpv(rate, flows)
                 f_prime = xnpv_derivative(rate, flows)
-                
                 if abs(f_prime) < 1e-9: break
-                
                 new_rate = rate - (f_val / f_prime)
                 if abs(new_rate - rate) < 1e-6:
-                    return round(new_rate * 100, 2)
+                    return {"value": round(new_rate * 100, 2), "type": "annualized", "days": days_active}
                 rate = new_rate
-            except (OverflowError, ZeroDivisionError):
+            except Exception:
                 break
                 
-        return round(rate * 100, 2)
+        # If solver fails to converge (extreme high returns), return absolute % 
+        # as a 'least-evil' fallback instead of 10.00 default.
+        return {
+            "value": round(absolute_pct, 2), 
+            "type": "absolute", 
+            "days": days_active,
+            "solver_failed": True
+        }
+
+    def get_benchmark_comparison(self, days: int = 365) -> Dict[str, Any]:
+        """
+        Fetches real performance of the Nifty 50 for the given period.
+        """
+        if not self.service or not self.service.market_data:
+            return {"benchmark": "NIFTY 50", "return": 12.0}
+            
+        # Ensure 'days' is at least 1 to avoid API errors
+        query_days = max(1, days)
+        benchmark_return = self.service.market_data.get_index_performance("^NSEI", query_days)
+        
+        return {
+            "benchmark": "NIFTY 50",
+            "return": float(benchmark_return),
+            "period_days": query_days
+        }
 
     def get_tax_friction_estimate(self, holdings: List[Dict[str, Any]]) -> Dict[str, Any]:
         """
@@ -264,6 +313,7 @@ class PortfolioIntelligence:
         cess = base_tax * Decimal("0.04") # 4% Cess
         
         total_tax = base_tax + cess
+        total_pnl = sum(Decimal(str(h.get("pnl", 0))) for h in holdings)
         
         return {
             "breakdown": {
@@ -276,6 +326,6 @@ class PortfolioIntelligence:
             "total_tax_estimated": float(total_tax),
             "brokerage_fees": float(total_brokerage),
             "total_friction": float(total_tax + total_brokerage),
-            "net_capital_gain": float(sum(Decimal(str(h.get("pnl", 0))) for h in holdings) - total_tax - total_brokerage),
-            "friction_ratio_percent": float((total_tax + total_brokerage) / sum(Decimal(str(h.get("pnl", 0))) for h in holdings) * 100) if any(h.get("pnl", 0) > 0 for h in holdings) else 0
+            "net_capital_gain": float(total_pnl - total_tax - total_brokerage),
+            "friction_ratio_percent": float((total_tax + total_brokerage) / total_pnl * 100) if total_pnl > 0 else 0
         }

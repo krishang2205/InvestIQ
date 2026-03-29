@@ -1,19 +1,45 @@
-import React, { useState } from 'react';
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
 import { ArrowUpRight, Activity } from 'lucide-react';
 
-const data = [
-    { name: 'Jan', value: 12400000 },
-    { name: 'Feb', value: 12800000 },
-    { name: 'Mar', value: 13500000 },
-    { name: 'Apr', value: 13200000 },
-    { name: 'May', value: 14000000 },
-    { name: 'Jun', value: 14800000 },
-    { name: 'Jul', value: 15500000 },
-];
+const PortfolioHero = ({ summary, holdings, intelligence }) => {
+    const totalValue = summary?.total_value ?? 0;
+    const pnl = summary?.pnl ?? 0;
+    const pnlPercent = summary?.pnl_percent ?? 0;
 
-const PortfolioHero = () => {
-    const [timeRange, setTimeRange] = useState('1Y');
+    // Backend provides `resilience_score` (0-100). Higher resilience => lower risk.
+    const resilienceScore = intelligence?.resilience_score;
+    const riskScore =
+        resilienceScore != null && !Number.isNaN(Number(resilienceScore))
+            ? Math.max(0, Math.min(100, Math.round(100 - Number(resilienceScore))))
+            : null;
+    const riskLevel = riskScore == null ? null : riskScore <= 40 ? 'low' : riskScore <= 70 ? 'medium' : 'high';
+    const riskColors = {
+        low: { border: '#10b981', text: '#34d399', bg: 'rgba(16, 185, 129, 0.1)' },
+        medium: { border: '#fbbf24', text: '#fbbf24', bg: 'rgba(245, 158, 11, 0.1)' },
+        high: { border: '#f87171', text: '#f87171', bg: 'rgba(248, 113, 113, 0.1)' },
+    };
+    const riskColor = riskLevel
+        ? riskColors[riskLevel]
+        : { border: '#6b7280', text: '#9ca3af', bg: 'rgba(107, 114, 128, 0.1)' };
+
+    // Pie Chart Data: Current Market Value per Stock
+    const COLORS = ['#D1C79D', '#A49B72', '#E5DEBA', '#8E865E', '#C0B589', '#F2EAD0', '#7A7250', '#DED4A9'];
+    
+    const chartData = (() => {
+        const arr = Array.isArray(holdings) ? holdings : [];
+        if (arr.length === 0) return [];
+        
+        const total = arr.reduce((sum, h) => sum + (Number(h.current_value) || 0), 0) || 1;
+        
+        return arr.map((h, idx) => ({
+            name: h.ticker,
+            value: Number(h.current_value) || 0,
+            percentage: (((Number(h.current_value) || 0) / total) * 100).toFixed(1),
+            color: COLORS[idx % COLORS.length]
+        })).sort((a, b) => b.value - a.value);
+    })();
+
+    const hasChartData = chartData.length > 0;
 
     return (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: '1.5rem', height: 'auto', minHeight: '340px' }}>
@@ -28,76 +54,62 @@ const PortfolioHero = () => {
                 borderRadius: '12px',
                 border: '1px solid var(--glass-border)'
             }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem', position: 'relative', zIndex: 10 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem', position: 'relative', zIndex: 10 }}>
                     <div>
-                        <h2 style={{ fontSize: '1.125rem', fontWeight: 600, color: 'rgba(255,255,255,0.9)', margin: 0 }}>Portfolio Performance</h2>
+                        <h2 style={{ fontSize: '1.125rem', fontWeight: 600, color: 'rgba(255,255,255,0.9)', margin: 0 }}>Portfolio Allocation</h2>
                         <div style={{ fontSize: '0.875rem', color: 'var(--color-secondary)', display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.25rem' }}>
                             <span style={{ width: '0.5rem', height: '0.5rem', borderRadius: '50%', backgroundColor: '#D1C79D' }}></span>
-                            Net Asset Value
+                            Current Market Value Breakdown
                         </div>
-                    </div>
-                    <div style={{ display: 'flex', backgroundColor: '#1E1E1E', borderRadius: '0.5rem', padding: '0.25rem', border: '1px solid rgba(255,255,255,0.05)' }}>
-                        {['1M', '3M', '1Y', 'ALL'].map((range) => (
-                            <button
-                                key={range}
-                                onClick={() => setTimeRange(range)}
-                                style={{
-                                    padding: '0.25rem 0.75rem',
-                                    fontSize: '0.75rem',
-                                    fontWeight: 500,
-                                    borderRadius: '0.375rem',
-                                    transition: 'all 0.2s',
-                                    border: 'none',
-                                    cursor: 'pointer',
-                                    backgroundColor: timeRange === range ? 'rgba(209, 199, 157, 0.15)' : 'transparent',
-                                    color: timeRange === range ? '#D1C79D' : '#6b7280',
-                                    boxShadow: timeRange === range ? '0 1px 2px 0 rgba(0, 0, 0, 0.05)' : 'none'
-                                }}
-                            >
-                                {range}
-                            </button>
-                        ))}
                     </div>
                 </div>
 
                 <div style={{ flex: 1, width: '100%', minHeight: 0 }}>
-                    <ResponsiveContainer width="100%" height="100%">
-                        <AreaChart data={data} margin={{ top: 5, right: 0, left: 0, bottom: 0 }}>
-                            <defs>
-                                <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
-                                    <stop offset="5%" stopColor="#D1C79D" stopOpacity={0.3} />
-                                    <stop offset="95%" stopColor="#D1C79D" stopOpacity={0} />
-                                </linearGradient>
-                            </defs>
-                            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
-                            <XAxis
-                                dataKey="name"
-                                axisLine={false}
-                                tickLine={false}
-                                tick={{ fill: '#6b7280', fontSize: 12 }}
-                                dy={10}
-                            />
-                            <YAxis
-                                axisLine={false}
-                                tickLine={false}
-                                tick={{ fill: '#6b7280', fontSize: 12 }}
-                                tickFormatter={(value) => `₹${(value / 10000000).toFixed(1)}Cr`}
-                            />
-                            <Tooltip
-                                contentStyle={{ backgroundColor: '#1E1E1E', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '8px' }}
-                                itemStyle={{ color: '#fff' }}
-                                formatter={(value) => [`₹${value.toLocaleString('en-IN')}`, 'Value']}
-                            />
-                            <Area
-                                type="monotone"
-                                dataKey="value"
-                                stroke="#D1C79D"
-                                strokeWidth={3}
-                                fillOpacity={1}
-                                fill="url(#colorValue)"
-                            />
-                        </AreaChart>
-                    </ResponsiveContainer>
+                <div style={{ flex: 1, width: '100%', minHeight: 0, position: 'relative' }}>
+                    {hasChartData ? (
+                        <ResponsiveContainer width="100%" height="100%">
+                            <PieChart>
+                                <Pie
+                                    data={chartData}
+                                    cx="40%"
+                                    cy="50%"
+                                    innerRadius={70}
+                                    outerRadius={100}
+                                    paddingAngle={5}
+                                    dataKey="value"
+                                    stroke="none"
+                                >
+                                    {chartData.map((entry, index) => (
+                                        <Cell key={`cell-${index}`} fill={entry.color} />
+                                    ))}
+                                </Pie>
+                                <Tooltip
+                                    contentStyle={{ backgroundColor: '#1E1E1E', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '8px' }}
+                                    itemStyle={{ color: '#fff' }}
+                                    formatter={(value, name, props) => [
+                                        `₹${value.toLocaleString('en-IN')} (${props.payload.percentage}%)`,
+                                        name
+                                    ]}
+                                />
+                                <Legend
+                                    layout="vertical"
+                                    verticalAlign="middle"
+                                    align="right"
+                                    iconType="circle"
+                                    wrapperStyle={{ 
+                                        paddingLeft: '20px',
+                                        fontSize: '12px', 
+                                        color: '#9ca3af' 
+                                    }}
+                                />
+                            </PieChart>
+                        </ResponsiveContainer>
+                    ) : (
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#6b7280', fontSize: '0.875rem' }}>
+                            No holdings yet. Add investments to see your allocation.
+                        </div>
+                    )}
+                </div>
                 </div>
             </div>
 
@@ -121,13 +133,16 @@ const PortfolioHero = () => {
 
                     <div style={{ position: 'relative', zIndex: 10 }}>
                         <p style={{ fontSize: '0.875rem', fontWeight: 500, color: 'var(--color-secondary)', marginBottom: '0.25rem' }}>Total Portfolio Value</p>
-                        <h3 style={{ fontSize: '2.25rem', fontWeight: 700, color: 'white', letterSpacing: '-0.025em', margin: '0 0 1rem 0' }}>₹1,55,42,050.00</h3>
+                        <h3 style={{ fontSize: '2.25rem', fontWeight: 700, color: 'white', letterSpacing: '-0.025em', margin: '0 0 1rem 0' }}>
+                            ₹{Number(totalValue).toLocaleString('en-IN', { maximumFractionDigits: 2 })}
+                        </h3>
 
                         <div style={{ display: 'flex', gap: '1rem' }}>
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
                                 <span style={{ fontSize: '0.75rem', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Daily P/L</span>
-                                <span style={{ fontSize: '1.125rem', fontWeight: 600, color: '#34d399', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                                    <ArrowUpRight size={18} /> +₹1,24,050.00 (0.8%)
+                                <span style={{ fontSize: '1.125rem', fontWeight: 600, color: pnl >= 0 ? '#34d399' : '#f43f5e', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                                    <ArrowUpRight size={18} />
+                                    {pnl >= 0 ? '+' : ''}₹{Number(pnl).toLocaleString('en-IN', { maximumFractionDigits: 2 })} ({Number(pnlPercent).toFixed(2)}%)
                                 </span>
                             </div>
                         </div>
@@ -140,18 +155,21 @@ const PortfolioHero = () => {
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
-                    borderLeft: '4px solid #10b981',
                     borderRadius: '12px',
                     border: '1px solid var(--glass-border)',
-                    borderLeftWidth: '4px',
-                    borderLeftColor: '#10b981'
+                    borderLeft: `4px solid ${riskColor.border}`
                 }}>
                     <div>
                         <p style={{ fontSize: '0.875rem', fontWeight: 500, color: 'var(--color-secondary)', marginBottom: '0.25rem' }}>Composite Risk Score</p>
-                        <h4 style={{ fontSize: '1.5rem', fontWeight: 700, color: 'white', margin: 0 }}>42/100 <span style={{ fontSize: '0.875rem', fontWeight: 400, color: '#34d399', marginLeft: '0.5rem' }}>(Low Risk)</span></h4>
+                        <h4 style={{ fontSize: '1.5rem', fontWeight: 700, color: 'white', margin: 0 }}>
+                            {riskScore != null ? `${riskScore}/100` : '--/100'}
+                            <span style={{ fontSize: '0.875rem', fontWeight: 400, color: riskScore != null ? riskColor.text : '#6b7280', marginLeft: '0.5rem' }}>
+                                {riskLevel === 'low' ? '(Low Risk)' : riskLevel === 'medium' ? '(Medium Risk)' : riskLevel === 'high' ? '(High Risk)' : ''}
+                            </span>
+                        </h4>
                     </div>
-                    <div style={{ height: '3rem', width: '3rem', borderRadius: '50%', backgroundColor: 'rgba(16, 185, 129, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(16, 185, 129, 0.2)' }}>
-                        <Activity size={24} color="#10b981" />
+                    <div style={{ height: '3rem', width: '3rem', borderRadius: '50%', backgroundColor: riskColor.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', border: `1px solid rgba(255,255,255,0.1)` }}>
+                        <Activity size={24} color={riskColor.border} />
                     </div>
                 </div>
             </div>

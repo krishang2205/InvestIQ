@@ -3,16 +3,14 @@ import { ArrowLeft, TrendingUp, TrendingDown, DollarSign, Wallet, ArrowUpRight }
 import PortfolioHoldingsTable from './PortfolioHoldingsTable';
 import PortfolioSectorAlloc from './PortfolioSectorAlloc';
 import PortfolioMarketCap from './PortfolioMarketCap';
-import { PORTFOLIO_HOLDINGS } from '../../data/portfolioData';
 
-const PortfolioDrillDown = ({ onBack }) => {
-    // Portfolio Summary Stats
+const PortfolioDrillDown = ({ onBack, holdings, summary, xirr, onAddTransaction, onDeleteStock }) => {
     const stats = {
-        invested: 1250000,
-        current: 1420000,
-        pnl: 170000,
-        xirr: 18.5,
-        cash: 45000,
+        invested: summary?.total_invested ?? 0,
+        current: summary?.total_value ?? 0,
+        pnl: summary?.pnl ?? 0,
+        xirr: xirr?.xirr ?? 0,
+        cash: 0,
     };
 
     const [sortConfig, setSortConfig] = useState({ key: 'weight', direction: 'descending' });
@@ -25,7 +23,7 @@ const PortfolioDrillDown = ({ onBack }) => {
         setSortConfig({ key, direction });
     };
 
-    const sortedData = [...PORTFOLIO_HOLDINGS].sort((a, b) => {
+    const sortedData = [...(holdings || [])].sort((a, b) => {
         if (a[sortConfig.key] < b[sortConfig.key]) {
             return sortConfig.direction === 'ascending' ? -1 : 1;
         }
@@ -149,13 +147,16 @@ const PortfolioDrillDown = ({ onBack }) => {
                         <div style={{ padding: '0.5rem', background: 'rgba(209, 199, 157, 0.1)', borderRadius: '10px', color: '#D1C79D' }}>
                             <TrendingUp size={20} />
                         </div>
-                        <span style={{ color: '#9ca3af', fontSize: '0.875rem' }}>Annualized Return (XIRR)</span>
+                        <span style={{ color: '#9ca3af', fontSize: '0.875rem' }}>
+                            {xirr?.xirr_type === 'absolute' ? 'Absolute Return' : 'Annualized Return (XIRR)'}
+                        </span>
                     </div>
                     <div style={{ fontSize: '2.5rem', fontWeight: 800, color: '#D1C79D', lineHeight: '1' }}>
-                        {stats.xirr}%
+                        {Number(stats.xirr || 0).toFixed(2)}%
                     </div>
                     <p style={{ fontSize: '0.875rem', color: '#6b7280', marginTop: '0.5rem' }}>
-                        Outperforming Nifty 50 by 4.2%
+                        Alpha vs Nifty 50: {xirr?.alpha != null ? `${xirr.alpha}%` : '--'}
+                        {xirr?.xirr_type === 'absolute' && <span style={{ marginLeft: '4px', opacity: 0.7 }}>(Absolute)</span>}
                     </p>
                 </div>
 
@@ -205,16 +206,18 @@ const PortfolioDrillDown = ({ onBack }) => {
                     data={sortedData}
                     sortConfig={sortConfig}
                     onSort={handleSort}
+                    onAddTransaction={onAddTransaction}
+                    onDeleteStock={onDeleteStock}
                 />
             </div>
 
             {/* 4. Insights Grid (Day 5 & 6) */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem', marginBottom: '4rem' }}>
                 {/* Day 5: Sector Allocation */}
-                <PortfolioSectorAlloc data={PORTFOLIO_HOLDINGS} />
+                <PortfolioSectorAlloc data={sortedData} />
 
                 {/* Day 6: Market Cap Analysis */}
-                <PortfolioMarketCap data={PORTFOLIO_HOLDINGS} />
+                <PortfolioMarketCap data={sortedData} />
             </div>
         </div>
     );

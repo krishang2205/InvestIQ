@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { X, Calendar, DollarSign, Hash, Check } from 'lucide-react';
+import api from '../../../../services/api';
 
 const INDIAN_STOCKS = [
     "RELIANCE", "TCS", "HDFCBANK", "INFY", "ICICIBANK", "HINDUNILVR", "SBIN", "BHARTIARTL", "ITC", "KOTAKBANK",
@@ -9,19 +10,38 @@ const INDIAN_STOCKS = [
     "EICHERMOT", "DRREDDY", "DIVISLAB", "SBILIFE", "HDFCLIFE", "APOLLOHOSP", "TATACONSUM", "UPL", "HEROMOTOCO"
 ];
 
-const AddTransactionModal = ({ isOpen, onClose }) => {
+const AddTransactionModal = ({ isOpen, onClose, onSaved, initialData }) => {
     const [formData, setFormData] = useState({
         type: 'buy', // buy | sell
         assetSegment: 'equity', // equity | mf | gold | bonds
         symbol: '',
-        date: new Date().toISOString().split('T')[0],
         quantity: '',
-        price: '',
+        price: '', // Representing Average Price
     });
+
+    useEffect(() => {
+        if (isOpen && initialData) {
+            setFormData(prev => ({
+                ...prev,
+                ...initialData,
+            }));
+        } else if (!isOpen) {
+            // Reset form when closing
+            setFormData({
+                type: 'buy',
+                assetSegment: 'equity',
+                symbol: '',
+                quantity: '',
+                price: '',
+            });
+        }
+    }, [isOpen, initialData]);
 
     const [totalValue, setTotalValue] = useState(0);
     const [suggestions, setSuggestions] = useState([]);
     const [showSuggestions, setShowSuggestions] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
+    const [error, setError] = useState('');
     const wrapperRef = useRef(null);
 
     // Auto-calculate total value
@@ -66,11 +86,27 @@ const AddTransactionModal = ({ isOpen, onClose }) => {
 
     if (!isOpen) return null;
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        // Here you would typically call an API
-        console.log('Transaction submitted:', formData);
-        onClose();
+        setError('');
+        setIsSaving(true);
+        try {
+            const payload = {
+                transaction_type: formData.type,
+                asset_segment: formData.assetSegment,
+                symbol: formData.symbol,
+                transaction_date: new Date().toISOString().split('T')[0], // Default to Today
+                quantity: parseFloat(formData.quantity),
+                price: parseFloat(formData.price),
+            };
+            await api.addPortfolioTransaction(payload);
+            onSaved?.();
+            onClose();
+        } catch (err) {
+            setError(err?.message || 'Failed to save transaction');
+        } finally {
+            setIsSaving(false);
+        }
     };
 
     return (
@@ -164,97 +200,72 @@ const AddTransactionModal = ({ isOpen, onClose }) => {
                         </select>
                     </div>
 
-                    {/* Symbol & Date Row */}
-                    <div style={{ display: 'flex', gap: '1rem' }}>
-                        <div style={{ flex: 1, position: 'relative' }} ref={wrapperRef}>
-                            <label style={{ display: 'block', fontSize: '0.875rem', color: '#9ca3af', marginBottom: '0.5rem' }}>Symbol / Ticker</label>
-                            <input
-                                type="text"
-                                placeholder="e.g. RELIANCE"
-                                value={formData.symbol}
-                                onChange={handleSymbolChange}
-                                onFocus={() => formData.symbol && setShowSuggestions(true)}
-                                style={{
-                                    width: '100%',
-                                    padding: '0.75rem',
-                                    backgroundColor: 'rgba(0,0,0,0.3)',
-                                    border: '1px solid rgba(255,255,255,0.1)',
-                                    borderRadius: '0.5rem',
-                                    color: 'white',
-                                    outline: 'none'
-                                }}
-                                required
-                            />
-                            {/* Autocomplete Dropdown */}
-                            {showSuggestions && suggestions.length > 0 && (
-                                <ul style={{
-                                    position: 'absolute',
-                                    top: '100%',
-                                    left: 0,
-                                    right: 0,
-                                    backgroundColor: '#262626',
-                                    border: '1px solid rgba(255,255,255,0.1)',
-                                    borderRadius: '0.5rem',
-                                    marginTop: '0.25rem',
-                                    maxHeight: '200px',
-                                    overflowY: 'auto',
-                                    zIndex: 100,
-                                    listStyle: 'none',
-                                    padding: '0.25rem 0',
-                                    boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.5)'
-                                }}>
-                                    {suggestions.map((stock) => (
-                                        <li
-                                            key={stock}
-                                            onClick={() => selectStock(stock)}
-                                            style={{
-                                                padding: '0.5rem 1rem',
-                                                cursor: 'pointer',
-                                                color: '#e5e7eb',
-                                                fontSize: '0.875rem',
-                                                transition: 'background-color 0.1s',
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                justifyContent: 'space-between'
-                                            }}
-                                            onMouseEnter={(e) => {
-                                                e.currentTarget.style.backgroundColor = 'rgba(209, 199, 157, 0.1)';
-                                                e.currentTarget.style.color = '#D1C79D';
-                                            }}
-                                            onMouseLeave={(e) => {
-                                                e.currentTarget.style.backgroundColor = 'transparent';
-                                                e.currentTarget.style.color = '#e5e7eb';
-                                            }}
-                                        >
-                                            {stock}
-                                        </li>
-                                    ))}
-                                </ul>
-                            )}
-                        </div>
-                        <div style={{ flex: 1 }}>
-                            <label style={{ display: 'block', fontSize: '0.875rem', color: '#9ca3af', marginBottom: '0.5rem' }}>Date</label>
-                            <div style={{ position: 'relative' }}>
-                                <input
-                                    type="date"
-                                    value={formData.date}
-                                    onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                                    style={{
-                                        width: '100%',
-                                        padding: '0.75rem',
-                                        paddingLeft: '2.5rem',
-                                        backgroundColor: 'rgba(0,0,0,0.3)',
-                                        border: '1px solid rgba(255,255,255,0.1)',
-                                        borderRadius: '0.5rem',
-                                        color: 'white',
-                                        outline: 'none',
-                                        colorScheme: 'dark'
-                                    }}
-                                    required
-                                />
-                                <Calendar size={16} color="#9ca3af" style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)' }} />
-                            </div>
-                        </div>
+                    {/* Symbol Input */}
+                    <div style={{ position: 'relative' }} ref={wrapperRef}>
+                        <label style={{ display: 'block', fontSize: '0.875rem', color: '#9ca3af', marginBottom: '0.5rem' }}>Symbol / Ticker</label>
+                        <input
+                            type="text"
+                            placeholder="e.g. RELIANCE"
+                            value={formData.symbol}
+                            onChange={handleSymbolChange}
+                            onFocus={() => formData.symbol && setShowSuggestions(true)}
+                            style={{
+                                width: '100%',
+                                padding: '0.75rem',
+                                backgroundColor: 'rgba(0,0,0,0.3)',
+                                border: '1px solid rgba(255,255,255,0.1)',
+                                borderRadius: '0.5rem',
+                                color: 'white',
+                                outline: 'none'
+                            }}
+                            required
+                        />
+                        {/* Autocomplete Dropdown */}
+                        {showSuggestions && suggestions.length > 0 && (
+                            <ul style={{
+                                position: 'absolute',
+                                top: '100%',
+                                left: 0,
+                                right: 0,
+                                backgroundColor: '#262626',
+                                border: '1px solid rgba(255,255,255,0.1)',
+                                borderRadius: '0.5rem',
+                                marginTop: '0.25rem',
+                                maxHeight: '200px',
+                                overflowY: 'auto',
+                                zIndex: 100,
+                                listStyle: 'none',
+                                padding: '0.25rem 0',
+                                boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.5)'
+                            }}>
+                                {suggestions.map((stock) => (
+                                    <li
+                                        key={stock}
+                                        onClick={() => selectStock(stock)}
+                                        style={{
+                                            padding: '0.5rem 1rem',
+                                            cursor: 'pointer',
+                                            color: '#e5e7eb',
+                                            fontSize: '0.875rem',
+                                            transition: 'background-color 0.1s',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'space-between'
+                                        }}
+                                        onMouseEnter={(e) => {
+                                            e.currentTarget.style.backgroundColor = 'rgba(209, 199, 157, 0.1)';
+                                            e.currentTarget.style.color = '#D1C79D';
+                                        }}
+                                        onMouseLeave={(e) => {
+                                            e.currentTarget.style.backgroundColor = 'transparent';
+                                            e.currentTarget.style.color = '#e5e7eb';
+                                        }}
+                                    >
+                                        {stock}
+                                    </li>
+                                ))}
+                            </ul>
+                        )}
                     </div>
 
                     {/* Qty & Price Row */}
@@ -285,7 +296,7 @@ const AddTransactionModal = ({ isOpen, onClose }) => {
                             </div>
                         </div>
                         <div style={{ flex: 1 }}>
-                            <label style={{ display: 'block', fontSize: '0.875rem', color: '#9ca3af', marginBottom: '0.5rem' }}>Price per Unit (₹)</label>
+                            <label style={{ display: 'block', fontSize: '0.875rem', color: '#9ca3af', marginBottom: '0.5rem' }}>Avg. Purchase Price (₹)</label>
                             <div style={{ position: 'relative' }}>
                                 <input
                                     type="number"
@@ -317,6 +328,12 @@ const AddTransactionModal = ({ isOpen, onClose }) => {
                         <span style={{ fontSize: '1.125rem', fontWeight: 700, color: 'white' }}>₹{totalValue.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</span>
                     </div>
 
+                    {error && (
+                        <div style={{ padding: '0.75rem 1rem', borderRadius: '0.5rem', border: '1px solid rgba(244, 63, 94, 0.3)', background: 'rgba(244, 63, 94, 0.08)', color: '#fecaca', fontSize: '0.875rem' }}>
+                            {error}
+                        </div>
+                    )}
+
                     {/* Submit Button */}
                     <button
                         type="submit"
@@ -336,8 +353,9 @@ const AddTransactionModal = ({ isOpen, onClose }) => {
                         }}
                         onMouseEnter={(e) => e.target.style.opacity = '0.9'}
                         onMouseLeave={(e) => e.target.style.opacity = '1'}
+                        disabled={isSaving}
                     >
-                        Add Transaction
+                        {isSaving ? 'Saving…' : 'Add Transaction'}
                     </button>
                 </form>
             </div>

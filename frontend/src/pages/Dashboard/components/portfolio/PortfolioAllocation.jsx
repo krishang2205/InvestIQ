@@ -1,15 +1,27 @@
 import React from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
 
-const data = [
-    { name: 'Technology', value: 45, color: '#D1C79D' }, // Gold (Primary)
-    { name: 'Healthcare', value: 20, color: '#4B5563' }, // Gray
-    { name: 'Finance', value: 15, color: '#B45309' },    // Bronze
-    { name: 'Consumer', value: 10, color: '#F59E0B' },   // Amber
-    { name: 'Cash', value: 10, color: '#1F2937' },       // Dark Gray
-];
+const COLORS = ['#D1C79D', '#10b981', '#6b7280', '#c2410c', '#3b82f6', '#8b5cf6', '#f59e0b', '#1f2937'];
 
-const PortfolioAllocation = () => {
+const PortfolioAllocation = ({ holdings }) => {
+    const data = (() => {
+        const arr = Array.isArray(holdings) ? holdings : [];
+        const sectorMap = arr.reduce((acc, s) => {
+            const sector = s.sector || 'Unknown';
+            const val = Number(s.current_value ?? (s.qty * s.ltp) ?? 0);
+            acc[sector] = (acc[sector] || 0) + val;
+            return acc;
+        }, {});
+        const total = Object.values(sectorMap).reduce((sum, v) => sum + v, 0) || 1;
+        return Object.keys(sectorMap)
+            .map((k, idx) => ({
+                name: k,
+                value: Math.round(((sectorMap[k] / total) * 100) * 10) / 10,
+                color: COLORS[idx % COLORS.length],
+            }))
+            .sort((a, b) => b.value - a.value);
+    })();
+
     return (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: '1.5rem' }}>
             {/* Donut Chart Card (Asset Allocation) */}
@@ -63,7 +75,7 @@ const PortfolioAllocation = () => {
                     {/* Center Text Overlay */}
                     <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none', paddingRight: '6rem' }}>
                         <div style={{ textAlign: 'center' }}>
-                            <span style={{ display: 'block', fontSize: '1.875rem', fontWeight: 700, color: 'white' }}>5</span>
+                            <span style={{ display: 'block', fontSize: '1.875rem', fontWeight: 700, color: 'white' }}>{data.length}</span>
                             <span style={{ fontSize: '0.75rem', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Sectors</span>
                         </div>
                     </div>

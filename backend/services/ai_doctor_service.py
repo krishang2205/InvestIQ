@@ -1,5 +1,5 @@
-import random
 from typing import List, Dict, Any
+from datetime import datetime, timedelta
 
 class PortfolioDoctorService:
     """
@@ -16,37 +16,72 @@ class PortfolioDoctorService:
         Processes portfolio metrics and generates an AI-driven 'Narrative Diagnosis'.
         In a production environment, this would call a model like Gemini or GPT-4.
         """
-        holdings = portfolio_report.get("holdings", [])
-        total_pnl = portfolio_report.get("total_pnl", 0)
+        holdings = portfolio_report.get("holdings", []) or []
+        total_pnl = float(portfolio_report.get("total_pnl", 0) or 0)
         
         # 1. Identify Key Symptoms
+        position_count = len(holdings)
         symptoms = []
-        if len(holdings) < 5:
-            symptoms.append("Extreme Concentration")
+        if position_count < 5:
+            symptoms.append(f"Low diversification ({position_count} positions)")
         if total_pnl < -100000:
-            symptoms.append("Deep Drawdown")
-        
-        # 2. Mock AI Narrative Generation
-        diagnoses = [
-            "Your portfolio shows strong momentum in Blue Chips, but you're blind to the upcoming inflation friction in IT services.",
-            "The Doctor's Note: You've over-diversified into laggards. Trimming the bottom 2-3 positions could boost your capital efficiency by 12%.",
-            "High conviction detected in Energy. While profitable now, your 'Stress Resilience' is low for a commodity-cycle reversal.",
-            "Excellent risk management. Your Beta is lower than the index, yet you've captured 85% of the upside."
-        ]
-        
+            symptoms.append("Material drawdown")
+        elif total_pnl < 0:
+            symptoms.append("Mild drawdown")
+
+        top_holding = None
+        if holdings:
+            # PortfolioService returns holdings sorted by `weight` descending.
+            top_holding = holdings[0]
+
+        concentration = float(top_holding.get("weight", 0) or 0) if top_holding else 0.0
+        ticker = top_holding.get("ticker") if top_holding else None
+
+        # 2. Deterministic narrative generation (no random placeholders)
+        if not holdings:
+            diagnosis = "No data available. Add transactions to start tracking portfolio performance."
+        elif concentration >= 30:
+            diagnosis = (
+                f"Your portfolio is anchored by {ticker} ({round(concentration, 1)}%). "
+                "A drawdown in this position can disproportionately impact your overall returns. "
+                "Consider trimming to reduce single-asset risk."
+            )
+        elif concentration >= 15:
+            diagnosis = (
+                f"Your portfolio shows moderate concentration in {ticker} ({round(concentration, 1)}%). "
+                "Small rebalancing trims can help smooth volatility without disrupting your thesis."
+            )
+        else:
+            diagnosis = (
+                "Your portfolio appears reasonably diversified. "
+                "Maintain your allocation and periodically rebalance to keep weights aligned."
+            )
+
+        if total_pnl < 0:
+            diagnosis += " You are currently in drawdown; prioritize downside risk controls over aggressive adding."
+        else:
+            diagnosis += " You are currently in positive P&L; protect gains by rebalancing back to target weights."
+
         # 3. Prescriptions (Actionable Advice)
-        prescriptions = [
-            "Consider adding Gold/Hedges to improve your Resilience Score above 70.",
-            "Stop-loss levels for your top holdings are too wide; tighten them to protect gains.",
-            "Your Herd Overlap is too high. Look for 'Hidden Gems' in the Midcap 100 to differentiate."
-        ]
-        
+        prescriptions = []
+        if concentration >= 30 and ticker:
+            prescriptions.append(f"Trim {ticker} toward ~20% weight and redeploy to underweighted holdings.")
+        if position_count < 5:
+            prescriptions.append("Add 2-3 additional positions across different sectors to reduce concentration risk.")
+        if total_pnl < 0:
+            prescriptions.append("Review per-position risk and tighten exits (stop-loss levels) to limit future drawdowns.")
+        else:
+            prescriptions.append("Rebalance back to current winners/losers split to avoid drift and lock in risk-adjusted gains.")
+
+        doctor_rating = "Healthy" if (total_pnl >= 0 and concentration < 30) else "Under Observation"
+        next_review_date = (datetime.now() + timedelta(days=30)).date().isoformat()
+
         return {
-            "diagnosis": random.choice(diagnoses),
+            "diagnosis": diagnosis,
             "symptoms": symptoms,
             "prescriptions": prescriptions[:2],
-            "doctor_rating": "Healthy" if total_pnl > 0 else "Under Observation",
-            "next_review_date": "2024-04-26"
+            "doctor_rating": doctor_rating,
+            "next_review_date": next_review_date,
         }
 
     def get_market_pulse_sentiment(self) -> Dict[str, Any]:

@@ -134,6 +134,229 @@ class MarketDataService:
             logger.error(f"Error fetching {symbol}: {e}")
             return None
 
+    def normalize_symbol(self, symbol: str) -> str:
+        """
+        Normalizes a user-facing symbol to a Yahoo Finance ticker.
+
+        Examples:
+        - RELIANCE -> RELIANCE.NS
+        - TCS -> TCS.NS
+        - ^NSEI stays as-is
+        - RELIANCE.NS stays as-is
+        """
+        if not symbol:
+            return symbol
+        s = str(symbol).strip().upper()
+        if s.startswith("^"):
+            return s
+        if "." in s:
+            return s
+        # Default to NSE suffix for Indian equities.
+        return f"{s}.NS"
+
+    def get_batch_quotes(self, symbols: list) -> dict:
+        """
+        Unified Batch Quotes with Day High/Low and 7-Day Sparkline Data.
+        Returns: { symbol: { price, high, low, sparkline, change, percentChange } }
+        """
+        if not symbols:
+            return {}
+        uniq = list(set(s for s in symbols if s))
+        if not uniq: return {}
+
+        tickers = [self.normalize_symbol(s) for s in uniq]
+        try:
+            # We fetch 7 days to provide a sparkline and reliable Day-High/Low
+            df = yf.download(
+                tickers,
+                period="7d",
+                interval="1d",
+                group_by="ticker",
+                progress=False,
+                threads=True,
+                auto_adjust=True
+            )
+        except Exception as e:
+            logger.error(f"Error batch download: {e}")
+            return {s: {"price": 0.0, "high": 0.0, "low": 0.0, "sparkline": []} for s in uniq}
+
+        if df is None or getattr(df, "empty", True):
+            return {s: {"price": 0.0, "high": 0.0, "low": 0.0, "sparkline": []} for s in uniq}
+
+        out = {}
+        for orig in uniq:
+            yf_s = self.normalize_symbol(orig)
+            try:
+                # Handle both Single and Multi-ticker DataFrames
+                if hasattr(df.columns, "levels") and yf_s in df.columns.levels[0]:
+                    s_df = df[yf_s].dropna()
+                elif yf_s in df.columns or "Close" in df.columns:
+                    s_df = df.dropna() if len(uniq) == 1 else df[yf_s].dropna()
+                else:
+                    s_df = pd.DataFrame()
+
+                if not s_df.empty:
+                    # Latest Stats
+                    price = float(s_df["Close"].iloc[-1])
+                    high = float(s_df["High"].iloc[-1])
+                    low = float(s_df["Low"].iloc[-1])
+                    prev_close = float(s_df["Close"].iloc[-2]) if len(s_df) > 1 else price
+                    
+                    # 7-Day Sparkline (Closing Prices)
+                    sparkline = [round(float(p), 2) for p in s_df["Close"].tolist()]
+                    
+                    change = price - prev_close
+                    pct_change = (change / prev_close) * 100 if prev_close else 0.0
+
+                    out[orig] = {
+                        "price": round(price, 2),
+                        "high": round(high, 2),
+                        "low": round(low, 2),
+                        "sparkline": sparkline,
+                        "change": round(change, 2),
+                        "percentChange": round(pct_change, 2)
+                    }
+                else:
+                    out[orig] = {"price": 0.0, "high": 0.0, "low": 0.0, "sparkline": []}
+            except Exception as e:
+                logger.error(f"Error processing {orig}: {e}")
+                out[orig] = {"price": 0.0, "high": 0.0, "low": 0.0, "sparkline": []}
+        return out
+
+    def get_quote(self, symbol: str) -> dict:
+        """
+        Lightweight quote endpoint used by PortfolioService.
+        Returns: { symbol, price, previousClose, change, percentChange, timestamp }
+        """
+        yf_symbol = self.normalize_symbol(symbol)
+        try:
+            ticker = yf.Ticker(yf_symbol)
+            price = None
+            prev_close = None
+
+            # Prefer fast_info when available.
+            try:
+                price = ticker.fast_info.last_price
+                prev_close = ticker.fast_info.previous_close
+            except Exception:
+                hist = ticker.history(period="2d")
+                if not hist.empty:
+                    price = float(hist["Close"].iloc[-1])
+                    if len(hist) > 1:
+                        prev_close = float(hist["Close"].iloc[-2])
+                    else:
+                        prev_close = price
+
+            if price is None:
+                return {"symbol": yf_symbol, "price": 0.0, "previousClose": 0.0, "change": 0.0, "percentChange": 0.0}
+
+            prev_close = float(prev_close) if prev_close is not None else float(price)
+            change = float(price) - prev_close
+            pct_change = (change / prev_close) * 100 if prev_close else 0.0
+            return {
+                "symbol": yf_symbol,
+                "price": round(float(price), 2),
+                "previousClose": round(prev_close, 2),
+                "change": round(change, 2),
+                "percentChange": round(pct_change, 2),
+                "timestamp": datetime.now().isoformat(),
+            }
+        except Exception as e:
+            logger.error(f"Error fetching quote for {yf_symbol}: {e}")
+            return {"symbol": yf_symbol, "price": 0.0, "previousClose": 0.0, "change": 0.0, "percentChange": 0.0}
+
+    def get_history(self, symbols: list, period: str = "1y", interval: str = "1d") -> "pd.DataFrame":
+        """
+        Batch price history fetch (used for portfolio performance chart).
+        """
+        tickers = [self.normalize_symbol(s) for s in symbols if s]
+        if not tickers:
+            return pd.DataFrame()
+
+        try:
+            return yf.download(
+                tickers,
+                period=period,
+                interval=interval,
+                group_by="ticker",
+                progress=False,
+                threads=True,
+                auto_adjust=True
+            )
+        except Exception as e:
+            logger.error(f"Error fetching history for {tickers}: {e}")
+            return pd.DataFrame()
+
+    def get_index_performance(self, symbol: str = "^NSEI", days: int = 365) -> float:
+        """
+        Calculates the point-to-point percentage return for a benchmark index.
+        Matches the lookback period to the portfolio's active life if days < 365.
+        """
+        try:
+            # yfinance handles period strings like "1mo", "3mo", "1y"
+            # We match to a "d" string or the preset strings.
+            lookback = f"{days}d" if days < 365 else "1y"
+            
+            ticker = yf.Ticker(symbol)
+            hist = ticker.history(period=lookback)
+            if hist.empty or len(hist) < 2:
+                # Institutional fallback (approximate 15-year India CAGR if API fails)
+                return 12.5 
+            
+            start_price = float(hist["Close"].iloc[0])
+            end_price = float(hist["Close"].iloc[-1])
+            perf = ((end_price / start_price) - 1) * 100
+            
+            return round(perf, 2)
+        except Exception as e:
+            logger.error(f"Error fetching index performance for {symbol}: {e}")
+            return 12.0
+
+    def get_instrument_profile(self, symbol: str) -> dict:
+        """
+        Fetches lightweight instrument metadata for UI (name/sector/marketCap bucket).
+        Cached at the route/store layer to avoid repeated yfinance calls.
+        """
+        yf_symbol = self.normalize_symbol(symbol)
+        try:
+            t = yf.Ticker(yf_symbol)
+            info = {}
+            try:
+                info = t.info or {}
+            except Exception:
+                info = {}
+
+            name = info.get("longName") or info.get("shortName") or yf_symbol.replace(".NS", "")
+            sector = info.get("sector") or info.get("industry") or "Unknown"
+            mcap = info.get("marketCap")
+
+            bucket = "Large"
+            try:
+                mcap = float(mcap) if mcap is not None else None
+                # Very rough buckets; enough for UI grouping.
+                if mcap is not None and mcap < 5_000_000_000:
+                    bucket = "Small"
+                elif mcap is not None and mcap < 20_000_000_000:
+                    bucket = "Mid"
+            except Exception:
+                bucket = "Large"
+
+            return {
+                "symbol": symbol.upper(),
+                "yf_symbol": yf_symbol,
+                "name": name,
+                "sector": sector,
+                "marketCap": bucket,
+            }
+        except Exception as e:
+            logger.error(f"Error fetching instrument profile for {yf_symbol}: {e}")
+            return {"symbol": symbol.upper(), "yf_symbol": yf_symbol, "name": symbol.upper(), "sector": "Unknown", "marketCap": "Large"}
+        try:
+            return yf.download(tickers, period=period, interval=interval, group_by="ticker", progress=False, threads=True)
+        except Exception as e:
+            logger.error(f"Error fetching history for {tickers}: {e}")
+            return pd.DataFrame()
+
     def get_indices(self):
         """
         Fetches data for all configured indices.

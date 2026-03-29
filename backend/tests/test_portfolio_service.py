@@ -1,4 +1,10 @@
 import unittest
+import sys
+import os
+
+# Ensure the backend root is in the path for resolution
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 from services.portfolio_service import PortfolioService
 from decimal import Decimal
 

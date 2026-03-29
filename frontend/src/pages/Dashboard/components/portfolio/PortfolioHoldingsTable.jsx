@@ -1,229 +1,212 @@
 import React, { useState } from 'react';
-import { ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
+import { ArrowUpDown, ArrowUp, ArrowDown, Trash2 } from 'lucide-react';
 
-const PortfolioHoldingsTable = ({ data, sortConfig, onSort }) => {
+const PortfolioHoldingsTable = ({ data, sortConfig, onSort, onAddTransaction, onDeleteStock }) => {
     const [expandedRowId, setExpandedRowId] = useState(null);
+
+    // Standard Grid for both Header and Rows to ensure perfect alignment
+    const GRID_STYLE = {
+        display: 'grid',
+        gridTemplateColumns: 'minmax(140px, 2.2fr) 0.8fr 1.2fr 1.6fr 1.2fr 1.6fr 2fr 0.8fr',
+        alignItems: 'center',
+        padding: '0.75rem 1.5rem',
+        gap: '0.5rem'
+    };
 
     // Helper to render sort icon
     const getSortIcon = (key) => {
-        if (sortConfig.key !== key) return <ArrowUpDown size={14} style={{ opacity: 0.3 }} />;
-        return sortConfig.direction === 'ascending' ? <ArrowUp size={14} /> : <ArrowDown size={14} />;
+        if (sortConfig.key !== key) return <ArrowUpDown size={12} style={{ opacity: 0.3 }} />;
+        return sortConfig.direction === 'ascending' ? <ArrowUp size={12} /> : <ArrowDown size={12} />;
     };
 
     const headers = [
-        { key: 'ticker', label: 'Instrument' },
-        { key: 'qty', label: 'Qty' },
-        { key: 'avgPrice', label: 'Avg.' },
-        { key: 'ltp', label: 'LTP' },
-        { key: 'pnl', label: 'P&L' },
-        { key: 'weight', label: 'Weight' },
+        { key: 'ticker', label: 'Instrument', align: 'left' },
+        { key: 'qty', label: 'Qty', align: 'right' },
+        { key: 'avgPrice', label: 'Avg.', align: 'right' },
+        { key: 'total_invested', label: 'Invested', align: 'right' },
+        { key: 'ltp', label: 'LTP', align: 'right' },
+        { key: 'current_value', label: 'Current', align: 'right' },
+        { key: 'pnl', label: 'P&L', align: 'right' },
+        { key: 'weight', label: 'Weight', align: 'right' },
     ];
+
+    const formatCurrency = (val) => {
+        if (val == null || isNaN(val)) return '₹0';
+        return '₹' + Number(val).toLocaleString('en-IN', { maximumFractionDigits: 0 });
+    };
 
     return (
         <div className="glass-panel" style={{
-            borderRadius: '20px',
+            borderRadius: '16px',
             border: '1px solid rgba(255,255,255,0.05)',
-            background: 'rgba(30,30,30,0.4)',
-            overflow: 'hidden'
+            background: 'rgba(20,20,20,0.4)',
+            overflow: 'hidden',
+            minWidth: '900px' // Ensure horizontal scroll on very small screens instead of squishing
         }}>
             {/* Header Row */}
             <div style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(12, 1fr)', // Using explicit 12-col grid for better control
-                padding: '1rem 1.5rem',
+                ...GRID_STYLE,
+                background: 'rgba(255,255,255,0.02)',
                 borderBottom: '1px solid rgba(255,255,255,0.05)',
-                background: 'rgba(255,255,255,0.02)'
+                paddingTop: '1rem',
+                paddingBottom: '1rem'
             }}>
-                {headers.map((header) => {
-                    // Responsive Visibility Logic
-                    const isHiddenOnMobile = ['avgPrice', 'weight'].includes(header.key);
-                    const colSpan = header.key === 'ticker' ? 'col-span-4 md:col-span-3' :
-                        isHiddenOnMobile ? 'hidden md:block md:col-span-2' :
-                            'col-span-2';
-
-                    return (
-                        <div
-                            key={header.key}
-                            className={colSpan}
-                            onClick={() => onSort(header.key)}
-                            style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '0.5rem',
-                                fontSize: '0.875rem',
-                                fontWeight: 600,
-                                color: sortConfig.key === header.key ? '#D1C79D' : '#9ca3af',
-                                cursor: 'pointer',
-                                userSelect: 'none'
-                            }}
-                        >
-                            {header.label}
-                            {getSortIcon(header.key)}
-                        </div>
-                    );
-                })}
+                {headers.map((h) => (
+                    <div
+                        key={h.key}
+                        onClick={() => onSort(h.key)}
+                        style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: h.align === 'right' ? 'flex-end' : 'flex-start',
+                            gap: '0.25rem',
+                            fontSize: '0.75rem',
+                            fontWeight: 600,
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.05em',
+                            color: sortConfig.key === h.key ? '#D1C79D' : '#6b7280',
+                            cursor: 'pointer',
+                            userSelect: 'none',
+                            textAlign: h.align
+                        }}
+                    >
+                        {h.label}
+                        {getSortIcon(h.key)}
+                    </div>
+                ))}
             </div>
 
             {/* Table Body */}
-            <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
+            <div style={{ maxHeight: '600px', overflowY: 'auto' }}>
                 {data.map((stock) => {
-                    const investedValue = stock.qty * stock.avgPrice;
-                    const currentValue = stock.qty * stock.ltp;
-                    const pnl = currentValue - investedValue;
-                    const pnlPercent = (pnl / investedValue) * 100;
+                    const investedValue = stock.total_invested ?? (stock.qty * stock.avgPrice);
+                    const currentValue = stock.current_value ?? (stock.qty * stock.ltp);
+                    const pnl = stock.pnl ?? (currentValue - investedValue);
+                    const pnlPercent = stock.pnl_percent ?? ((pnl / (investedValue || 1)) * 100);
                     const isProfit = pnl >= 0;
-
-                    const formatCurrency = (val) => '₹' + val.toLocaleString('en-IN', { maximumFractionDigits: 2 });
-
-
                     const isExpanded = expandedRowId === stock.id;
 
                     return (
-                        <div key={stock.id}>
+                        <div key={stock.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
                             {/* Main Row */}
                             <div
                                 onClick={() => setExpandedRowId(isExpanded ? null : stock.id)}
                                 style={{
-                                    display: 'grid',
-                                    gridTemplateColumns: 'repeat(12, 1fr)',
-                                    padding: '1rem 1.5rem',
-                                    borderBottom: isExpanded ? 'none' : '1px solid rgba(255,255,255,0.05)',
-                                    alignItems: 'center',
-                                    transition: 'background 0.2s',
+                                    ...GRID_STYLE,
+                                    transition: 'all 0.2s',
                                     cursor: 'pointer',
-                                    background: isExpanded ? 'rgba(255,255,255,0.03)' : 'transparent'
+                                    background: isExpanded ? 'rgba(209, 199, 157, 0.03)' : 'transparent',
+                                    paddingTop: '1.25rem',
+                                    paddingBottom: '1.25rem'
                                 }}
                                 onMouseEnter={(e) => { if (!isExpanded) e.currentTarget.style.background = 'rgba(255,255,255,0.02)'; }}
                                 onMouseLeave={(e) => { if (!isExpanded) e.currentTarget.style.background = 'transparent'; }}
                             >
-                                {/* Ticker & Name - Span 4 on mobile, 3 on desktop */}
-                                <div className="col-span-4 md:col-span-3">
-                                    <div style={{ fontWeight: 700, color: 'white' }}>{stock.ticker}</div>
-                                    <div style={{ fontSize: '0.75rem', color: '#9ca3af' }}>{stock.name}</div>
+                                {/* Instrument */}
+                                <div style={{ textAlign: 'left' }}>
+                                    <div style={{ fontWeight: 700, color: 'white', fontSize: '0.925rem' }}>{stock.ticker}</div>
+                                    <div style={{ fontSize: '0.7rem', color: '#6b7280', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{stock.name}</div>
                                 </div>
 
-                                {/* Qty - Span 2 */}
-                                <div className="col-span-2" style={{ color: '#e5e7eb', fontWeight: 500 }}>{stock.qty}</div>
+                                {/* Qty */}
+                                <div style={{ textAlign: 'right', color: '#e5e7eb', fontWeight: 500 }}>{stock.qty}</div>
 
-                                {/* Avg Price - Hidden on mobile, Span 2 on desktop */}
-                                <div className="hidden md:block md:col-span-2" style={{ color: '#9ca3af' }}>{formatCurrency(stock.avgPrice)}</div>
+                                {/* Avg Price */}
+                                <div style={{ textAlign: 'right', color: '#9ca3af', fontSize: '0.875rem' }}>{formatCurrency(stock.avgPrice)}</div>
 
-                                {/* LTP - Span 2 */}
-                                <div className="col-span-2" style={{ color: 'white', fontWeight: 600 }}>{formatCurrency(stock.ltp)}</div>
+                                {/* Invested Amount */}
+                                <div style={{ textAlign: 'right', color: '#D1C79D', fontWeight: 600 }}>{formatCurrency(investedValue)}</div>
 
-                                {/* P&L - Span 2 */}
-                                <div className="col-span-3 md:col-span-2">
-                                    <div style={{ color: isProfit ? '#10b981' : '#f43f5e', fontWeight: 600, fontSize: '0.9rem' }}>
+                                {/* LTP */}
+                                <div style={{ textAlign: 'right', color: '#e5e7eb', fontSize: '0.875rem' }}>{formatCurrency(stock.ltp)}</div>
+
+                                {/* Current Value */}
+                                <div style={{ textAlign: 'right', color: 'white', fontWeight: 600 }}>{formatCurrency(currentValue)}</div>
+
+                                {/* P&L */}
+                                <div style={{ textAlign: 'right' }}>
+                                    <div style={{ color: isProfit ? '#10b981' : '#f43f5e', fontWeight: 700, fontSize: '0.9rem' }}>
                                         {isProfit ? '+' : ''}{formatCurrency(pnl)}
                                     </div>
-                                    <div style={{
-                                        fontSize: '0.75rem',
-                                        display: 'inline-block',
-                                        padding: '2px 6px',
-                                        borderRadius: '4px',
-                                        background: isProfit ? 'rgba(16, 185, 129, 0.1)' : 'rgba(244, 63, 94, 0.1)',
-                                        color: isProfit ? '#10b981' : '#f43f5e',
-                                        marginTop: '2px'
-                                    }}>
+                                    <div style={{ fontSize: '0.7rem', color: isProfit ? '#34d399' : '#fb7185', opacity: 0.8 }}>
                                         {isProfit ? '+' : ''}{pnlPercent.toFixed(2)}%
                                     </div>
                                 </div>
 
-                                {/* Weight - Hidden on mobile, Span 1 on desktop */}
-                                <div className="hidden md:block md:col-span-1" style={{ color: '#9ca3af' }}>{stock.weight}%</div>
+                                {/* Weight */}
+                                <div style={{ textAlign: 'right', color: '#6b7280', fontSize: '0.875rem' }}>{stock.weight}%</div>
                             </div>
 
                             {/* Expanded Detail View */}
                             {isExpanded && (
-                                <div className="animate-in slide-in-from-top-2 duration-200" style={{
-                                    background: 'rgba(20, 20, 20, 0.5)',
-                                    borderBottom: '1px solid rgba(255,255,255,0.05)',
+                                <div className="animate-in slide-in-from-top-2 duration-300" style={{
+                                    background: 'rgba(0, 0, 0, 0.2)',
                                     padding: '1.5rem',
+                                    borderTop: '1px solid rgba(255,255,255,0.03)'
                                 }}>
-                                    <div style={{
-                                        display: 'grid',
-                                        gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-                                        gap: '2rem'
-                                    }}>
-                                        {/* Left Col: Chart Placeholder */}
-                                        <div style={{
-                                            height: '120px',
-                                            background: 'rgba(0,0,0,0.2)',
-                                            borderRadius: '12px',
-                                            padding: '1rem',
-                                            position: 'relative',
-                                            overflow: 'hidden'
-                                        }}>
-                                            <div style={{ fontSize: '0.75rem', color: '#9ca3af', marginBottom: '0.5rem' }}>7-Day Performance</div>
-                                            {/* Simulated Sparkline SVG */}
-                                            <svg width="100%" height="70%" viewBox="0 0 300 100" preserveAspectRatio="none">
-                                                <path
-                                                    d={isProfit
-                                                        ? "M0,80 C50,80 50,40 100,50 C150,60 150,20 200,30 C250,40 250,0 300,10"
-                                                        : "M0,20 C50,20 50,60 100,50 C150,40 150,80 200,70 C250,60 250,100 300,90"}
-                                                    fill="none"
-                                                    stroke={isProfit ? '#10b981' : '#f43f5e'}
-                                                    strokeWidth="2"
-                                                    vectorEffect="non-scaling-stroke"
-                                                />
-                                                <defs>
-                                                    <linearGradient id={`grad-${stock.id}`} x1="0%" y1="0%" x2="0%" y2="100%">
-                                                        <stop offset="0%" stopColor={isProfit ? '#10b981' : '#f43f5e'} stopOpacity="0.2" />
-                                                        <stop offset="100%" stopColor={isProfit ? '#10b981' : '#f43f5e'} stopOpacity="0" />
-                                                    </linearGradient>
-                                                </defs>
-                                                <path
-                                                    d={isProfit
-                                                        ? "M0,80 C50,80 50,40 100,50 C150,60 150,20 200,30 C250,40 250,0 300,10 V100 H0 Z"
-                                                        : "M0,20 C50,20 50,60 100,50 C150,40 150,80 200,70 C250,60 250,100 300,90 V100 H0 Z"}
-                                                    fill={`url(#grad-${stock.id})`}
-                                                    stroke="none"
-                                                />
-                                            </svg>
+                                    <div style={{ display: 'flex', gap: '2rem', flexWrap: 'wrap' }}>
+                                        {/* Performance Indicator (Real Sparkline) */}
+                                        <div style={{ flex: '1 1 300px', height: '100px', background: 'rgba(255,255,255,0.02)', borderRadius: '12px', padding: '1rem' }}>
+                                            <div style={{ fontSize: '0.7rem', color: '#6b7280', marginBottom: '0.5rem', textTransform: 'uppercase' }}>7-Day Momentum</div>
+                                            {stock.sparkline && stock.sparkline.length > 1 ? (
+                                                <svg width="100%" height="50" viewBox="0 0 300 100" preserveAspectRatio="none">
+                                                    {(() => {
+                                                        const data = stock.sparkline;
+                                                        const min = Math.min(...data);
+                                                        const max = Math.max(...data);
+                                                        const range = max - min || 1;
+                                                        
+                                                        // Generate Path Points
+                                                        const points = data.map((val, i) => {
+                                                            const x = (i / (data.length - 1)) * 300;
+                                                            const y = 90 - ((val - min) / range) * 80; // 90 to 10 scale (inverted y)
+                                                            return `${x},${y}`;
+                                                        });
+                                                        
+                                                        // Smooth Cubic Bezier Path
+                                                        const pathData = points.reduce((acc, point, i, a) => {
+                                                            if (i === 0) return `M${point}`;
+                                                            const prev = a[i - 1].split(',');
+                                                            const curr = point.split(',');
+                                                            const midX = (parseFloat(prev[0]) + parseFloat(curr[0])) / 2;
+                                                            return `${acc} C${midX},${prev[1]} ${midX},${curr[1]} ${curr[0]},${curr[1]}`;
+                                                        }, "");
+
+                                                        return (
+                                                            <path 
+                                                                d={pathData} 
+                                                                fill="none" 
+                                                                stroke={isProfit ? '#10b981' : '#f43f5e'} 
+                                                                strokeWidth="3" 
+                                                                strokeLinecap="round"
+                                                                strokeLinejoin="round"
+                                                            />
+                                                        );
+                                                    })()}
+                                                </svg>
+                                            ) : (
+                                                <div style={{ height: '50px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#4b5563', fontSize: '0.75rem' }}>
+                                                    Loading momentum data...
+                                                </div>
+                                            )}
                                         </div>
 
-                                        {/* Right Col: Quick Stats & Actions */}
-                                        <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-                                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
-                                                <div>
-                                                    <p style={{ fontSize: '0.75rem', color: '#9ca3af' }}>Day's High</p>
-                                                    <p style={{ color: 'white', fontWeight: 600 }}>{formatCurrency(stock.ltp * 1.02)}</p>
+                                        {/* Quick Controls */}
+                                        <div style={{ flex: '0 0 350px', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                                                <div style={{ padding: '0.75rem', background: 'rgba(255,255,255,0.03)', borderRadius: '8px' }}>
+                                                    <div style={{ fontSize: '0.65rem', color: '#6b7280' }}>Day High</div>
+                                                    <div style={{ color: 'white', fontWeight: 600 }}>{formatCurrency(stock.day_high)}</div>
                                                 </div>
-                                                <div>
-                                                    <p style={{ fontSize: '0.75rem', color: '#9ca3af' }}>Day's Low</p>
-                                                    <p style={{ color: 'white', fontWeight: 600 }}>{formatCurrency(stock.ltp * 0.98)}</p>
-                                                </div>
-                                                <div>
-                                                    <p style={{ fontSize: '0.75rem', color: '#9ca3af' }}>52W High</p>
-                                                    <p style={{ color: 'white', fontWeight: 600 }}>{formatCurrency(stock.ltp * 1.4)}</p>
-                                                </div>
-                                                <div>
-                                                    <p style={{ fontSize: '0.75rem', color: '#9ca3af' }}>52W Low</p>
-                                                    <p style={{ color: 'white', fontWeight: 600 }}>{formatCurrency(stock.ltp * 0.7)}</p>
+                                                <div style={{ padding: '0.75rem', background: 'rgba(255,255,255,0.03)', borderRadius: '8px' }}>
+                                                    <div style={{ fontSize: '0.65rem', color: '#6b7280' }}>Day Low</div>
+                                                    <div style={{ color: 'white', fontWeight: 600 }}>{formatCurrency(stock.day_low)}</div>
                                                 </div>
                                             </div>
-
-                                            <div style={{ display: 'flex', gap: '1rem' }}>
-                                                <button style={{
-                                                    flex: 1,
-                                                    padding: '0.5rem',
-                                                    background: '#10b981',
-                                                    color: 'white',
-                                                    border: 'none',
-                                                    borderRadius: '8px',
-                                                    fontWeight: 600,
-                                                    cursor: 'pointer'
-                                                }}>Buy More</button>
-                                                <button style={{
-                                                    flex: 1,
-                                                    padding: '0.5rem',
-                                                    background: 'rgba(244, 63, 94, 0.1)',
-                                                    color: '#f43f5e',
-                                                    border: '1px solid rgba(244, 63, 94, 0.2)',
-                                                    borderRadius: '8px',
-                                                    fontWeight: 600,
-                                                    cursor: 'pointer'
-                                                }}>Sell</button>
+                                            <div style={{ display: 'flex', gap: '0.75rem' }}>
+                                                <button onClick={() => onAddTransaction?.({ symbol: stock.ticker, type: 'buy' })} style={{ flex: 1, padding: '0.6rem', background: '#D1C79D', color: 'black', border: 'none', borderRadius: '8px', fontWeight: 700, cursor: 'pointer' }}>Buy More</button>
+                                                <button onClick={() => onAddTransaction?.({ symbol: stock.ticker, type: 'sell' })} style={{ flex: 1, padding: '0.6rem', background: 'rgba(255,255,255,0.05)', color: 'white', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', fontWeight: 600, cursor: 'pointer' }}>Sell</button>
+                                                <button onClick={() => onDeleteStock?.(stock.ticker)} style={{ padding: '0.6rem', background: 'rgba(244, 63, 94, 0.1)', color: '#f43f5e', border: 'none', borderRadius: '8px', cursor: 'pointer' }}><Trash2 size={18}/></button>
                                             </div>
                                         </div>
                                     </div>

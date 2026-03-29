@@ -1,9 +1,13 @@
 import uuid
+import random
 from datetime import datetime
 from typing import List, Dict, Any, Optional
 from decimal import Decimal
 
-from services.market_data import MarketDataService
+try:
+    from services.market_data import MarketDataService
+except ImportError:
+    from .market_data import MarketDataService
 
 class PortfolioService:
     """
@@ -19,18 +23,11 @@ class PortfolioService:
     def get_live_prices(self, symbols: List[str]) -> Dict[str, float]:
         """
         Fetches the Latest Traded Price (LTP) for a list of symbols.
-        Uses the shared MarketDataService to ensure consistency across the app.
+        Batches into one yfinance download when multiple symbols (much faster).
         """
-        prices = {}
-        for symbol in symbols:
-            try:
-                # Assuming market_data.get_quote() returns a dict with 'price'
-                quote = self.market_data.get_quote(symbol)
-                prices[symbol] = float(quote.get("price", 0))
-            except Exception:
-                # Fallback to a zero price if provider fails
-                prices[symbol] = 0.0
-        return prices
+        if not symbols:
+            return {}
+        return self.market_data.get_batch_quotes(symbols)
 
     def create_portfolio(self, user_id: str, name: str = "Primary Portfolio") -> Dict[str, Any]:
         """
@@ -76,11 +73,14 @@ class PortfolioService:
         }
         
         # Business Rule: Quantity must be positive
-        if transaction["quantity"] <= 0:
+        qty_val = float(transaction["quantity"])
+        price_val = float(transaction["price"])
+        
+        if qty_val <= 0:
             raise ValueError("Quantity must be greater than zero.")
             
         # Business Rule: Price must be positive
-        if transaction["price"] < 0:
+        if price_val < 0:
             raise ValueError("Price cannot be negative.")
 
         # Logic for writing to database would go here
@@ -96,7 +96,7 @@ class PortfolioService:
             
         # 1. Get Holdings
         # In mock mode, we use the TEMP_DB; in prod, we'd query SQL
-        from routes.portfolio_routes import TEMP_PORTFOLIO_DB
+        from db.mock_db import TEMP_PORTFOLIO_DB
         holdings = self.get_holdings(portfolio_id, TEMP_PORTFOLIO_DB["transactions"])
         
         # 2. Get Live Prices
@@ -119,26 +119,74 @@ class PortfolioService:
         # SQL: INSERT INTO daily_nav (...) VALUES (...) ON CONFLICT UPDATE
         return snapshot
 
-    def get_performance_history(self, portfolio_id: str, days: int = 30) -> List[Dict[str, Any]]:
+    def get_performance_history(self, portfolio_id: str, transactions: List[Dict[str, Any]], days: int = 180) -> List[Dict[str, Any]]:
         """
-        Retrieves historical NAV data for Recharts integration.
+        Reconstructs the historical Net Asset Value (NAV) of the portfolio.
+        Instead of simulating, it uses historical price data and your trade dates.
         """
-        # Mocking 30 days of data for the 'Growth Chart'
+        if not transactions:
+            return []
+
+        # 1. Get unique symbols and date range
+        symbols = list(set(tx["symbol"] for tx in transactions))
+        
+        # 2. Fetch Historical Data (Batch)
+        period = "1y" if days > 180 else "6mo"
+        hist_df = self.market_data.get_history(symbols, period=period)
+        
+        if hist_df.empty:
+            return []
+
+        # 3. Process Trades into a Daily Quantity Map
+        # We need to know exactly how many shares were held on any given Date.
+        sorted_txs = sorted(transactions, key=lambda x: x["transaction_date"])
+        
+        # Normalize Dataframe Format (MultiIndex handling)
+        series_map = {}
+        if hasattr(hist_df.columns, "levels"):
+            for s in symbols:
+                yf_s = self.market_data.normalize_symbol(s)
+                if yf_s in hist_df.columns.levels[0]:
+                    series_map[s] = hist_df[yf_s]["Close"].dropna()
+        else:
+            if len(symbols) == 1:
+                series_map[symbols[0]] = hist_df["Close"].dropna()
+
+        if not series_map:
+            return []
+
+        # 4. Align by the dates present in the market data
+        timeline = sorted(list(next(iter(series_map.values())).index))
+        # Filter to the requested window
+        timeline = timeline[-days:]
+        
         history = []
-        base_value = 1000000.0
-        for i in range(days, 0, -1):
-            date_offset = datetime.now().timestamp() - (i * 86400)
-            date_str = datetime.fromtimestamp(date_offset).strftime("%Y-%m-%d")
+        for dt in timeline:
+            dt_str = dt.strftime("%Y-%m-%d")
+            total_value = Decimal("0")
             
-            # Simulate a 15% annual growth with some daily noise
-            daily_return = (0.15 / 365) + (random.uniform(-0.01, 0.012))
-            base_value *= (1 + daily_return)
+            # Calculate holdings for this specific date
+            for s, ser in series_map.items():
+                # Qty of this stock on this day = Sum of buys - Sum of sells before or on this day
+                qty = sum(
+                    Decimal(str(tx["quantity"])) if tx["transaction_type"] == "buy" else -Decimal(str(tx["quantity"]))
+                    for tx in sorted_txs 
+                    if tx["symbol"] == s and tx["transaction_date"] <= dt_str
+                )
+                
+                if qty > 0:
+                    try:
+                        # Find closest price (as market might be closed on tx date)
+                        price = Decimal(str(ser.asof(dt) if hasattr(ser, 'asof') else ser.iloc[0]))
+                        total_value += qty * price
+                    except Exception:
+                        continue
             
             history.append({
-                "date": date_str,
-                "value": round(base_value, 2),
-                "pnl": round(base_value - 1000000.0, 2)
+                "date": dt_str,
+                "value": round(float(total_value), 2)
             })
+
         return history
 
     def get_holdings(self, portfolio_id: str, transactions: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
@@ -193,7 +241,10 @@ class PortfolioService:
         final_holdings = []
         for h in active_holdings:
             # Type casting to float for JSON serialization later
-            weight = (h["total_cost"] / total_p_cost * 100) if total_p_cost > 0 else 0
+            total_cost_val = Decimal(str(h["total_cost"]))
+            total_p_cost_val = Decimal(str(total_p_cost))
+            
+            weight = (total_cost_val / total_p_cost_val * Decimal("100")) if total_p_cost_val > 0 else Decimal("0")
             
             final_holdings.append({
                 "ticker": h["ticker"],
@@ -205,21 +256,36 @@ class PortfolioService:
 
         return sorted(final_holdings, key=lambda x: x["weight"], reverse=True)
 
-    def calculate_unrealized_pnl(self, holdings: List[Dict[str, Any]], current_prices: Dict[str, float]) -> Dict[str, Any]:
+    def calculate_unrealized_pnl(self, holdings: List[Dict[str, Any]], current_prices: Dict[str, Any]) -> Dict[str, Any]:
         """
-        Merges current holdings with live market prices to calculate unrealized gains.
+        Merges current holdings with live market prices, high/low stats, and sparklines.
         """
         total_current_value = Decimal("0")
         total_invested_value = Decimal("0")
         
         for h in holdings:
             symbol = h["ticker"]
-            ltp = Decimal(str(current_prices.get(symbol, h["avg_price"])))
+            market_data = current_prices.get(symbol, {})
+            
+            # If market_data is a float (legacy) or missing, handle gracefully
+            if isinstance(market_data, (int, float, Decimal)):
+                ltp = Decimal(str(market_data))
+                day_high = float(ltp)
+                day_low = float(ltp)
+                sparkline = []
+            else:
+                ltp = Decimal(str(market_data.get("price", h["avg_price"])))
+                day_high = market_data.get("high", float(ltp))
+                day_low = market_data.get("low", float(ltp))
+                sparkline = market_data.get("sparkline", [])
             
             current_val = Decimal(str(h["qty"])) * ltp
             invested_val = Decimal(str(h["total_invested"]))
             
             h["ltp"] = float(ltp)
+            h["day_high"] = day_high
+            h["day_low"] = day_low
+            h["sparkline"] = sparkline
             h["current_value"] = float(current_val)
             h["pnl"] = float(current_val - invested_val)
             h["pnl_percent"] = float(((current_val / invested_val) - 1) * 100) if invested_val > 0 else 0

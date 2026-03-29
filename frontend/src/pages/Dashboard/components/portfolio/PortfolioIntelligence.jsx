@@ -52,7 +52,15 @@ const RiskMetricCard = ({ title, value, subtext, level }) => {
     );
 };
 
-const PortfolioIntelligence = () => {
+const PortfolioIntelligence = ({ intelligence }) => {
+    const doctorSummary = intelligence?.doctor_summary;
+    const alphaScore = intelligence?.alpha_score;
+    const resilience = intelligence?.resilience_score;
+    const netGain = intelligence?.net_gain_post_tax;
+
+    const formatInr = (n) =>
+        '₹' + Number(n || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 });
+
     return (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: '1.5rem' }}>
             {/* AI Insight Box (Full Width) */}
@@ -87,9 +95,7 @@ const PortfolioIntelligence = () => {
                             <button style={{ background: 'none', border: 'none', fontSize: '0.75rem', color: '#D1C79D', cursor: 'pointer', transition: 'color 0.2s' }}>View detailed report →</button>
                         </div>
                         <p style={{ fontSize: '0.875rem', color: '#d1d5db', lineHeight: '1.625' }}>
-                            Your portfolio is heavily weighted towards <span style={{ color: '#D1C79D', fontWeight: 500 }}>Technology (45%)</span>, which increases volatility.
-                            Consider diversifying into <span style={{ color: '#34d399', cursor: 'pointer', textDecoration: 'underline' }}>Government Bonds</span> or <span style={{ color: '#34d399', cursor: 'pointer', textDecoration: 'underline' }}>Consumer Staples</span> to balance risk.
-                            The recent drop in tech stocks has increased your drawdown risk by <span style={{ color: '#f87171' }}>2.4%</span>.
+                            {doctorSummary || 'AI insights will appear once your portfolio has enough history and holdings.'}
                         </p>
                     </div>
                 </div>
@@ -98,28 +104,28 @@ const PortfolioIntelligence = () => {
             {/* Risk Metrics Grid */}
             <div style={{ gridColumn: 'span 12', display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1rem' }}>
                 <RiskMetricCard
-                    title="Max Drawdown"
-                    value="-12.4%"
-                    subtext="vs -15% benchmark"
-                    level="low"
+                    title="Resilience Score"
+                    value={resilience != null ? `${resilience}/100` : '--'}
+                    subtext="Stress-test proxy"
+                    level={resilience != null && resilience >= 70 ? 'low' : resilience != null && resilience >= 45 ? 'medium' : 'high'}
                 />
                 <RiskMetricCard
-                    title="Volatility (Beta)"
-                    value="1.24"
-                    subtext="High sensitivity"
-                    level="high"
+                    title="Alpha Score"
+                    value={alphaScore != null ? `${alphaScore}` : '--'}
+                    subtext="Uniqueness vs benchmark"
+                    level={alphaScore != null && alphaScore >= 60 ? 'low' : alphaScore != null && alphaScore >= 30 ? 'medium' : 'high'}
                 />
                 <RiskMetricCard
-                    title="Sharpe Ratio"
-                    value="1.85"
-                    subtext="Good returns/risk"
+                    title="Net Gain (Post Tax)"
+                    value={netGain != null ? formatInr(netGain) : '--'}
+                    subtext="Estimated friction included"
                     level="medium"
                 />
                 <RiskMetricCard
                     title="Concentration"
-                    value="Top 3: 45%"
-                    subtext="High Alert"
-                    level="high"
+                    value="--"
+                    subtext="(Coming next)"
+                    level="medium"
                 />
             </div>
         </div>
