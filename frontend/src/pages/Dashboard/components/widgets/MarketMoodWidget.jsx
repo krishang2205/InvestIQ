@@ -109,8 +109,8 @@ const MarketMoodWidget = () => {
                         marginBottom: '0.25rem',
                         cursor: 'help'
                     }}>
-                    <ResponsiveContainer width="100%" height="100%">
-                        <PieChart>
+                    <div style={{ width: '140px', height: '80px', margin: '0 auto' }}>
+                        <PieChart width={140} height={80}>
                             <Pie
                                 data={[{ value: score }, { value: 100 - score }]}
                                 cx="50%"
@@ -126,7 +126,7 @@ const MarketMoodWidget = () => {
                                 <Cell fill="rgba(255,255,255,0.05)" />
                             </Pie>
                         </PieChart>
-                    </ResponsiveContainer>
+                    </div>
                     {/* Needle */}
                     <div style={{
                         position: 'absolute', bottom: '10px', left: '69px',

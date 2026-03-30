@@ -78,22 +78,24 @@ export const StockLogo = ({ symbol, logoUrl }) => {
     }, [logoUrl, cleanSymbol]);
 
     const handleError = () => {
-        // User strictly wants "NO LOGO" (Grey Icon) if the image fails.
-        // Google S2 typically returns a "Globe" icon if the domain is valid but has no favicon, 
-        // which might be acceptable as a "logo". 
-        // If it truly errors out, we show the Grey Building.
-        setHasError(true);
+        // If primary fails, try Google S2 as a secondary fallback
+        if (imgSource && !imgSource.includes('google.com/s2')) {
+            setImgSource(`https://www.google.com/s2/favicons?domain=${cleanSymbol.toLowerCase()}.com&sz=128`);
+        } else {
+            // Truly exhausted options
+            setHasError(true);
+        }
     };
 
     if (hasError) {
         return (
             <div style={{
                 width: '100%', height: '100%', borderRadius: '8px',
-                backgroundColor: '#2A2A2A', // Grey background
-                color: '#666', // Grey Icon
+                backgroundColor: 'rgba(255,255,255,0.03)',
+                color: 'rgba(255,255,255,0.2)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center'
             }}>
-                <Building2 size={18} />
+                <Building2 size={16} />
             </div>
         );
     }
@@ -103,7 +105,15 @@ export const StockLogo = ({ symbol, logoUrl }) => {
             src={imgSource}
             alt={symbol}
             onError={handleError}
-            style={{ width: '100%', height: '100%', borderRadius: '8px', objectFit: 'contain', backgroundColor: 'rgba(255,255,255,0.05)' }}
+            loading="lazy"
+            style={{ 
+                width: '100%', 
+                height: '100%', 
+                borderRadius: '8px', 
+                objectFit: 'contain', 
+                backgroundColor: 'rgba(255,255,255,0.02)',
+                padding: '2px' // slight padding for logos
+            }}
         />
     );
 };

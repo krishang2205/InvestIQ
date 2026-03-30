@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, PieChart, Activity, Settings, LogOut, FileText, Zap } from 'lucide-react';
+import { LayoutDashboard, PieChart, Activity, Settings, LogOut, FileText, Zap, GraduationCap } from 'lucide-react';
 import { useAuth } from '../../../context/AuthContext';
 
 const Sidebar = () => {
@@ -12,6 +12,7 @@ const Sidebar = () => {
         { icon: FileText, label: 'Intelligence Report', path: '/dashboard/intelligence-reports' },
         { icon: PieChart, label: 'Portfolio', path: '/dashboard/portfolio' },
         { icon: Activity, label: 'Market', path: '/dashboard/market' },
+        { icon: GraduationCap, label: 'Learning', path: '/dashboard/learning' },
         { icon: Settings, label: 'Settings', path: '/dashboard/settings' },
     ];
 
