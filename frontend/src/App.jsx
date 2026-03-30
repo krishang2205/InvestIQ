@@ -13,6 +13,9 @@ import MarketMoodIndexPage from './pages/Dashboard/MarketMoodIndexPage';
 import IntelligenceReportPage from './pages/Dashboard/IntelligenceReportPage';
 import PortfolioPage from './pages/Dashboard/PortfolioPage';
 import PredictionsPage from './pages/Dashboard/PredictionsPage';
+import LearningPage from './pages/Dashboard/LearningPage';
+import LessonDetailPage from './pages/Dashboard/LessonDetailPage';
+import FinalAssessmentPage from './pages/Dashboard/FinalAssessmentPage';
 import './App.css';
 
 function App() {
@@ -32,6 +35,9 @@ function App() {
           <Route path="intelligence-reports" element={<IntelligenceReportPage />} />
           <Route path="portfolio" element={<PortfolioPage />} />
           <Route path="predictions" element={<PredictionsPage />} />
+          <Route path="learning" element={<LearningPage />} />
+          <Route path="learning/lesson/:lessonId" element={<LessonDetailPage />} />
+          <Route path="learning/assessment" element={<FinalAssessmentPage />} />
         </Route>
       </Routes>
       <AuthModal />

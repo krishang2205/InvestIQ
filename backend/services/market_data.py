@@ -69,6 +69,7 @@ class MarketDataService:
             'DRREDDY.NS': 'drreddys.com',
             'SBILIFE.NS': 'sbilife.co.in',
             'BAJAJ-AUTO.NS': 'bajajauto.com',
+            'GURUFOCUS.COM': 'gurufocus.com',
             'GRASIM.NS': 'grasim.com',
             'BPCL.NS': 'bharatpetroleum.in',
             'EICHERMOT.NS': 'eichermotors.com',
@@ -484,13 +485,18 @@ class MarketDataService:
                     is_52w_high = current_price >= (fifty_two_week_high * 0.98)
                     is_52w_low = current_price <= (fifty_two_week_low * 1.02)
 
-                    # Logo URL (From Cache or Simple Guess)
+                    # Logo URL (Prioritize High-Quality Corporate Logos)
                     website_domain = self.ticker_websites.get(symbol)
                     if not website_domain:
                          # Fallback simple guess for untracked stocks
                          website_domain = f"{symbol.split('.')[0].lower()}.com"
                     
-                    logo_url = f"https://www.google.com/s2/favicons?domain={website_domain}&sz=128"
+                    # Using a more robust logo service (Unavatar with Clearbit fallback)
+                    # This reduces 404s and handles DNS resolution failures better
+                    logo_url = f"https://unavatar.io/clearbit/{website_domain}"
+                    # We can't easily check for 404 here, but we can provide the URL. 
+                    # Browsers handle broken images better than console errors if we use a reliable service.
+                    # As a fallback, we keep the google favicon in mind, but Clearbit is better for Dashboard aesthetics.
 
                     processed_data.append({
                         'symbol': symbol,

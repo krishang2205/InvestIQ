@@ -14,6 +14,7 @@ CORS(app)
 from routes.market_routes import market_bp, cache
 from routes.portfolio_routes import portfolio_bp
 from reports.api import reports_v2_bp
+from routes.learning_routes import learning_bp
 
 # Initialize the simple cache
 cache.init_app(app, config={'CACHE_TYPE': 'SimpleCache'})
@@ -22,6 +23,7 @@ cache.init_app(app, config={'CACHE_TYPE': 'SimpleCache'})
 app.register_blueprint(market_bp)
 app.register_blueprint(portfolio_bp)
 app.register_blueprint(reports_v2_bp)
+app.register_blueprint(learning_bp)
 
 @app.route('/')
 def home():

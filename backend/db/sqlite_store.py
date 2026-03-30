@@ -88,6 +88,68 @@ class SqliteStore:
                 )
                 """
             )
+            # --- Learning Model Tables ---
+            conn.execute(
+                """
+                CREATE TABLE IF NOT EXISTS learning_lessons (
+                    id TEXT PRIMARY KEY,
+                    title TEXT NOT NULL,
+                    description TEXT NOT NULL,
+                    video_url TEXT NOT NULL,
+                    thumbnail_url TEXT,
+                    duration TEXT,
+                    order_index INTEGER NOT NULL,
+                    created_at TEXT NOT NULL
+                )
+                """
+            )
+            conn.execute(
+                """
+                CREATE TABLE IF NOT EXISTS learning_quizzes (
+                    id TEXT PRIMARY KEY,
+                    lesson_id TEXT NOT NULL,
+                    question TEXT NOT NULL,
+                    options_json TEXT NOT NULL,
+                    correct_option_index INTEGER NOT NULL,
+                    order_index INTEGER NOT NULL,
+                    FOREIGN KEY (lesson_id) REFERENCES learning_lessons (id)
+                )
+                """
+            )
+            conn.execute(
+                """
+                CREATE TABLE IF NOT EXISTS learning_progress (
+                    user_id TEXT NOT NULL,
+                    lesson_id TEXT NOT NULL,
+                    status TEXT NOT NULL DEFAULT 'not_started', -- 'watched', 'quiz_completed'
+                    quiz_score INTEGER,
+                    updated_at TEXT NOT NULL,
+                    PRIMARY KEY (user_id, lesson_id),
+                    FOREIGN KEY (lesson_id) REFERENCES learning_lessons (id)
+                )
+                """
+            )
+            conn.execute(
+                """
+                CREATE TABLE IF NOT EXISTS learning_final_questions (
+                    id TEXT PRIMARY KEY,
+                    question TEXT NOT NULL,
+                    options_json TEXT NOT NULL,
+                    correct_option_index INTEGER NOT NULL
+                )
+                """
+            )
+            conn.execute(
+                """
+                CREATE TABLE IF NOT EXISTS learning_assessments (
+                    id TEXT PRIMARY KEY,
+                    user_id TEXT NOT NULL,
+                    score INTEGER NOT NULL,
+                    total_questions INTEGER NOT NULL,
+                    completed_at TEXT NOT NULL
+                )
+                """
+            )
             conn.commit()
  
     def get_or_create_default_portfolio(self) -> PortfolioIdentity:
@@ -219,3 +281,125 @@ class SqliteStore:
             )
             conn.commit()
             return cursor.rowcount > 0
+
+    # --- Learning Model Methods ---
+
+    def list_lessons(self, user_id: str) -> List[Dict[str, Any]]:
+        with self._connect() as conn:
+            rows = conn.execute(
+                """
+                SELECT l.*, p.status, p.quiz_score, p.updated_at
+                FROM learning_lessons l
+                LEFT JOIN learning_progress p ON l.id = p.lesson_id AND p.user_id = ?
+                ORDER BY l.order_index ASC
+                """,
+                (user_id,),
+            ).fetchall()
+            return [dict(r) for r in rows]
+
+    def get_lesson_with_quiz(self, lesson_id: str) -> Optional[Dict[str, Any]]:
+        with self._connect() as conn:
+            lesson = conn.execute("SELECT * FROM learning_lessons WHERE id = ?", (lesson_id,)).fetchone()
+            if not lesson:
+                return None
+            
+            quizzes = conn.execute(
+                "SELECT * FROM learning_quizzes WHERE lesson_id = ? ORDER BY order_index ASC", 
+                (lesson_id,)
+            ).fetchall()
+            
+            result = dict(lesson)
+            result["quizzes"] = [dict(q) for q in quizzes]
+            for q in result["quizzes"]:
+                q["options"] = json.loads(q["options_json"])
+            return result
+
+    def update_learning_progress(self, user_id: str, lesson_id: str, status: str, quiz_score: Optional[int] = None) -> None:
+        with self._connect() as conn:
+            conn.execute(
+                """
+                INSERT INTO learning_progress (user_id, lesson_id, status, quiz_score, updated_at)
+                VALUES (?, ?, ?, ?, ?)
+                ON CONFLICT(user_id, lesson_id) DO UPDATE SET
+                    status = excluded.status,
+                    quiz_score = COALESCE(excluded.quiz_score, learning_progress.quiz_score),
+                    updated_at = excluded.updated_at
+                """,
+                (user_id, lesson_id, status, quiz_score, _utcnow_iso()),
+            )
+            conn.commit()
+
+    def get_final_assessment_questions(self) -> List[Dict[str, Any]]:
+        with self._connect() as conn:
+            rows = conn.execute("SELECT * FROM learning_final_questions ORDER BY id ASC").fetchall()
+            questions = [dict(r) for r in rows]
+            for q in questions:
+                q["options"] = json.loads(q["options_json"])
+            return questions
+
+    def save_final_assessment_result(self, user_id: str, score: int, total: int) -> str:
+        assessment_id = str(uuid4())
+        with self._connect() as conn:
+            conn.execute(
+                "INSERT INTO learning_assessments (id, user_id, score, total_questions, completed_at) VALUES (?, ?, ?, ?, ?)",
+                (assessment_id, user_id, score, total, _utcnow_iso()),
+            )
+            conn.commit()
+        return assessment_id
+
+    def set_lessons(self, lessons: List[Dict[str, Any]]) -> None:
+        """Seed or update lessons."""
+        with self._connect() as conn:
+            for l in lessons:
+                conn.execute(
+                    """
+                    INSERT INTO learning_lessons (id, title, description, video_url, thumbnail_url, duration, order_index, created_at)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                    ON CONFLICT(id) DO UPDATE SET
+                        title=excluded.title,
+                        description=excluded.description,
+                        video_url=excluded.video_url,
+                        thumbnail_url=excluded.thumbnail_url,
+                        duration=excluded.duration,
+                        order_index=excluded.order_index
+                    """,
+                    (l["id"], l["title"], l["description"], l["video_url"], l.get("thumbnail_url"), l.get("duration"), l["order_index"], _utcnow_iso())
+                )
+            conn.commit()
+
+    def set_quizzes(self, lesson_id: str, quizzes: List[Dict[str, Any]]) -> None:
+        """Seed or update quizzes for a lesson."""
+        with self._connect() as conn:
+            conn.execute("DELETE FROM learning_quizzes WHERE lesson_id = ?", (lesson_id,))
+            for q in quizzes:
+                conn.execute(
+                    """
+                    INSERT INTO learning_quizzes (id, lesson_id, question, options_json, correct_option_index, order_index)
+                    VALUES (?, ?, ?, ?, ?, ?)
+                    """,
+                    (str(uuid4()), lesson_id, q["question"], json.dumps(q["options"]), q["correct_option_index"], q["order_index"])
+                )
+            conn.commit()
+
+    def set_final_questions(self, questions: List[Dict[str, Any]]) -> None:
+        """Seed or update final assessment questions."""
+        with self._connect() as conn:
+            conn.execute("DELETE FROM learning_final_questions")
+            for q in questions:
+                conn.execute(
+                    """
+                    INSERT INTO learning_final_questions (id, question, options_json, correct_option_index)
+                    VALUES (?, ?, ?, ?)
+                    """,
+                    (str(uuid4()), q["question"], json.dumps(q["options"]), q["correct_option_index"])
+                )
+            conn.commit()
+
+    def clear_all_learning_data(self) -> None:
+        """Wipe all tables related to the curriculum to prevent ID fragmentation."""
+        with self._connect() as conn:
+            conn.execute("DELETE FROM learning_progress")
+            conn.execute("DELETE FROM learning_quizzes")
+            conn.execute("DELETE FROM learning_lessons")
+            conn.execute("DELETE FROM learning_final_questions")
+            conn.commit()

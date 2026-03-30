@@ -121,6 +121,52 @@ const api = {
         }
         return data;
     },
+
+    /**
+     * Learning Model APIs
+     */
+    getLessons: async () => {
+        const response = await fetch(`${API_BASE_URL}/learning/lessons`);
+        if (!response.ok) throw new Error('Failed to fetch lessons');
+        return await response.json();
+    },
+
+    getLesson: async (lessonId) => {
+        const response = await fetch(`${API_BASE_URL}/learning/lessons/${lessonId}`);
+        if (!response.ok) throw new Error('Failed to fetch lesson');
+        return await response.json();
+    },
+
+    completeLesson: async (lessonId) => {
+        const response = await fetch(`${API_BASE_URL}/learning/lessons/${lessonId}/complete`, {
+            method: 'POST'
+        });
+        return await response.json();
+    },
+
+    submitQuiz: async (lessonId, score) => {
+        const response = await fetch(`${API_BASE_URL}/learning/lessons/${lessonId}/quiz`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ score })
+        });
+        return await response.json();
+    },
+
+    getFinalQuestions: async () => {
+        const response = await fetch(`${API_BASE_URL}/learning/final-assessment/questions`);
+        if (!response.ok) throw new Error('Failed to fetch final questions');
+        return await response.json();
+    },
+
+    submitFinalAssessment: async (score, total) => {
+        const response = await fetch(`${API_BASE_URL}/learning/final-assessment/submit`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ score, total })
+        });
+        return await response.json();
+    },
 };
 
 export default api;
