@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Calendar, DollarSign, Hash, Check } from 'lucide-react';
+import { X, Calendar, DollarSign, Hash, Check, Plus } from 'lucide-react';
 import api from '../../../../services/api';
 
 const INDIAN_STOCKS = [
@@ -42,7 +42,9 @@ const AddTransactionModal = ({ isOpen, onClose, onSaved, initialData }) => {
     const [showSuggestions, setShowSuggestions] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
     const [error, setError] = useState('');
+    const [successFlash, setSuccessFlash] = useState(false);
     const wrapperRef = useRef(null);
+    const symbolInputRef = useRef(null);
 
     // Auto-calculate total value
     useEffect(() => {
@@ -86,8 +88,12 @@ const AddTransactionModal = ({ isOpen, onClose, onSaved, initialData }) => {
 
     if (!isOpen) return null;
 
-    const handleSubmit = async (e) => {
+    const handleSave = async (e, closeAfterSave) => {
         e.preventDefault();
+        if (!formData.symbol || !formData.quantity || !formData.price) {
+            setError('Please fill in all details (Symbol, Qty, Price).');
+            return;
+        }
         setError('');
         setIsSaving(true);
         try {
@@ -101,7 +107,25 @@ const AddTransactionModal = ({ isOpen, onClose, onSaved, initialData }) => {
             };
             await api.addPortfolioTransaction(payload);
             onSaved?.();
-            onClose();
+            
+            if (closeAfterSave) {
+                onClose();
+            } else {
+                setSuccessFlash(true);
+                setTimeout(() => setSuccessFlash(false), 2000);
+                
+                // Clear state for rapid entry
+                setFormData(prev => ({
+                    ...prev,
+                    symbol: '',
+                    quantity: '',
+                    price: ''
+                }));
+                // Auto-focus next ticker
+                if (symbolInputRef.current) {
+                    symbolInputRef.current.focus();
+                }
+            }
         } catch (err) {
             setError(err?.message || 'Failed to save transaction');
         } finally {
@@ -149,7 +173,7 @@ const AddTransactionModal = ({ isOpen, onClose, onSaved, initialData }) => {
                 </div>
 
                 {/* Form */}
-                <form onSubmit={handleSubmit} style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                <form style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
 
                     {/* Transaction Type Toggle */}
                     <div style={{ display: 'flex', backgroundColor: 'rgba(255,255,255,0.05)', padding: '0.25rem', borderRadius: '0.5rem' }}>
@@ -204,6 +228,7 @@ const AddTransactionModal = ({ isOpen, onClose, onSaved, initialData }) => {
                     <div style={{ position: 'relative' }} ref={wrapperRef}>
                         <label style={{ display: 'block', fontSize: '0.875rem', color: '#9ca3af', marginBottom: '0.5rem' }}>Symbol / Ticker</label>
                         <input
+                            ref={symbolInputRef}
                             type="text"
                             placeholder="e.g. RELIANCE"
                             value={formData.symbol}
@@ -334,29 +359,58 @@ const AddTransactionModal = ({ isOpen, onClose, onSaved, initialData }) => {
                         </div>
                     )}
 
-                    {/* Submit Button */}
-                    <button
-                        type="submit"
-                        style={{
-                            width: '100%',
-                            padding: '0.875rem',
-                            background: 'linear-gradient(135deg, #D1C79D 0%, #B0A678 100%)',
-                            borderRadius: '0.5rem',
-                            fontSize: '1rem',
-                            color: '#000',
-                            fontWeight: 600,
-                            border: 'none',
-                            cursor: 'pointer',
-                            marginTop: '0.5rem',
-                            boxShadow: '0 4px 12px rgba(209, 199, 157, 0.2)',
-                            transition: 'opacity 0.2s',
-                        }}
-                        onMouseEnter={(e) => e.target.style.opacity = '0.9'}
-                        onMouseLeave={(e) => e.target.style.opacity = '1'}
-                        disabled={isSaving}
-                    >
-                        {isSaving ? 'Saving…' : 'Add Transaction'}
-                    </button>
+                    {/* Submit Area */}
+                    <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.5rem' }}>
+                        <button
+                            type="button"
+                            onClick={(e) => handleSave(e, true)}
+                            style={{
+                                flex: 4,
+                                padding: '0.875rem',
+                                background: 'linear-gradient(135deg, #D1C79D 0%, #B0A678 100%)',
+                                borderRadius: '0.5rem',
+                                fontSize: '0.9375rem',
+                                color: '#000',
+                                fontWeight: 600,
+                                border: 'none',
+                                cursor: 'pointer',
+                                boxShadow: '0 4px 12px rgba(209, 199, 157, 0.2)',
+                                transition: 'opacity 0.2s ease',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center'
+                            }}
+                            onMouseEnter={(e) => e.target.style.opacity = '0.9'}
+                            onMouseLeave={(e) => e.target.style.opacity = '1'}
+                            disabled={isSaving}
+                        >
+                            {isSaving ? 'Saving…' : 'Save Transaction'}
+                        </button>
+                        
+                        <button
+                            type="button"
+                            title="Save & Add Another"
+                            onClick={(e) => handleSave(e, false)}
+                            style={{
+                                flex: 1,
+                                padding: '0.875rem',
+                                background: successFlash ? 'rgba(16, 185, 129, 0.15)' : 'rgba(255,255,255,0.05)',
+                                border: successFlash ? '1px solid rgba(16, 185, 129, 0.4)' : '1px solid rgba(255,255,255,0.1)',
+                                borderRadius: '0.5rem',
+                                color: successFlash ? '#34d399' : '#e5e7eb',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s ease',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                            }}
+                            onMouseEnter={(e) => { if(!successFlash) e.target.style.background = 'rgba(255,255,255,0.1)' }}
+                            onMouseLeave={(e) => { if(!successFlash) e.target.style.background = 'rgba(255,255,255,0.05)' }}
+                            disabled={isSaving}
+                        >
+                            {successFlash ? <Check size={20} /> : <Plus size={20} />}
+                        </button>
+                    </div>
                 </form>
             </div>
         </div>

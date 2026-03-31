@@ -3,7 +3,8 @@ import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recha
 
 const COLORS = ['#D1C79D', '#10b981', '#6b7280', '#c2410c', '#3b82f6', '#8b5cf6', '#f59e0b', '#1f2937'];
 
-const PortfolioAllocation = ({ holdings }) => {
+const PortfolioAllocation = ({ holdings, intelligence }) => {
+    const rebalancing = intelligence?.rebalancing || [];
     const data = (() => {
         const arr = Array.isArray(holdings) ? holdings : [];
         const sectorMap = arr.reduce((acc, s) => {
@@ -82,18 +83,45 @@ const PortfolioAllocation = ({ holdings }) => {
                 </div>
             </div>
 
-            {/* Placeholder for Rebalancing Hints */}
+            {/* Structural Risk Alerts */}
             <div className="glass-panel" style={{
                 gridColumn: 'span 5',
                 padding: '1.5rem',
-                border: '1px dashed rgba(255,255,255,0.1)',
+                border: '1px solid var(--glass-border)',
                 display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: '#6b7280',
+                flexDirection: 'column',
                 borderRadius: '12px'
             }}>
-                Rebalancing Recommendations module inactive.
+                <div style={{ marginBottom: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div>
+                        <h3 style={{ fontSize: '1.125rem', fontWeight: 600, color: 'white', margin: 0 }}>Structure X-Ray</h3>
+                        <p style={{ fontSize: '0.875rem', color: '#9ca3af', marginTop: '0.25rem' }}>AI Portfolio Risk Alerts</p>
+                    </div>
+                </div>
+
+                <div style={{ flex: 1, overflowY: 'auto' }}>
+                    {rebalancing.length === 0 ? (
+                        <div style={{ display: 'flex', height: '100%', alignItems: 'center', justifyContent: 'center', color: '#6b7280', fontSize: '0.875rem' }}>
+                            Zero structural vulnerabilities detected.
+                        </div>
+                    ) : (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                            {rebalancing.map((rec, idx) => (
+                                <div key={idx} style={{ padding: '1rem', backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: '0.5rem', borderLeft: `3px solid ${rec.type.includes('OVERWEIGHT') ? '#f59e0b' : '#3b82f6'}` }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
+                                        <span style={{ fontSize: '0.875rem', fontWeight: 600, color: 'white' }}>{rec.ticker}</span>
+                                        <span style={{ fontSize: '0.75rem', fontWeight: 700, padding: '0.125rem 0.375rem', borderRadius: '4px', backgroundColor: rec.type.includes('OVERWEIGHT') ? 'rgba(245,158,11,0.1)' : 'rgba(59,130,246,0.1)', color: rec.type.includes('OVERWEIGHT') ? '#fcd34d' : '#93c5fd' }}>{rec.type}</span>
+                                    </div>
+                                    <p style={{ fontSize: '0.75rem', color: '#9ca3af', margin: '0 0 0.5rem 0', lineHeight: 1.4 }}>{rec.reason}</p>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                        <span style={{ fontSize: '0.75rem', color: '#d1d5db', fontStyle: 'italic' }}>{rec.impact}</span>
+                                        {rec.amount > 0 && <span style={{ fontSize: '0.875rem', fontWeight: 600, color: '#D1C79D' }}>Risk: ₹{Number(rec.amount).toLocaleString('en-IN', { maximumFractionDigits: 0 })}</span>}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
             </div>
         </div>
     );

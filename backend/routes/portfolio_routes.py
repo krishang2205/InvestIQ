@@ -70,7 +70,7 @@ def get_portfolio_holdings():
         for h in report["holdings"]:
             sym = h.get("ticker")
             meta = store.get_cached_instrument(sym)
-            if not meta:
+            if not meta or 'beta' not in meta:
                 meta = portfolio_service.market_data.get_instrument_profile(sym)
                 store.set_cached_instrument(sym, meta)
             enriched.append({
@@ -123,7 +123,7 @@ def get_portfolio_bootstrap():
         for h in report["holdings"]:
             sym = h.get("ticker")
             meta = store.get_cached_instrument(sym)
-            if not meta:
+            if not meta or 'beta' not in meta:
                 meta = portfolio_service.market_data.get_instrument_profile(sym)
                 store.set_cached_instrument(sym, meta)
             enriched.append({
@@ -231,13 +231,31 @@ def get_portfolio_intelligence():
         current_prices = portfolio_service.get_live_prices(symbols)
         report = portfolio_service.calculate_unrealized_pnl(holdings, current_prices)
         
+        # Enrich Holdings with Fundamental Data
+        enriched_holdings = []
+        for h in report["holdings"]:
+            sym = h.get("ticker")
+            meta = store.get_cached_instrument(sym)
+            if not meta or 'beta' not in meta:
+                meta = portfolio_service.market_data.get_instrument_profile(sym)
+                store.set_cached_instrument(sym, meta)
+            
+            enrich_h = dict(h)
+            enrich_h["sector"] = meta.get("sector") or "Unknown"
+            enrich_h["marketCap"] = meta.get("marketCap") or "Large"
+            enrich_h["beta"] = meta.get("beta", 1.0)
+            enrich_h["trailingPE"] = meta.get("trailingPE")
+            enrich_h["dividendYield"] = meta.get("dividendYield", 0.0)
+            enriched_holdings.append(enrich_h)
+            
         # Calculate Intelligence Metrics
-        stress_results = portfolio_intel.simulate_stress_test(report["holdings"])
-        alpha_data = portfolio_intel.get_herd_divergence_score(report["holdings"])
-        tax_data = portfolio_intel.get_tax_friction_estimate(report["holdings"])
-        rebalance_data = portfolio_intel.get_rebalancing_suggestions(report["holdings"])
+        stress_results = portfolio_intel.simulate_stress_test(enriched_holdings)
+        alpha_data = portfolio_intel.get_herd_divergence_score(enriched_holdings)
+        tax_data = portfolio_intel.get_tax_friction_estimate(enriched_holdings)
+        rebalance_data = portfolio_intel.get_rebalancing_suggestions(enriched_holdings)
+        fundamentals = portfolio_intel.calculate_fundamental_radar(enriched_holdings)
         
-        # 4. Generate AI Doctor Health Check
+        # 4. Generate AI Doctor Health Check (Doctor receives raw report)
         health_check = portfolio_doctor.generate_health_check(report)
         
         return jsonify({
@@ -247,6 +265,7 @@ def get_portfolio_intelligence():
             "alpha_divergence": alpha_data,
             "tax_friction": tax_data,
             "rebalancing": rebalance_data,
+            "fundamentals": fundamentals,
             "alpha_score": alpha_data["score"],
             "resilience_score": stress_results.get("resilience_score", 0),
             "net_gain_post_tax": tax_data["net_capital_gain"]

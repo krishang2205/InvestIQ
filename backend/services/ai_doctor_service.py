@@ -37,43 +37,43 @@ class PortfolioDoctorService:
         concentration = float(top_holding.get("weight", 0) or 0) if top_holding else 0.0
         ticker = top_holding.get("ticker") if top_holding else None
 
-        # 2. Deterministic narrative generation (no random placeholders)
+        # 2. Deterministic narrative generation (Compliance safe - no explicit advice)
         if not holdings:
             diagnosis = "No data available. Add transactions to start tracking portfolio performance."
         elif concentration >= 30:
             diagnosis = (
                 f"Your portfolio is anchored by {ticker} ({round(concentration, 1)}%). "
-                "A drawdown in this position can disproportionately impact your overall returns. "
-                "Consider trimming to reduce single-asset risk."
+                "A drawdown in this specific position can disproportionately impact your overall returns. "
+                "The structure currently exceeds the standard 20% single-asset threshold, increasing concentration risk."
             )
         elif concentration >= 15:
             diagnosis = (
                 f"Your portfolio shows moderate concentration in {ticker} ({round(concentration, 1)}%). "
-                "Small rebalancing trims can help smooth volatility without disrupting your thesis."
+                "The structural weighting is slightly elevated but remains within acceptable institutional limits."
             )
         else:
             diagnosis = (
-                "Your portfolio appears reasonably diversified. "
-                "Maintain your allocation and periodically rebalance to keep weights aligned."
+                "Your portfolio exhibits excellent structural diversification. "
+                "No single asset dominates the risk profile, resulting in a highly stable beta allocation."
             )
 
         if total_pnl < 0:
-            diagnosis += " You are currently in drawdown; prioritize downside risk controls over aggressive adding."
+            diagnosis += " The portfolio exhibits negative momentum. Downside protections may be historically weak."
         else:
-            diagnosis += " You are currently in positive P&L; protect gains by rebalancing back to target weights."
+            diagnosis += " The portfolio exhibits positive momentum. Capitalizing on strength structure."
 
-        # 3. Prescriptions (Actionable Advice)
+        # 3. Prescriptions (Actionable Analytical Flags, not Advice)
         prescriptions = []
         if concentration >= 30 and ticker:
-            prescriptions.append(f"Trim {ticker} toward ~20% weight and redeploy to underweighted holdings.")
+            prescriptions.append(f"Structure Risk: {ticker} exposure exceeds the safe 20% institutional threshold.")
         if position_count < 5:
-            prescriptions.append("Add 2-3 additional positions across different sectors to reduce concentration risk.")
+            prescriptions.append("Diversification Gap: Holding fewer than 5 positions severely limits structural alpha.")
         if total_pnl < 0:
-            prescriptions.append("Review per-position risk and tighten exits (stop-loss levels) to limit future drawdowns.")
+            prescriptions.append("Momentum Alert: Portfolio is experiencing a sustained drawdown against the benchmark.")
         else:
-            prescriptions.append("Rebalance back to current winners/losers split to avoid drift and lock in risk-adjusted gains.")
+            prescriptions.append("Volatility Alignment: Current weights are contributing positively to the overall variance.")
 
-        doctor_rating = "Healthy" if (total_pnl >= 0 and concentration < 30) else "Under Observation"
+        doctor_rating = "Structurally Sound" if (total_pnl >= 0 and concentration < 30) else "High Risk Vulnerability"
         next_review_date = (datetime.now() + timedelta(days=30)).date().isoformat()
 
         return {

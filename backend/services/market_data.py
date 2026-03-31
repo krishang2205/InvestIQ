@@ -331,10 +331,10 @@ class MarketDataService:
             sector = info.get("sector") or info.get("industry") or "Unknown"
             mcap = info.get("marketCap")
 
+            # Basic buckets
             bucket = "Large"
             try:
                 mcap = float(mcap) if mcap is not None else None
-                # Very rough buckets; enough for UI grouping.
                 if mcap is not None and mcap < 5_000_000_000:
                     bucket = "Small"
                 elif mcap is not None and mcap < 20_000_000_000:
@@ -342,21 +342,23 @@ class MarketDataService:
             except Exception:
                 bucket = "Large"
 
+            beta = info.get("beta")
+            pe = info.get("trailingPE") or info.get("forwardPE")
+            yield_pct = info.get("dividendYield") or 0.0
+
             return {
                 "symbol": symbol.upper(),
                 "yf_symbol": yf_symbol,
                 "name": name,
                 "sector": sector,
                 "marketCap": bucket,
+                "beta": float(beta) if beta is not None else 1.0,
+                "trailingPE": float(pe) if pe is not None else None,
+                "dividendYield": float(yield_pct) if yield_pct is not None else 0.0
             }
         except Exception as e:
             logger.error(f"Error fetching instrument profile for {yf_symbol}: {e}")
-            return {"symbol": symbol.upper(), "yf_symbol": yf_symbol, "name": symbol.upper(), "sector": "Unknown", "marketCap": "Large"}
-        try:
-            return yf.download(tickers, period=period, interval=interval, group_by="ticker", progress=False, threads=True)
-        except Exception as e:
-            logger.error(f"Error fetching history for {tickers}: {e}")
-            return pd.DataFrame()
+            return {"symbol": symbol.upper(), "yf_symbol": yf_symbol, "name": symbol.upper(), "sector": "Unknown", "marketCap": "Large", "beta": 1.0, "trailingPE": None, "dividendYield": 0.0}
 
     def get_indices(self):
         """

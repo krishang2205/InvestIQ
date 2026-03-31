@@ -162,7 +162,7 @@ const PortfolioPage = () => {
 
                     {/* Section D: Allocation & Rebalancing */}
                     <div style={{ marginBottom: '1.5rem' }}>
-                        <PortfolioAllocation holdings={holdings} />
+                        <PortfolioAllocation holdings={holdings} intelligence={intel} />
                     </div>
                 </>
             )}

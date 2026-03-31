@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ArrowLeft, TrendingUp, TrendingDown, DollarSign, Wallet, ArrowUpRight } from 'lucide-react';
+import { ArrowLeft, TrendingUp, TrendingDown, DollarSign, Wallet, ArrowUpRight, ArrowDownRight } from 'lucide-react';
 import PortfolioHoldingsTable from './PortfolioHoldingsTable';
 import PortfolioSectorAlloc from './PortfolioSectorAlloc';
 import PortfolioMarketCap from './PortfolioMarketCap';
@@ -99,36 +99,48 @@ const PortfolioDrillDown = ({ onBack, holdings, summary, xirr, onAddTransaction,
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
                         <div>
                             <p style={{ color: '#9ca3af', fontSize: '0.875rem', marginBottom: '0.25rem' }}>Total Value</p>
-                            <h3 style={{ fontSize: '1.75rem', fontWeight: 700, color: 'white' }}>
-                                ₹{stats.current.toLocaleString('en-IN')}
+                            <h3 style={{ fontSize: '1.75rem', fontWeight: 700, color: 'white', margin: 0 }}>
+                                ₹{stats.current.toLocaleString('en-IN', { maximumFractionDigits: 2 })}
                             </h3>
                         </div>
                         <div style={{
                             padding: '0.5rem 1rem',
-                            background: 'rgba(16, 185, 129, 0.1)',
+                            background: stats.pnl >= 0 ? 'rgba(16, 185, 129, 0.1)' : 'rgba(244, 63, 94, 0.1)',
                             borderRadius: '99px',
-                            border: '1px solid rgba(16, 185, 129, 0.2)',
-                            color: '#10b981',
+                            border: `1px solid ${stats.pnl >= 0 ? 'rgba(16, 185, 129, 0.2)' : 'rgba(244, 63, 94, 0.2)'}`,
+                            color: stats.pnl >= 0 ? '#10b981' : '#f43f5e',
                             fontWeight: 600,
                             fontSize: '0.875rem',
                             display: 'flex',
                             alignItems: 'center',
                             gap: '0.25rem'
                         }}>
-                            <ArrowUpRight size={16} />
-                            +{((stats.pnl / stats.invested) * 100).toFixed(2)}%
+                            {stats.pnl >= 0 ? <ArrowUpRight size={16} /> : <ArrowDownRight size={16} />}
+                            {stats.pnl >= 0 ? '+' : ''}{((stats.pnl / (stats.invested || 1)) * 100).toFixed(2)}%
                         </div>
                     </div>
 
                     {/* Progress Bar Comparison */}
                     <div style={{ marginBottom: '0.5rem' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: '#9ca3af', marginBottom: '0.5rem' }}>
-                            <span>Invested: ₹{stats.invested.toLocaleString('en-IN')}</span>
-                            <span style={{ color: '#10b981' }}>+₹{stats.pnl.toLocaleString('en-IN')}</span>
+                            <span>Invested: ₹{stats.invested.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</span>
+                            <span style={{ color: stats.pnl >= 0 ? '#10b981' : '#f43f5e' }}>
+                                {stats.pnl >= 0 ? '+' : ''}₹{stats.pnl.toLocaleString('en-IN', { maximumFractionDigits: 2 })}
+                            </span>
                         </div>
                         <div style={{ height: '8px', background: 'rgba(255,255,255,0.1)', borderRadius: '4px', overflow: 'hidden', display: 'flex' }}>
-                            <div style={{ width: '85%', background: '#6b7280', height: '100%' }} /> {/* Invested Base */}
-                            <div style={{ width: '15%', background: '#10b981', height: '100%' }} /> {/* Profit Gain */}
+                            <div style={{ 
+                                width: `${stats.current > 0 ? (stats.invested / Math.max(stats.invested, stats.current)) * 100 : 100}%`, 
+                                background: '#6b7280', 
+                                height: '100%',
+                                transition: 'width 0.5s ease-in-out'
+                            }} />
+                            <div style={{ 
+                                width: `${stats.current > 0 ? (Math.abs(stats.pnl) / Math.max(stats.invested, stats.current)) * 100 : 0}%`, 
+                                background: stats.pnl >= 0 ? '#10b981' : '#f43f5e', 
+                                height: '100%',
+                                transition: 'width 0.5s ease-in-out'
+                            }} />
                         </div>
                     </div>
                 </div>

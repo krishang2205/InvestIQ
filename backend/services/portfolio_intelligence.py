@@ -141,27 +141,27 @@ class PortfolioIntelligence:
     def get_rebalancing_suggestions(self, holdings: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         """
         Analyzes the portfolio for 'Over-concentration' and 'Stagnant Capital'.
-        Suggests rebalancing trades to optimize for the AI-Sentiment Pulse.
+        Returns 100% compliant data analytics (flags), avoiding 'Buy/Sell' terms.
         """
         suggestions = []
         total_value = sum(h.get("total_invested", 0) for h in holdings)
         
         if total_value <= 0: return []
         
-        # Rule 1: Trim over-concentrated positions (> 25% weight)
+        # Rule 1: Flag over-concentrated positions (> 25% weight)
         for h in holdings:
             if h["weight"] > 25:
                 excess_weight = h["weight"] - 20 # Target 20%
-                trim_value = (excess_weight / 100) * total_value
+                exposure_value = (excess_weight / 100) * total_value
                 suggestions.append({
-                    "type": "SELL / TRIM",
+                    "type": "OVERWEIGHT",
                     "ticker": h["ticker"],
-                    "reason": f"Concentration risk: {h['weight']}% is above the 20% safety threshold.",
-                    "amount": round(float(trim_value), 2),
-                    "impact": "Reduces single-stock drawdown risk."
+                    "reason": f"Exposure is {h['weight']}%, which exceeds the standard 20% institutional maximum holding threshold.",
+                    "amount": round(float(exposure_value), 2),
+                    "impact": "High single-stock vulnerability."
                 })
         
-        # Rule 2: Suggest entries for under-represented high-momentum sectors
+        # Rule 2: Flag under-represented high-momentum sectors
         # Mocking momentum sectors for April 2024
         momentum_sectors = ["automobile", "pharma"]
         portfolio_sectors = {h.get("sector", "").lower() for h in holdings}
@@ -169,11 +169,11 @@ class PortfolioIntelligence:
         for sector in momentum_sectors:
             if sector not in portfolio_sectors:
                 suggestions.append({
-                    "type": "BUY / ADD",
-                    "ticker": "SECTOR_ETF",
-                    "reason": f"Sector Gap: You have 0% exposure to {sector.upper()}, which shows strong AI-Sentiment.",
-                    "amount": round(total_value * 0.05, 2), # Recommend 5% start
-                    "impact": "Improves structural Alpha."
+                    "type": "UNDER-EXPOSED",
+                    "ticker": sector.upper(),
+                    "reason": f"Zero historical exposure to the {sector.title()} sector, which is currently in a macro-uptrend.",
+                    "amount": 0, # Do not prescribe buy amounts
+                    "impact": "Missing structural alpha."
                 })
                 
         return suggestions
@@ -269,6 +269,89 @@ class PortfolioIntelligence:
             "benchmark": "NIFTY 50",
             "return": float(benchmark_return),
             "period_days": query_days
+        }
+
+    def calculate_fundamental_radar(self, holdings: List[Dict[str, Any]]) -> Dict[str, Any]:
+        """
+        Calculates the 4 Premium Metrics:
+        1. Weighted Average P/E Ratio
+        2. Portfolio Beta (Volatility)
+        3. Dividend Cashflow Predictor
+        4. Market Cap Distribution (Large, Mid, Small)
+        """
+        total_value = sum(float(h.get("current_value", 0)) for h in holdings)
+        if total_value <= 0:
+            return {
+                "avg_pe": 0.0,
+                "pe_label": "N/A",
+                "beta": 1.0,
+                "beta_label": "Mirror",
+                "dividend_yield": 0.0,
+                "dividend_cashflow": 0.0,
+                "market_cap": {"Large": 100.0, "Mid": 0.0, "Small": 0.0}
+            }
+
+        weighted_pe = 0.0
+        weighted_beta = 0.0
+        weighted_yield = 0.0
+        market_cap_split = {"Large": 0.0, "Mid": 0.0, "Small": 0.0}
+
+        pe_contributing_weight = 0.0
+
+        for h in holdings:
+            val = float(h.get("current_value", 0))
+            weight = val / total_value
+            
+            # Market Cap Split
+            mcap = h.get("marketCap", "Large")
+            if mcap in market_cap_split:
+                market_cap_split[mcap] += weight * 100
+            else:
+                market_cap_split["Large"] += weight * 100
+                
+            # Beta
+            beta = h.get("beta")
+            weighted_beta += float(beta if beta is not None else 1.0) * weight
+            
+            # Dividend Yield
+            dy = float(h.get("dividendYield", 0.0))
+            # Critical Bugfix: yfinance occasionally returns Dividend Yield as a whole percentage
+            # (e.g., 1.96 instead of 0.0196). We normalize this to a true decimal ratio.
+            if dy > 0.30:
+                dy = dy / 100.0
+                
+            weighted_yield += dy * weight
+
+            # P/E (Exclude negative or missing P/E from the weighted average properly)
+            pe = h.get("trailingPE")
+            if pe is not None:
+                pe_float = float(pe)
+                if pe_float > 0:
+                    weighted_pe += pe_float * weight
+                    pe_contributing_weight += weight
+
+        # Normalize P/E if some companies had no P/E
+        if pe_contributing_weight > 0:
+            weighted_pe = weighted_pe / pe_contributing_weight
+
+        # Labels
+        pe_label = "Undervalued" if weighted_pe > 0 and weighted_pe < 22 else "Premium" if weighted_pe > 35 else "Fair"
+        if weighted_pe == 0:
+            pe_label = "N/A"
+            
+        beta_label = "Defensive" if weighted_beta < 0.9 else "Aggressive" if weighted_beta > 1.15 else "Neutral"
+        
+        # Indian retail investors expect annual cashflow values
+        annual_cashflow = total_value * weighted_yield
+
+        return {
+            "avg_pe": round(weighted_pe, 1),
+            "pe_label": pe_label,
+            "beta": round(weighted_beta, 2),
+            "beta_label": beta_label,
+            "dividend_yield": round(weighted_yield * 100, 2), # convert to percentage e.g. 1.5%
+            "dividend_cashflow": round(annual_cashflow, 0),
+            "market_cap": {k: round(v, 1) for k, v in market_cap_split.items()}
         }
 
     def get_tax_friction_estimate(self, holdings: List[Dict[str, Any]]) -> Dict[str, Any]:

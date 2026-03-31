@@ -23,7 +23,18 @@ const PortfolioHero = ({ summary, holdings, intelligence }) => {
         : { border: '#6b7280', text: '#9ca3af', bg: 'rgba(107, 114, 128, 0.1)' };
 
     // Pie Chart Data: Current Market Value per Stock
-    const COLORS = ['#D1C79D', '#A49B72', '#E5DEBA', '#8E865E', '#C0B589', '#F2EAD0', '#7A7250', '#DED4A9'];
+    const COLORS = [
+        '#D1C79D', // Brand Gold
+        '#60A5FA', // Premium Blue
+        '#34D399', // Emerald
+        '#A78BFA', // Violet
+        '#F472B6', // Pink
+        '#FBBF24', // Amber
+        '#2DD4BF', // Teal
+        '#FB7185', // Rose
+        '#38BDF8', // Sky Blue
+        '#E879F9'  // Fuchsia
+    ];
     
     const chartData = (() => {
         const arr = Array.isArray(holdings) ? holdings : [];
@@ -64,8 +75,7 @@ const PortfolioHero = ({ summary, holdings, intelligence }) => {
                     </div>
                 </div>
 
-                <div style={{ flex: 1, width: '100%', minHeight: 0 }}>
-                <div style={{ flex: 1, width: '100%', minHeight: 0, position: 'relative' }}>
+                <div style={{ flex: 1, width: '100%', minHeight: '250px', position: 'relative' }}>
                     {hasChartData ? (
                         <ResponsiveContainer width="100%" height="100%">
                             <PieChart>
@@ -109,7 +119,6 @@ const PortfolioHero = ({ summary, holdings, intelligence }) => {
                             No holdings yet. Add investments to see your allocation.
                         </div>
                     )}
-                </div>
                 </div>
             </div>
 
@@ -172,6 +181,31 @@ const PortfolioHero = ({ summary, holdings, intelligence }) => {
                         <Activity size={24} color={riskColor.border} />
                     </div>
                 </div>
+
+                {/* Market Cap Distribution */}
+                {intelligence?.fundamentals?.market_cap && (
+                    <div style={{ padding: '0.5rem 0' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                            <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--color-secondary)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Market Cap Allocation</span>
+                        </div>
+                        <div style={{ display: 'flex', height: '0.5rem', borderRadius: '9999px', overflow: 'hidden' }}>
+                            <div style={{ width: `${intelligence.fundamentals.market_cap.Large}%`, backgroundColor: '#3b82f6' }} title={`Large Cap: ${intelligence.fundamentals.market_cap.Large}%`} />
+                            <div style={{ width: `${intelligence.fundamentals.market_cap.Mid}%`, backgroundColor: '#10b981' }} title={`Mid Cap: ${intelligence.fundamentals.market_cap.Mid}%`} />
+                            <div style={{ width: `${intelligence.fundamentals.market_cap.Small}%`, backgroundColor: '#8b5cf6' }} title={`Small Cap: ${intelligence.fundamentals.market_cap.Small}%`} />
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '0.5rem', fontSize: '0.75rem', color: '#9ca3af' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
+                                <span style={{ width: '0.5rem', height: '0.5rem', borderRadius: '50%', backgroundColor: '#3b82f6' }}></span> Large {intelligence.fundamentals.market_cap.Large}%
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', opacity: intelligence.fundamentals.market_cap.Mid > 0 ? 1 : 0.5 }}>
+                                <span style={{ width: '0.5rem', height: '0.5rem', borderRadius: '50%', backgroundColor: '#10b981' }}></span> Mid {intelligence.fundamentals.market_cap.Mid}%
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', opacity: intelligence.fundamentals.market_cap.Small > 0 ? 1 : 0.5 }}>
+                                <span style={{ width: '0.5rem', height: '0.5rem', borderRadius: '50%', backgroundColor: '#8b5cf6' }}></span> Small {intelligence.fundamentals.market_cap.Small}%
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     );
