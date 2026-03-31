@@ -134,8 +134,29 @@ const PortfolioPage = () => {
             )}
 
             {loading ? (
-                <div className="glass-panel" style={{ padding: '1.5rem', borderRadius: '12px', border: '1px solid var(--glass-border)' }}>
-                    Loading portfolio…
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '60vh', gap: '1.75rem' }} className="animate-fade-in">
+                    <div style={{ position: 'relative', width: '70px', height: '70px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        {/* Outer pulsing glow */}
+                        <div className="animate-pulse" style={{ position: 'absolute', inset: -20, background: 'radial-gradient(circle, rgba(209, 199, 157, 0.25) 0%, transparent 70%)', filter: 'blur(12px)', borderRadius: '50%' }} />
+                        
+                        {/* Spinning Ring */}
+                        <svg className="animate-spin" viewBox="0 0 24 24" style={{ width: '100%', height: '100%', color: '#D1C79D', position: 'relative', zIndex: 10 }}>
+                            <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2.5" fill="none" style={{ opacity: 0.15 }} />
+                            <path fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" style={{ opacity: 0.9 }} />
+                        </svg>
+                        
+                        {/* Inner static node */}
+                        <div style={{ position: 'absolute', width: '24px', height: '24px', borderRadius: '50%', backgroundColor: '#D1C79D', opacity: 0.15, zIndex: 5 }} />
+                    </div>
+                    
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem', textAlign: 'center' }}>
+                        <h3 className="text-gradient-gold" style={{ fontSize: '1.25rem', fontWeight: 600, letterSpacing: '0.05em', margin: 0 }}>
+                            Synthesizing Portfolio Matrix
+                        </h3>
+                        <p style={{ fontSize: '0.875rem', color: '#9ca3af', margin: 0 }} className="animate-pulse">
+                            Fetching real-time market data & analyzing underlying models...
+                        </p>
+                    </div>
                 </div>
             ) : holdings.length === 0 ? (
                 <PortfolioEmptyState onAddTransaction={() => openAddTransaction()} />
