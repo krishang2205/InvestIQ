@@ -4,7 +4,7 @@ import { MessageSquare, Send, X, Minimize2, Sparkles, Zap, ShieldAlert, ChevronR
 const AIChatBot = ({ isOpen, onClose, reportData, jobId }) => {
     const [activeTab, setActiveTab] = useState('chat'); // 'chat' or 'simulate'
     const [messages, setMessages] = useState([
-        { role: 'assistant', content: `I am KIMS AI—your bridge from complexity to conviction. Engineered by Darji, Jingar, and Dixit, I've synthesized the intelligence for ${reportData?.header?.company}. How shall we navigate the catalysts today?` }
+        { role: 'assistant', content: `Hi! I'm **KIMS AI**—your personal Market Saarathi, engineered by **Krishang, Ishan, and Mohit**. I've analyzed the report for **${reportData?.header?.company}**. How can I help you understand it today?` }
     ]);
     const [inputValue, setInputValue] = useState('');
     const [isTyping, setIsTyping] = useState(false);
@@ -75,6 +75,17 @@ const AIChatBot = ({ isOpen, onClose, reportData, jobId }) => {
         }
     };
 
+    const formatMessage = (text) => {
+        if (!text) return '';
+        const parts = text.split(/(\*\*.*?\*\*)/g);
+        return parts.map((part, index) => {
+            if (part.startsWith('**') && part.endsWith('**')) {
+                return <strong key={index} style={{ color: 'var(--color-accent)', fontWeight: 800 }}>{part.slice(2, -2)}</strong>;
+            }
+            return part;
+        });
+    };
+
     if (!isOpen) return null;
 
     return (
@@ -89,8 +100,9 @@ const AIChatBot = ({ isOpen, onClose, reportData, jobId }) => {
             flexDirection: 'column',
             zIndex: 1000,
             overflow: 'hidden',
-            border: '1px solid var(--color-accent-glow)',
+            border: '1px solid rgba(209, 199, 157, 0.2)',
             boxShadow: '0 20px 50px rgba(0,0,0,0.5)',
+            backdropFilter: 'blur(20px)'
         }}>
             {/* Header */}
             <div style={{
@@ -230,7 +242,7 @@ const AIChatBot = ({ isOpen, onClose, reportData, jobId }) => {
                                         border: msg.role === 'user' ? 'none' : '1px solid var(--glass-border)',
                                         boxShadow: msg.role === 'assistant' ? '0 4px 15px rgba(0,0,0,0.2)' : 'none'
                                     }}>
-                                        {msg.content}
+                                        {formatMessage(msg.content)}
                                     </div>
                             </div>
                         ))}
