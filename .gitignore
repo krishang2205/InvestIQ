@@ -42,3 +42,7 @@ yarn-error.log*
 
 # Supabase
 supabase/
+
+# Databases
+*.sqlite3
+backend/data/*.sqlite3
