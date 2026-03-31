@@ -4,7 +4,7 @@ import { MessageSquare, Send, X, Minimize2, Sparkles, Zap, ShieldAlert, ChevronR
 const AIChatBot = ({ isOpen, onClose, reportData, jobId }) => {
     const [activeTab, setActiveTab] = useState('chat'); // 'chat' or 'simulate'
     const [messages, setMessages] = useState([
-        { role: 'assistant', content: `Hi! I'm KIMS AI—your personal Market Saarathi (named after your project creators: Krishang, Ishan, Mohit). I've analyzed the report for ${reportData?.header?.company}. How can I help you understand it today?` }
+        { role: 'assistant', content: `I am KIMS AI—your bridge from complexity to conviction. Engineered by Darji, Jingar, and Dixit, I've synthesized the intelligence for ${reportData?.header?.company}. How shall we navigate the catalysts today?` }
     ]);
     const [inputValue, setInputValue] = useState('');
     const [isTyping, setIsTyping] = useState(false);
