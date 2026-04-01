@@ -12,7 +12,7 @@ const MOCK_STOCKS = [
     { symbol: 'SBIN', name: 'State Bank of India', sector: 'Financials' },
     { symbol: 'BHARTIARTL', name: 'Bharti Airtel Ltd', sector: 'Telecommunication' },
     { symbol: 'LICI', name: 'Life Insurance Corp of India', sector: 'Financials' },
-    { symbol: 'TATAMOTORS', name: 'Tata Motors Ltd', sector: 'Automotive' },
+    { symbol: 'TMPV', name: 'Tata Motors (PV / EV)', sector: 'Automotive' },
 ];
 
 const StockSearch = ({ onSelect }) => {

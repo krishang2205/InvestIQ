@@ -87,9 +87,9 @@ const IntelligenceReportPage = () => {
         let attempts = 0;
         pollIntervalRef.current = setInterval(async () => {
             attempts++;
-            if (attempts > 20) { // 60s timeout
+            if (attempts > 50) { // 150s timeout
                 clearInterval(pollIntervalRef.current);
-                setError('Report generation timed out.');
+                setError('Report generation timed out. The AI analysis is taking longer than usual.');
                 setIsGenerating(false);
                 return;
             }

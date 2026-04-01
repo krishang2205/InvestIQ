@@ -6,6 +6,26 @@ import os
 # Load .env variables locally
 load_dotenv()
 
+# --- AUTOMATIC MIGRATION: Update TATAMOTORS to TMPV in SQLite ---
+try:
+    import sqlite3
+    db_path = os.path.join(os.path.dirname(__file__), 'data', 'investiq.sqlite3')
+    if os.path.exists(db_path):
+        conn = sqlite3.connect(db_path)
+        cur = conn.cursor()
+        
+        # Check if transactions table exists before updating
+        cur.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='transactions'")
+        if cur.fetchone():
+            cur.execute("UPDATE transactions SET symbol = 'TMPV' WHERE symbol = 'TATAMOTORS'")
+            conn.commit()
+            print("AUTOMATIC MIGRATION COMPLETE: Updated TATAMOTORS to TMPV in SQLite transactions table.")
+        
+        conn.close()
+except Exception as e:
+    print("AUTOMATIC MIGRATION ERROR:", str(e))
+# -----------------------------------------------------
+
 app = Flask(__name__)
 # Enable CORS for the React frontend
 CORS(app)

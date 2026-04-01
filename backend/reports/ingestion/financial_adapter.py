@@ -77,6 +77,9 @@ class FinancialDataAdapter:
 
             # ── Live 1-Year OHLCV History for Chart ─────────────────────────
             chart_data = self._fetch_price_history(ticker, ticker_symbol)
+            
+            # ── Live 1-Day Intraday History for 1D Chart ────────────────────
+            intraday_data = self._fetch_intraday_history(ticker, ticker_symbol)
 
             # ── Recent News ──────────────────────────────────────────────────
             recent_news = []
@@ -98,15 +101,19 @@ class FinancialDataAdapter:
 
             # ── Company Metadata ─────────────────────────────────────────────
             officers = info.get("companyOfficers", [])
-            ceo = "N/A"
+            ceo_name = "N/A"
             if officers:
-                # Find the MD, CEO, or first officer
-                ceo_obj = next((o for o in officers if "CEO" in o.get("title", "") or "MD" in o.get("title", "")), officers[0])
-                ceo = ceo_obj.get("name", "N/A")
+                for off in officers:
+                    title = str(off.get("title", "")).lower()
+                    if "ceo" in title or "chief executive" in title:
+                        ceo_name = off.get("name", "N/A")
+                        break
+                if ceo_name == "N/A":
+                    ceo_name = officers[0].get("name", "N/A")
 
             company_meta = {
                 "name": info.get("longName") or info.get("shortName") or symbol,
-                "ceo": ceo,
+                "ceo": ceo_name,
                 "sector": info.get("sector") or "Unknown",
                 "industry": info.get("industry") or "Unknown",
                 "exchange": info.get("exchange") or info.get("fullExchangeName") or "Unknown",
@@ -132,7 +139,8 @@ class FinancialDataAdapter:
                 "two_hundred_day_avg": two_hundred_day_avg,
                 "fundamentals": fundamentals,
                 "company_meta": company_meta,
-                "chart_data": chart_data,         # Real 1Y OHLCV for chart injection
+                "chart_data": chart_data,         # Real OHLCV for chart injection
+                "intraday_data": intraday_data,   # Real tick-by-tick for 1D chart
                 "news": recent_news,              # Top 5 latest news articles
                 "sentiment_score": 0.0,            # Placeholder; overridden by AI
                 "volatility": self._compute_volatility(chart_data),
@@ -164,7 +172,7 @@ class FinancialDataAdapter:
             "WIPRO", "HINDUNILVR", "KOTAKBANK", "BAJFINANCE", "LT",
             "AXISBANK", "MARUTI", "TITAN", "SUNPHARMA", "ASIANPAINT",
             "NESTLEIND", "ULTRACEMCO", "TECHM", "POWERGRID", "NTPC",
-            "HCLTECH", "ADANIENT", "ADANIPORTS", "TATAMOTORS", "TATASTEEL",
+            "HCLTECH", "ADANIENT", "ADANIPORTS", "TMPV", "TATASTEEL",
             "ONGC", "BPCL", "IOC", "COALINDIA", "ITC", "BHARTIARTL",
         }
         if symbol in indian_hints:
@@ -175,11 +183,11 @@ class FinancialDataAdapter:
 
     def _fetch_price_history(self, ticker: yf.Ticker, symbol: str) -> list:
         """
-        Downloads 1 year of daily closing prices and returns them as the
-        chart_data array format expected by the report schema.
+        Downloads historical daily closing prices (5y duration) and returns them as 
+        the chart_data array format expected by the report schema.
         """
         try:
-            hist = ticker.history(period="1y", interval="1d", auto_adjust=True)
+            hist = ticker.history(period="5y", interval="1d", auto_adjust=True)
             if hist.empty:
                 logger.warning(f"Empty price history for {symbol}, using fallback.")
                 return []
@@ -198,9 +206,33 @@ class FinancialDataAdapter:
 
             logger.info(f"Fetched {len(chart_data)} days of real price history for {symbol}")
             return chart_data
-
         except Exception as e:
             logger.warning(f"Price history fetch failed for {symbol}: {e}")
+            return []
+
+    def _fetch_intraday_history(self, ticker: yf.Ticker, symbol: str) -> list:
+        """
+        Downloads 1-day intraday data at 5-minute intervals for real-time 1D charting.
+        """
+        try:
+            hist = ticker.history(period="1d", interval="5m", auto_adjust=True)
+            if hist.empty:
+                logger.warning(f"Empty intraday history for {symbol}, using fallback.")
+                return []
+
+            intraday_data = []
+            for date_idx, row in hist.iterrows():
+                # Format to HH:MM AM/PM
+                time_str = date_idx.strftime("%I:%M %p") if hasattr(date_idx, 'strftime') else str(date_idx)[11:16]
+                intraday_data.append({
+                    "date": time_str,
+                    "price": round(float(row["Close"]), 2)
+                })
+
+            logger.info(f"Fetched {len(intraday_data)} intraday ticks for {symbol}")
+            return intraday_data
+        except Exception as e:
+            logger.warning(f"Failed to fetch intraday data for {symbol}: {e}")
             return []
 
     def _compute_volatility(self, chart_data: list) -> float:

@@ -122,9 +122,52 @@ const ReportView = ({ data, onBack, jobId }) => {
 
     // Google Finance Style Metrics & Interactive Timeline Filtering
     const rawChartData = data.priceBehavior?.chartData || [];
-    const ratioMap = { '1D': 0.05, '5D': 0.1, '1M': 0.25, '6M': 0.5, 'YTD': 0.75, '1Y': 1.0, '5Y': 1.0, 'Max': 1.0 };
-    const sliceLength = Math.max(2, Math.floor(rawChartData.length * ratioMap[activeTab]));
-    const chartData = rawChartData.slice(-sliceLength); // Take exactly the N most recent points
+    const intradayData = data.priceBehavior?.intradayData || [];
+    
+    // Precise calendar date filtering for unparalleled accuracy
+    let chartData = [...rawChartData];
+    if (activeTab === '1D' && intradayData.length > 0) {
+        chartData = [...intradayData]; // Use the live 5-minute ticks for 1D chart
+    } else if (rawChartData.length > 0 && activeTab !== 'Max') {
+        const today = new Date();
+        const cutoffDate = new Date();
+        
+        switch(activeTab) {
+            case '1D': 
+                chartData = rawChartData.slice(-2); // Fallback: Need 2 points to render a line 
+                break;
+            case '5D': 
+                chartData = rawChartData.slice(-5);
+                break;
+            case '1M':
+                cutoffDate.setMonth(today.getMonth() - 1);
+                chartData = rawChartData.filter(d => new Date(d.date) >= cutoffDate);
+                break;
+            case '6M':
+                cutoffDate.setMonth(today.getMonth() - 6);
+                chartData = rawChartData.filter(d => new Date(d.date) >= cutoffDate);
+                break;
+            case 'YTD':
+                cutoffDate.setFullYear(today.getFullYear(), 0, 1); // Jan 1st of current year
+                chartData = rawChartData.filter(d => new Date(d.date) >= cutoffDate);
+                break;
+            case '1Y':
+                cutoffDate.setFullYear(today.getFullYear() - 1);
+                chartData = rawChartData.filter(d => new Date(d.date) >= cutoffDate);
+                break;
+            case '5Y':
+                cutoffDate.setFullYear(today.getFullYear() - 5);
+                chartData = rawChartData.filter(d => new Date(d.date) >= cutoffDate);
+                break;
+            default:
+                chartData = rawChartData;
+        }
+    }
+    
+    // Fallback: Recharts needs at least 2 points to draw a connected line graph
+    if (chartData.length < 2 && rawChartData.length >= 2) {
+        chartData = rawChartData.slice(-2);
+    }
 
     const startPrice = chartData.length > 0 ? chartData[0].price : 0;
     const endPrice = chartData.length > 0 ? chartData[chartData.length - 1].price : 0;

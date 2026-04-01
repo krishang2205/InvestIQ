@@ -494,7 +494,16 @@ class AIProviderManager:
                         for p in real_data
                     ]
                     logger.info(f"Injected {len(real_data)} real yfinance price points into chart.")
-                    return
+            
+            # ── INTRADAY REAL DATA (1D Graph) ─────────────────────────────────
+            if market_context and market_context.get("intraday_data"):
+                intraday = market_context["intraday_data"]
+                if len(intraday) >= 2:
+                    data["priceBehavior"]["intradayData"] = intraday
+                    logger.info(f"Injected {len(intraday)} real intraday price points.")
+
+            if "chartData" in data.get("priceBehavior", {}):
+                return
 
             # ── FALLBACK: Brownian Motion (only if yfinance returned nothing) ─
             logger.warning("No real chart data available — falling back to Brownian Motion simulation.")
