@@ -11,7 +11,7 @@ const Sidebar = () => {
         { icon: Zap, label: 'Predictions', path: '/dashboard/predictions' },
         { icon: FileText, label: 'Intelligence Report', path: '/dashboard/intelligence-reports' },
         { icon: PieChart, label: 'Portfolio', path: '/dashboard/portfolio' },
-        { icon: Activity, label: 'Market', path: '/dashboard/market' },
+        { icon: Activity, label: 'Market Mood', path: '/dashboard/market-mood-index' },
         { icon: GraduationCap, label: 'Learning', path: '/dashboard/learning' },
         { icon: Settings, label: 'Settings', path: '/dashboard/settings' },
     ];

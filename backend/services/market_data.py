@@ -69,15 +69,14 @@ class MarketDataService:
             'DRREDDY.NS': 'drreddys.com',
             'SBILIFE.NS': 'sbilife.co.in',
             'BAJAJ-AUTO.NS': 'bajajauto.com',
-            'GURUFOCUS.COM': 'gurufocus.com',
             'GRASIM.NS': 'grasim.com',
             'BPCL.NS': 'bharatpetroleum.in',
-            'EICHERMOT.NS': 'eichermotors.com',
+            'EICHERMOT.NS': 'eichergroup.com',
             'COALINDIA.NS': 'coalindia.in',
             'TATASTEEL.NS': 'tatasteel.com',
             'JSWSTEEL.NS': 'jsw.in',
-            'ADANIPORTS.NS': 'adani.com', # adaniports.com often has no favicon, adani.com works
-            'ADANIENT.NS': 'adani.com', # adanienterprises.com often has no favicon
+            'ADANIPORTS.NS': 'adaniports.com',
+            'ADANIENT.NS': 'adanienterprises.com',
             'SUNPHARMA.NS': 'sunpharma.com',
             'CIPLA.NS': 'cipla.com',
             'ITC.NS': 'itcportal.com',
@@ -97,7 +96,22 @@ class MarketDataService:
             'WIPRO.NS': 'wipro.com',
             'HCLTECH.NS': 'hcltech.com',
             'TECHM.NS': 'techmahindra.com',
-            'LTIM.NS': 'ltimindtree.com'
+            'LTIM.NS': 'ltimindtree.com',
+            'AXISBANK.NS': 'axisbank.com',
+            'BAJFINANCE.NS': 'bajajfinserv.in',
+            'BAJAJFINSV.NS': 'bajajfinserv.in',
+            'BHARTIARTL.NS': 'airtel.in',
+            'ASIANPAINT.NS': 'asianpaints.com',
+            'HDFCBANK.NS': 'hdfcbank.com',
+            'ICICIBANK.NS': 'icicibank.com',
+            'INDUSINDBK.NS': 'indusind.com',
+            'KOTAKBANK.NS': 'kotak.com',
+            'SBIN.NS': 'sbi.co.in',
+            'LT.NS': 'larsentoubro.com',
+            'RELIANCE.NS': 'ril.com',
+            'TATACONSUM.NS': 'tataconsumer.com',
+            'TMPV.NS': 'tatamotors.com',
+            'TATAMOTORS.NS': 'tatamotors.com',
         }
 
     def _get_ticker_data(self, symbol):
@@ -668,3 +682,121 @@ class MarketDataService:
         except Exception as e:
             logger.error(f"Error fetching news: {e}")
             return []
+
+    def get_index_history(self, symbol: str = "^NSEI", period: str = "1mo", interval: str = "1d") -> list:
+        """
+        Fetches historical data specifically formatted for frontend charting.
+        """
+        yf_symbol = self.normalize_symbol(symbol)
+        try:
+            df = yf.download(yf_symbol, period=period, interval=interval, progress=False, threads=True)
+            if df is None or df.empty:
+                return []
+            
+            # Clean columns if multi-index
+            if hasattr(df.columns, 'levels') or isinstance(df.columns, pd.MultiIndex):
+                 df.columns = df.columns.get_level_values(0)
+
+            history = []
+            for date, row in df.iterrows():
+                history.append({
+                    "date": date.strftime("%Y-%m-%d"),
+                    "close": round(float(row['Close']), 2),
+                    "open": round(float(row['Open']), 2),
+                    "high": round(float(row['High']), 2),
+                    "low": round(float(row['Low']), 2),
+                    "volume": int(row['Volume'])
+                })
+            return history
+        except Exception as e:
+            logger.error(f"Error fetching history for {symbol}: {e}")
+            return []
+
+    def get_market_mood(self) -> dict:
+        """
+        Calculates a dynamic Fear & Greed Index specifically calibrated for the Indian market.
+        Uses ^NSEI (Nifty 50) and ^INDIAVIX (India VIX).
+        """
+        try:
+            # Fetch 3 months of data to calculate 50-SMA and 14-RSI
+            nifty_df = yf.download('^NSEI', period="3mo", interval="1d", progress=False)
+            vix_df = yf.download('^INDIAVIX', period="1mo", interval="1d", progress=False)
+
+            if nifty_df is None or nifty_df.empty or vix_df is None or vix_df.empty:
+                return {"composite_score": 50.0, "zone": "Neutral", "metrics": {}}
+
+            # Clean and flatten columns if multi-index
+            if isinstance(nifty_df.columns, pd.MultiIndex):
+                nifty_df.columns = nifty_df.columns.get_level_values(0)
+            if isinstance(vix_df.columns, pd.MultiIndex):
+                vix_df.columns = vix_df.columns.get_level_values(0)
+
+            # 1. Volatility (VIX) scoring
+            current_vix = float(vix_df['Close'].iloc[-1])
+            # For VIX: Low (10-14) = Greed (high score), High (>22) = Fear (low score)
+            # Map [10, 25] to [100, 0]
+            vix_score = max(0, min(100, 100 - ((current_vix - 10) / 15 * 100)))
+
+            vix_status = "Neutral"
+            if current_vix > 20: vix_status = "High Volatility (Fear)"
+            elif current_vix < 13: vix_status = "Low Volatility (Greed)"
+
+            # 2. Market Momentum (Nifty vs 50-SMA)
+            current_nifty = float(nifty_df['Close'].iloc[-1])
+            sma_50 = float(nifty_df['Close'].rolling(window=50).mean().iloc[-1])
+            # If current is 5% above SMA -> 100 score. 5% below -> 0 score.
+            momentum_ratio = (current_nifty / sma_50) - 1
+            momentum_score = max(0, min(100, ((momentum_ratio + 0.05) / 0.10) * 100))
+            
+            mom_status = "Bullish" if current_nifty > sma_50 else "Bearish"
+
+            # 3. Relative Strength Index (RSI 14-day)
+            delta = nifty_df['Close'].diff()
+            gain = (delta.where(delta > 0, 0)).rolling(window=14).mean()
+            loss = (-delta.where(delta < 0, 0)).rolling(window=14).mean()
+            rs = gain / loss
+            rsi = 100 - (100 / (1 + rs))
+            current_rsi = float(rsi.iloc[-1])
+            
+            # RSI score correlates exactly to the index (0-100 scale anyway)
+            rsi_score = current_rsi
+            rsi_status = "Neutral"
+            if current_rsi > 70: rsi_status = "Overbought"
+            elif current_rsi < 30: rsi_status = "Oversold"
+
+            # Final Composite
+            composite = round((vix_score + momentum_score + rsi_score) / 3, 2)
+            
+            zone = "Neutral"
+            if composite < 30: zone = "Extreme Fear"
+            elif composite < 45: zone = "Fear"
+            elif composite < 55: zone = "Neutral"
+            elif composite < 70: zone = "Greed"
+            else: zone = "Extreme Greed"
+
+            return {
+                "composite_score": composite,
+                "zone": zone,
+                "metrics": {
+                    "vix": {
+                        "value": round(current_vix, 2), 
+                        "status": vix_status, 
+                        "description": "India VIX measures near-term volatility expectations."
+                    },
+                    "momentum": {
+                        "value": round(current_nifty, 2), 
+                        "sma": round(sma_50, 2),
+                        "status": mom_status, 
+                        "description": "Nifty 50 position relative to its 50-day Moving Average."
+                    },
+                    "rsi": {
+                        "value": round(current_rsi, 2), 
+                        "status": rsi_status, 
+                        "description": "14-day Relative Strength Index (Momentum indicator)."
+                    }
+                }
+            }
+
+        except Exception as e:
+            logger.error(f"Error calculating market mood: {e}")
+            return {"composite_score": 50.0, "zone": "Neutral (Error)", "metrics": {}}
