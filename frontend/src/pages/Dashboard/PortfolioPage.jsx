@@ -4,13 +4,15 @@ import PortfolioAllocation from './components/portfolio/PortfolioAllocation';
 import PortfolioEmptyState from './components/portfolio/PortfolioEmptyState';
 import PortfolioDrillDown from './components/portfolio/PortfolioDrillDown';
 import AddTransactionModal from './components/portfolio/AddTransactionModal';
+import PortfolioChatBot from './components/portfolio/PortfolioChatBot';
 import { useCallback, useEffect, useState } from 'react';
 import api from '../../services/api';
-import { Plus } from 'lucide-react';
+import { Plus, Sparkles } from 'lucide-react';
 
 
 const PortfolioPage = () => {
     const [isAddTransactionOpen, setIsAddTransactionOpen] = useState(false);
+    const [isChatOpen, setIsChatOpen] = useState(false);
     const [transactionInitialData, setTransactionInitialData] = useState(null);
     const [viewMode, setViewMode] = useState('overview'); // 'overview' | 'detailed'
     const [loading, setLoading] = useState(true);
@@ -176,14 +178,18 @@ const PortfolioPage = () => {
                         <PortfolioHero summary={summary} holdings={holdings} intelligence={intel} />
                     </div>
 
-                    {/* Section C: Intelligence Row */}
-                    <div style={{ marginBottom: '1.5rem' }}>
-                        <PortfolioIntelligence intelligence={intel} holdings={holdings} />
-                    </div>
-
-                    {/* Section D: Allocation & Rebalancing */}
+                    {/* Section C: Allocation & Rebalancing */}
                     <div style={{ marginBottom: '1.5rem' }}>
                         <PortfolioAllocation holdings={holdings} intelligence={intel} />
+                    </div>
+
+                    {/* Section D: Intelligence Row (Moved to bottom) */}
+                    <div style={{ marginBottom: '1.5rem' }}>
+                        <PortfolioIntelligence 
+                            intelligence={intel} 
+                            holdings={holdings} 
+                            onViewDetailed={() => setViewMode('detailed')} 
+                        />
                     </div>
                 </>
             )}
@@ -196,6 +202,56 @@ const PortfolioPage = () => {
                 }}
                 onSaved={refresh}
                 initialData={transactionInitialData}
+            />
+
+            {/* AI Assistant FAB */}
+            {!loading && holdings.length > 0 && (
+                <div style={{ position: 'fixed', bottom: '24px', right: '24px', zIndex: 999, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
+                    {!isChatOpen && (
+                        <div className="animate-bounce" style={{ 
+                            background: 'rgba(209, 199, 157, 0.9)', 
+                            color: '#000', 
+                            padding: '4px 10px', 
+                            borderRadius: '8px', 
+                            fontSize: '0.65rem', 
+                            fontWeight: 800, 
+                            letterSpacing: '0.5px',
+                            boxShadow: '0 4px 12px rgba(209, 199, 157, 0.4)',
+                            border: '1px solid #fff'
+                        }}>
+                            1st CHAT FREE 💎
+                        </div>
+                    )}
+                    <button
+                        onClick={() => setIsChatOpen(true)}
+                        style={{
+                            width: '56px',
+                            height: '56px',
+                            borderRadius: '50%',
+                            background: 'linear-gradient(135deg, #D1C79D 0%, #B0A678 100%)',
+                            color: '#000',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            boxShadow: '0 8px 32px rgba(209, 199, 157, 0.3)',
+                            border: 'none',
+                            cursor: 'pointer',
+                            transition: 'transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1)'
+                        }}
+                        onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.1)'}
+                        onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                    >
+                        <Sparkles size={24} color="#000" />
+                    </button>
+                </div>
+            )}
+
+            {/* AI Assistant Chat Panel */}
+            <PortfolioChatBot
+                isOpen={isChatOpen}
+                onClose={() => setIsChatOpen(false)}
+                holdings={holdings}
+                intelligence={intel}
             />
         </div>
     );

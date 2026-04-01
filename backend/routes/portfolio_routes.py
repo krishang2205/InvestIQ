@@ -255,8 +255,14 @@ def get_portfolio_intelligence():
         rebalance_data = portfolio_intel.get_rebalancing_suggestions(enriched_holdings)
         fundamentals = portfolio_intel.calculate_fundamental_radar(enriched_holdings)
         
-        # 4. Generate AI Doctor Health Check (Doctor receives raw report)
-        health_check = portfolio_doctor.generate_health_check(report)
+        # 4. Generate AI Doctor Health Check (Doctor receives raw report + institutional metrics)
+        health_check = portfolio_doctor.generate_health_check(
+            report, 
+            stress_test=stress_results,
+            alpha_divergence=alpha_data,
+            tax_friction=tax_data,
+            fundamentals=fundamentals
+        )
         
         return jsonify({
             "doctor_summary": health_check["diagnosis"],
@@ -351,5 +357,45 @@ def get_portfolio_history():
         )
         
         return jsonify(history)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@portfolio_bp.route('/chat', methods=['POST'])
+def portfolio_chat():
+    """
+    Handle chat interaction with Portfolio Doctor context.
+    Takes message, history array, and portfolio summary state.
+    """
+    try:
+        data = request.json
+        if not data:
+            return jsonify({"error": "No JSON payload provided"}), 400
+            
+        message = data.get("message", "")
+        history = data.get("history", [])
+        portfolio_summary = data.get("portfolio_context", {})
+        
+        response_text = portfolio_doctor.handle_portfolio_chat(message, history, portfolio_summary)
+        
+        return jsonify({"response": response_text})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@portfolio_bp.route('/simulate', methods=['POST'])
+def portfolio_simulate():
+    """
+    Handle macro catalyst simulation against the portfolio holdings.
+    """
+    try:
+        data = request.json
+        if not data:
+            return jsonify({"error": "No JSON payload provided"}), 400
+            
+        catalyst = data.get("catalyst", "")
+        portfolio_summary = data.get("portfolio_context", {})
+        
+        simulation_data = portfolio_doctor.simulate_portfolio_catalyst(catalyst, portfolio_summary)
+        
+        return jsonify(simulation_data)
     except Exception as e:
         return jsonify({"error": str(e)}), 500

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ArrowLeft, TrendingUp, TrendingDown, DollarSign, Wallet, ArrowUpRight, ArrowDownRight } from 'lucide-react';
+import { ArrowLeft, TrendingUp, TrendingDown, DollarSign, Wallet, ArrowUpRight, ArrowDownRight, Sparkles, Lock, BarChart2, PieChart, ShieldCheck } from 'lucide-react';
 import PortfolioHoldingsTable from './PortfolioHoldingsTable';
 import PortfolioSectorAlloc from './PortfolioSectorAlloc';
 import PortfolioMarketCap from './PortfolioMarketCap';
@@ -63,8 +63,26 @@ const PortfolioDrillDown = ({ onBack, holdings, summary, xirr, onAddTransaction,
                     <ArrowLeft size={20} />
                 </button>
                 <div>
-                    <h1 style={{ fontSize: '1.5rem', fontWeight: 700, color: 'white', margin: 0 }}>Detailed Analysis</h1>
-                    <p style={{ fontSize: '0.875rem', color: '#6b7280', margin: 0 }}>Deep dive into your holdings and performance.</p>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                        <h1 style={{ fontSize: '1.5rem', fontWeight: 700, color: 'white', margin: 0 }}>Detailed Analysis</h1>
+                        <span style={{ 
+                            fontSize: '0.625rem', 
+                            backgroundColor: 'rgba(209, 199, 157, 0.1)', 
+                            color: '#D1C79D', 
+                            padding: '0.25rem 0.75rem', 
+                            borderRadius: '99px', 
+                            border: '1px solid rgba(209, 199, 157, 0.2)',
+                            fontWeight: 700,
+                            letterSpacing: '0.05em',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.25rem'
+                        }}>
+                            <Sparkles size={10} />
+                            PREMIUM
+                        </span>
+                    </div>
+                    <p style={{ fontSize: '0.875rem', color: '#6b7280', margin: 0 }}>Institutional-Grade Structural Diagnostics & Insights.</p>
                 </div>
             </div>
 
@@ -224,12 +242,63 @@ const PortfolioDrillDown = ({ onBack, holdings, summary, xirr, onAddTransaction,
             </div>
 
             {/* 4. Insights Grid (Day 5 & 6) */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem', marginBottom: '4rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem', marginBottom: '2rem' }}>
                 {/* Day 5: Sector Allocation */}
                 <PortfolioSectorAlloc data={sortedData} />
 
                 {/* Day 6: Market Cap Analysis */}
                 <PortfolioMarketCap data={sortedData} />
+            </div>
+
+            {/* 5. Premium Institutional Scans (Locked) */}
+            <div style={{ padding: '2rem', borderRadius: '24px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)', position: 'relative', overflow: 'hidden', marginBottom: '4rem' }}>
+                <div style={{ position: 'absolute', inset: 0, backdropFilter: 'blur(12px)', backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 10, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: '2rem' }}>
+                    <div style={{ 
+                        width: '64px', 
+                        height: '64px', 
+                        borderRadius: '50%', 
+                        background: 'rgba(209, 199, 157, 0.1)', 
+                        border: '1px solid rgba(209, 199, 157, 0.3)', 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        justifyContent: 'center',
+                        color: '#D1C79D',
+                        marginBottom: '1.5rem'
+                    }}>
+                        <Lock size={32} />
+                    </div>
+                    <h2 className="text-gradient-gold" style={{ fontSize: '1.75rem', fontWeight: 700, marginBottom: '0.75rem' }}>Professional Yield Optimizers</h2>
+                    <p style={{ color: '#9ca3af', maxWidth: '600px', marginBottom: '2rem', lineHeight: '1.6' }}>
+                        Unlock specialized institutional tools including Tax-Loss Harvesting suggestions, Dividend Forecast Calendars, and Asset Correlation Heatmaps to fine-tune your portfolio architecture.
+                    </p>
+                    <button style={{ 
+                        padding: '1rem 3rem', 
+                        background: 'linear-gradient(135deg, #D1C79D 0%, #B0A678 100%)', 
+                        color: 'black', 
+                        borderRadius: '99px', 
+                        fontWeight: 700, 
+                        border: 'none', 
+                        cursor: 'pointer',
+                        boxShadow: '0 8px 16px rgba(209, 199, 157, 0.2)'
+                    }}>
+                        Upgrade to Premium
+                    </button>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem', opacity: 0.3 }}>
+                    <div className="glass-panel" style={{ padding: '1.5rem', height: '200px', borderRadius: '16px', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', gap: '1rem' }}>
+                        <ShieldCheck size={40} color="#9ca3af" />
+                        <span style={{ color: '#6b7280', fontWeight: 600 }}>Correlation Heatmap</span>
+                    </div>
+                    <div className="glass-panel" style={{ padding: '1.5rem', height: '200px', borderRadius: '16px', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', gap: '1rem' }}>
+                        <BarChart2 size={40} color="#9ca3af" />
+                        <span style={{ color: '#6b7280', fontWeight: 600 }}>Dividend Forecast Pro</span>
+                    </div>
+                    <div className="glass-panel" style={{ padding: '1.5rem', height: '200px', borderRadius: '16px', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', gap: '1rem' }}>
+                        <PieChart size={40} color="#9ca3af" />
+                        <span style={{ color: '#6b7280', fontWeight: 600 }}>Tax Loss Harvester</span>
+                    </div>
+                </div>
             </div>
         </div>
     );
