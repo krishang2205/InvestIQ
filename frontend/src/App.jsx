@@ -16,6 +16,7 @@ import PredictionsPage from './pages/Dashboard/PredictionsPage';
 import LearningPage from './pages/Dashboard/LearningPage';
 import LessonDetailPage from './pages/Dashboard/LessonDetailPage';
 import FinalAssessmentPage from './pages/Dashboard/FinalAssessmentPage';
+import SettingsPage from './pages/Dashboard/SettingsPage';
 import './App.css';
 
 function App() {
@@ -38,6 +39,7 @@ function App() {
           <Route path="learning" element={<LearningPage />} />
           <Route path="learning/lesson/:lessonId" element={<LessonDetailPage />} />
           <Route path="learning/assessment" element={<FinalAssessmentPage />} />
+          <Route path="settings" element={<SettingsPage />} />
         </Route>
       </Routes>
       <AuthModal />
