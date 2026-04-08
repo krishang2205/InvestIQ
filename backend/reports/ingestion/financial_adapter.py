@@ -1,6 +1,7 @@
 import logging
 import time
 import datetime
+from concurrent.futures import ThreadPoolExecutor
 from typing import Dict, Any
 
 import yfinance as yf
@@ -35,10 +36,36 @@ class FinancialDataAdapter:
 
         try:
             ticker = yf.Ticker(ticker_symbol)
-            info = ticker.info
+            
+            def _get_info():
+                return ticker.info
+                
+            def _get_history():
+                return ticker.history(period="2y", interval="1d", auto_adjust=True)
+                
+            def _get_intraday():
+                return ticker.history(period="1d", interval="5m", auto_adjust=True)
+                
+            def _get_news():
+                try:
+                    return ticker.news or []
+                except:
+                    return []
+
+            logger.info(f"Parallelizing data fetching for {ticker_symbol}...")
+            with ThreadPoolExecutor(max_workers=4) as executor:
+                future_info = executor.submit(_get_info)
+                future_hist = executor.submit(_get_history)
+                future_intra = executor.submit(_get_intraday)
+                future_news = executor.submit(_get_news)
+                
+                info = future_info.result()
+                hist_df = future_hist.result()
+                intra_df = future_intra.result()
+                raw_news = future_news.result()
 
             # Validate ticker returned actual data (not empty dict)
-            if not info or info.get("regularMarketPrice") is None and info.get("currentPrice") is None:
+            if not info or (info.get("regularMarketPrice") is None and info.get("currentPrice") is None):
                 logger.warning(f"yfinance returned empty info for {ticker_symbol}. Symbol may be delisted or invalid.")
                 raise ValueError(f"No market data found for symbol: {ticker_symbol}")
 
@@ -75,29 +102,24 @@ class FinancialDataAdapter:
             fifty_day_avg = info.get("fiftyDayAverage") or current_price
             two_hundred_day_avg = info.get("twoHundredDayAverage") or current_price
 
-            # ── Live 1-Year OHLCV History for Chart ─────────────────────────
-            chart_data = self._fetch_price_history(ticker, ticker_symbol)
+            # ── Live 2-Year OHLCV History for Chart ─────────────────────────
+            chart_data = self._parse_history(hist_df, ticker_symbol)
             
             # ── Live 1-Day Intraday History for 1D Chart ────────────────────
-            intraday_data = self._fetch_intraday_history(ticker, ticker_symbol)
+            intraday_data = self._parse_intraday(intra_df, ticker_symbol)
 
             # ── Recent News ──────────────────────────────────────────────────
             recent_news = []
-            try:
-                raw_news = ticker.news
-                if raw_news:
-                    for n in raw_news[:5]:
-                        # yfinance structure: {'content': {'title': '...', 'pubDate': '...', 'summary': '...'}}
-                        content = n.get("content") or n  # fallback if structure varies
-                        title = content.get("title")
-                        if title:
-                            recent_news.append({
-                                "title": title,
-                                "date": content.get("pubDate", ""),
-                                "summary": content.get("summary", "")[:200]
-                            })
-            except Exception as e:
-                logger.warning(f"Failed to fetch news for {ticker_symbol}: {e}")
+            if raw_news:
+                for n in raw_news[:5]:
+                    content = n.get("content") or n
+                    title = content.get("title")
+                    if title:
+                        recent_news.append({
+                            "title": title,
+                            "date": content.get("pubDate", ""),
+                            "summary": content.get("summary", "")[:200]
+                        })
 
             # ── Company Metadata ─────────────────────────────────────────────
             officers = info.get("companyOfficers", [])
@@ -181,13 +203,11 @@ class FinancialDataAdapter:
         # Default: return as-is and let yfinance handle it
         return symbol
 
-    def _fetch_price_history(self, ticker: yf.Ticker, symbol: str) -> list:
+    def _parse_history(self, hist: pd.DataFrame, symbol: str) -> list:
         """
-        Downloads historical daily closing prices (5y duration) and returns them as 
-        the chart_data array format expected by the report schema.
+        Parses historical daily closing prices DataFrame into the chart_data format.
         """
         try:
-            hist = ticker.history(period="5y", interval="1d", auto_adjust=True)
             if hist.empty:
                 logger.warning(f"Empty price history for {symbol}, using fallback.")
                 return []
@@ -204,35 +224,33 @@ class FinancialDataAdapter:
                     "volume": int(row["Volume"]) if not pd.isna(row["Volume"]) else 0,
                 })
 
-            logger.info(f"Fetched {len(chart_data)} days of real price history for {symbol}")
+            logger.info(f"Parsed {len(chart_data)} days of real price history for {symbol}")
             return chart_data
         except Exception as e:
-            logger.warning(f"Price history fetch failed for {symbol}: {e}")
+            logger.warning(f"Price history parsing failed for {symbol}: {e}")
             return []
 
-    def _fetch_intraday_history(self, ticker: yf.Ticker, symbol: str) -> list:
+    def _parse_intraday(self, hist: pd.DataFrame, symbol: str) -> list:
         """
-        Downloads 1-day intraday data at 5-minute intervals for real-time 1D charting.
+        Parses intraday data DataFrame into formatted ticks.
         """
         try:
-            hist = ticker.history(period="1d", interval="5m", auto_adjust=True)
             if hist.empty:
                 logger.warning(f"Empty intraday history for {symbol}, using fallback.")
                 return []
 
             intraday_data = []
             for date_idx, row in hist.iterrows():
-                # Format to HH:MM AM/PM
                 time_str = date_idx.strftime("%I:%M %p") if hasattr(date_idx, 'strftime') else str(date_idx)[11:16]
                 intraday_data.append({
                     "date": time_str,
                     "price": round(float(row["Close"]), 2)
                 })
 
-            logger.info(f"Fetched {len(intraday_data)} intraday ticks for {symbol}")
+            logger.info(f"Parsed {len(intraday_data)} intraday ticks for {symbol}")
             return intraday_data
         except Exception as e:
-            logger.warning(f"Failed to fetch intraday data for {symbol}: {e}")
+            logger.warning(f"Failed to parse intraday data for {symbol}: {e}")
             return []
 
     def _compute_volatility(self, chart_data: list) -> float:

@@ -3,8 +3,9 @@ from flask_cors import CORS
 from dotenv import load_dotenv
 import os
 
-# Load .env variables locally
-load_dotenv()
+# Load backend/.env explicitly to avoid ambiguity in monorepo setup.
+_BACKEND_DIR = os.path.dirname(os.path.abspath(__file__))
+load_dotenv(dotenv_path=os.path.join(_BACKEND_DIR, ".env"), override=True)
 
 # --- AUTOMATIC MIGRATION: Update TATAMOTORS to TMPV in SQLite ---
 try:
@@ -53,6 +54,10 @@ def home():
 def debug_providers():
     from reports.dependencies import report_di, MOCK_REPORTS_DB
     llm = report_di.get_llm_manager()
+    def _mask_prefix(value: str):
+        if not value:
+            return None
+        return f"{value[:8]}...({len(value)} chars)"
     
     # Get latest 3 reports
     recent_reports = []
@@ -67,6 +72,9 @@ def debug_providers():
     return jsonify({
         "providers_ready": llm.providers_ready,
         "gemini_key_set": bool(llm.gemini_key),
+        "gemini_key_prefix": _mask_prefix(llm.gemini_key),
+        "groq_key_prefix": _mask_prefix(llm.groq_key),
+        "xai_key_prefix": _mask_prefix(llm.xai_key),
         "recent_reports": recent_reports,
         "db_size": len(MOCK_REPORTS_DB)
     })

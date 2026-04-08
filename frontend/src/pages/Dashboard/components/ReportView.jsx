@@ -177,6 +177,7 @@ const ReportView = ({ data, onBack, jobId }) => {
     const changeColor = isPositive ? '#10b981' : '#ef4444'; // Green/Red
     const changePrefix = isPositive ? '+' : '';
     const currencyLabel = 'INR';
+    const marketNews = Array.isArray(data.marketNews) ? data.marketNews.filter(n => n && n.title).slice(0, 5) : [];
 
 
     return (
@@ -210,9 +211,9 @@ const ReportView = ({ data, onBack, jobId }) => {
             <div className="glass-panel" style={{ padding: '1.5rem', borderRadius: '12px', marginBottom: '2rem' }}>
                 <div className="rv-snapshot-grid">
                     <div>
-                        <p style={{ color: 'var(--color-text)', lineHeight: '1.6', marginBottom: '1rem' }}>{data.snapshot.description}</p>
+                        <p style={{ color: 'var(--color-text)', lineHeight: '1.6', marginBottom: '1rem' }}>{data.snapshot?.description || 'Market description currently unavailable.'}</p>
                         <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-                            {data.snapshot.domains.map(d => (
+                            {(data.snapshot?.domains || []).map(d => (
                                 <span key={d} style={{ fontSize: '0.75rem', padding: '0.25rem 0.75rem', border: '1px solid var(--color-secondary)', borderRadius: '1rem', color: 'var(--color-secondary)' }}>
                                     {d}
                                 </span>
@@ -220,7 +221,7 @@ const ReportView = ({ data, onBack, jobId }) => {
                         </div>
                     </div>
                     {/* Key Metrics Grid */}
-                    {data.snapshot.keyMetrics && (
+                    {(data.snapshot?.keyMetrics || []).length > 0 && (
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', background: 'rgba(255,255,255,0.03)', padding: '1rem', borderRadius: '8px' }}>
                             {data.snapshot.keyMetrics.map(m => (
                                 <div key={m.label}>
@@ -263,10 +264,10 @@ const ReportView = ({ data, onBack, jobId }) => {
             {/* 3. EXECUTIVE SUMMARY */}
             <div className="glass-panel" style={{ background: 'linear-gradient(180deg, rgba(209, 199, 157, 0.1) 0%, rgba(0,0,0,0) 100%)', padding: '2rem', borderRadius: '16px', marginBottom: '2rem', border: '1px solid var(--color-accent)' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-around', flexWrap: 'wrap', gap: '1rem', marginBottom: '1.5rem' }}>
-                    {data.executiveSummary.status.map(s => <StatusPill key={s.label} {...s} />)}
+                    {(data.executiveSummary?.status || []).map(s => <StatusPill key={s.label} {...s} />)}
                 </div>
                 <p style={{ textAlign: 'center', fontSize: '1.1rem', lineHeight: '1.6', fontWeight: 500 }}>
-                    {data.executiveSummary.text}
+                    {data.executiveSummary?.text || 'Analysis summary is currently being compiled.'}
                 </p>
             </div>
 
@@ -333,7 +334,7 @@ const ReportView = ({ data, onBack, jobId }) => {
                     
                     <p style={{ marginTop: '1.5rem', fontSize: '0.9rem', color: 'var(--color-secondary)', lineHeight: 1.6, padding: '1rem', background: 'rgba(255,255,255,0.02)', borderRadius: '8px' }}>
                         <span style={{color: 'var(--color-text)', fontWeight: 600}}>AI Interpretation: </span> 
-                        {data.priceBehavior.interpretation}
+                        {data.priceBehavior?.interpretation || 'Market price mechanics interpretation unavailable.'}
                     </p>
                 </div>
             </div>
@@ -342,9 +343,9 @@ const ReportView = ({ data, onBack, jobId }) => {
             <div className="glass-panel" style={{ marginBottom: '2.5rem', display: 'flex', alignItems: 'center', gap: '1rem', padding: '1rem' }}>
                 <span style={{ width: '100px', fontSize: '0.875rem', fontWeight: 600 }}>Volatility</span>
                 <div style={{ flex: 1, height: '8px', background: '#333', borderRadius: '4px', overflow: 'hidden' }}>
-                    <div style={{ width: `${data.volatility.value}%`, height: '100%', background: 'linear-gradient(90deg, #34d399 0%, #facc15 100%)' }}></div>
+                    <div style={{ width: `${data.volatility?.value || 0}%`, height: '100%', background: 'linear-gradient(90deg, #34d399 0%, #facc15 100%)' }}></div>
                 </div>
-                <span style={{ fontSize: '0.875rem', color: 'var(--color-secondary)' }}>{data.volatility.level}</span>
+                <span style={{ fontSize: '0.875rem', color: 'var(--color-secondary)' }}>{data.volatility?.level || 'N/A'}</span>
                 <Info size={16} color="var(--color-secondary)" />
             </div>
 
@@ -352,7 +353,7 @@ const ReportView = ({ data, onBack, jobId }) => {
             <div style={{ marginBottom: '2.5rem' }}>
                 <h3 style={{ fontSize: '1.25rem', marginBottom: '1rem', borderLeft: '4px solid var(--color-accent)', paddingLeft: '0.75rem' }}>Technical Signals</h3>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
-                    {data.technicalSignals.map(sig => (
+                    {(data.technicalSignals || []).map(sig => (
                         <div key={sig.name} className="glass-panel" style={{ padding: '1rem', borderRadius: '8px' }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
                                 <span style={{ fontWeight: 600, fontSize: '0.875rem' }}>{sig.name}</span>
@@ -372,17 +373,32 @@ const ReportView = ({ data, onBack, jobId }) => {
                         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
                             <span style={{ fontSize: '0.75rem' }}>Negative</span>
                             <div style={{ flex: 1, height: '4px', background: '#333' }}>
-                                <div style={{ marginLeft: `${data.sentiment.score}%`, width: '8px', height: '8px', borderRadius: '50%', background: '#fff', marginTop: '-2px' }}></div>
+                                <div style={{ marginLeft: `${data.sentiment?.score || 50}%`, width: '8px', height: '8px', borderRadius: '50%', background: '#fff', marginTop: '-2px' }}></div>
                             </div>
                             <span style={{ fontSize: '0.75rem' }}>Positive</span>
                         </div>
-                        <p style={{ fontSize: '0.875rem', color: 'var(--color-secondary)' }}>{data.sentiment.text}</p>
+                        <p style={{ fontSize: '0.875rem', color: 'var(--color-secondary)' }}>{data.sentiment?.text || 'Crowdsourced sentiment analysis unavailable.'}</p>
+                        {marketNews.length > 0 && (
+                            <div style={{ marginTop: '1rem', paddingTop: '0.9rem', borderTop: '1px solid var(--glass-border)' }}>
+                                <div style={{ fontSize: '0.72rem', color: 'var(--color-secondary)', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: '0.6rem' }}>
+                                    Latest Headlines
+                                </div>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                                    {marketNews.map((item, idx) => (
+                                        <div key={`${item.title}-${idx}`} style={{ fontSize: '0.82rem', color: '#cbd5e1', lineHeight: 1.45 }}>
+                                            <span style={{ color: 'var(--color-accent)', marginRight: '0.45rem' }}>•</span>
+                                            {item.title}
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </div>
                 <div>
                     <h3 style={{ fontSize: '1.25rem', marginBottom: '1rem', borderLeft: '4px solid var(--color-accent)', paddingLeft: '0.75rem' }}>Risk Factors</h3>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                        {data.riskSignals.map((risk, i) => (
+                        {(data.riskSignals || []).map((risk, i) => (
                             <div key={i} style={{ display: 'flex', gap: '0.75rem', alignItems: 'start', padding: '0.75rem', background: 'rgba(239, 68, 68, 0.1)', borderRadius: '8px' }}>
                                 <AlertTriangle size={16} color="#f87171" style={{ marginTop: '2px' }} />
                                 <span style={{ fontSize: '0.875rem', color: '#fca5a5' }}>{risk.text}</span>
@@ -397,7 +413,7 @@ const ReportView = ({ data, onBack, jobId }) => {
                 <h3 style={{ fontSize: '1.25rem', marginBottom: '1rem', borderLeft: '4px solid var(--color-accent)', paddingLeft: '0.75rem' }}>Analytical Weighting</h3>
                 <div style={{ display: 'flex', gap: '2rem', alignItems: 'center' }}>
                     <div style={{ flex: 1, display: 'flex', alignItems: 'flex-end', height: '100px', gap: '1rem' }}>
-                        {data.explainability.factors.map(f => {
+                        {(data.explainability?.factors || []).map(f => {
                             const rawVal = typeof f.value === 'string' ? parseFloat(f.value.replace('%', '')) : f.value;
                             const safeHeight = isNaN(rawVal) ? 10 : Math.min(100, Math.max(5, rawVal));
                             return (
@@ -408,7 +424,7 @@ const ReportView = ({ data, onBack, jobId }) => {
                         )})}
                     </div>
                     <p style={{ flex: 1, fontSize: '0.875rem', color: 'var(--color-secondary)', fontStyle: 'italic', lineHeight: 1.6 }}>
-                        {data.explainability.text}
+                        {data.explainability?.text || 'Weighting methodology currently unavailable.'}
                     </p>
                 </div>
             </div>
@@ -559,14 +575,14 @@ const ReportView = ({ data, onBack, jobId }) => {
 
             {/* 10. INDUSTRY & FINANCIAL DEEP DIVE (New Sections) */}
             <div style={{ marginBottom: '2.5rem' }}>
-                <h3 style={{ fontSize: '1.25rem', marginBottom: '1rem', borderLeft: '4px solid var(--color-accent)', paddingLeft: '0.75rem' }}>{data.industryOverview.title}</h3>
+                <h3 style={{ fontSize: '1.25rem', marginBottom: '1rem', borderLeft: '4px solid var(--color-accent)', paddingLeft: '0.75rem' }}>{data.industryOverview?.title || 'Sector Backdrop'}</h3>
                 <p style={{ color: 'var(--color-text)', lineHeight: '1.7', marginBottom: '2rem', fontSize: '0.95rem' }}>
-                    {data.industryOverview.text}
+                    {data.industryOverview?.text || 'Sector-specific macro intelligence is unavailable.'}
                 </p>
 
-                <h3 style={{ fontSize: '1.25rem', marginBottom: '1rem', borderLeft: '4px solid var(--color-accent)', paddingLeft: '0.75rem' }}>{data.financialAnalysis.title}</h3>
+                <h3 style={{ fontSize: '1.25rem', marginBottom: '1rem', borderLeft: '4px solid var(--color-accent)', paddingLeft: '0.75rem' }}>{data.financialAnalysis?.title || 'Financial Narrative'}</h3>
                 <p style={{ color: 'var(--color-text)', lineHeight: '1.7', fontSize: '0.95rem' }}>
-                    {data.financialAnalysis.text}
+                    {data.financialAnalysis?.text || 'Detailed financial statement analysis unavailable.'}
                 </p>
             </div>
 
@@ -585,7 +601,7 @@ const ReportView = ({ data, onBack, jobId }) => {
                             </tr>
                         </thead>
                         <tbody>
-                            {data.peerComparison.map((peer, i) => (
+                            {(data.peerComparison || []).map((peer, i) => (
                                 <tr key={peer.name} style={{ borderBottom: i !== data.peerComparison.length - 1 ? '1px solid var(--glass-border)' : 'none' }}>
                                     <td style={{ padding: '1rem', fontWeight: 600 }}>{peer.name}</td>
                                     <td style={{ padding: '1rem' }}>{peer.price}</td>
@@ -603,11 +619,11 @@ const ReportView = ({ data, onBack, jobId }) => {
             <div className="rv-outlook-grid">
                 <div style={{ padding: '1.5rem', background: 'rgba(59, 130, 246, 0.1)', borderRadius: '12px', border: '1px solid rgba(59, 130, 246, 0.2)' }}>
                     <span style={{ fontSize: '0.75rem', fontWeight: 700, letterSpacing: '1px', color: '#60a5fa', textTransform: 'uppercase', display: 'block', marginBottom: '0.5rem' }}>Tactical View (0-3 Months)</span>
-                    <p style={{ fontSize: '0.9rem', lineHeight: '1.6' }}>{data.outlook.shortTerm}</p>
+                    <p style={{ fontSize: '0.9rem', lineHeight: '1.6' }}>{data.outlook?.shortTerm || 'Short-term outlook is being processed.'}</p>
                 </div>
                 <div style={{ padding: '1.5rem', background: 'rgba(16, 185, 129, 0.1)', borderRadius: '12px', border: '1px solid rgba(16, 185, 129, 0.2)' }}>
                     <span style={{ fontSize: '0.75rem', fontWeight: 700, letterSpacing: '1px', color: '#34d399', textTransform: 'uppercase', display: 'block', marginBottom: '0.5rem' }}>Structural View (12+ Months)</span>
-                    <p style={{ fontSize: '0.9rem', lineHeight: '1.6' }}>{data.outlook.longTerm}</p>
+                    <p style={{ fontSize: '0.9rem', lineHeight: '1.6' }}>{data.outlook?.longTerm || 'Long-term structural analysis is being processed.'}</p>
                 </div>
             </div>
 

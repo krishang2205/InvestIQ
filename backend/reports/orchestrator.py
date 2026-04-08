@@ -1,6 +1,7 @@
 import logging
 from typing import Dict, Any, Optional
 import uuid
+import time
 
 from reports.contracts import ReportJobContract, ReportPreferencesContract
 from reports.dependencies import report_di
@@ -52,15 +53,22 @@ class ReportGenerationOrchestrator:
     def _background_process(job_id: str, symbol: str, prefs: Dict[str, bool]):
         db = report_di.get_db_client()
         llm = report_di.get_llm_manager()
+        pipeline_started = time.perf_counter()
         
         try:
-            db.table("reports").update({"status": "processing"}).eq("id", job_id).execute()
+            db.table("reports").update({"status": "processing:fetching_data"}).eq("id", job_id).execute()
             
             # ── Step 1: Fetch real live market data from yfinance ─────────────
+            stage_started = time.perf_counter()
             market_data = financial_ingestion_engine.fetch_market_context(symbol)
+            logger.info(
+                f"Job <{job_id}> stage=fetching_data completed in {time.perf_counter() - stage_started:.2f}s"
+            )
             
+            db.table("reports").update({"status": "processing:analyzing_context"}).eq("id", job_id).execute()
             # ── Step 2: Enrich context for the LLM prompt ────────────────────
             # Pass live fundamentals so Gemini's narrative is grounded in reality
+            stage_started = time.perf_counter()
             meta = market_data.get("company_meta", {})
             fund = market_data.get("fundamentals", {})
             prompt_context = {
@@ -90,20 +98,43 @@ class ReportGenerationOrchestrator:
                     "company_description": meta.get("description", ""),
                 },
             }
+            logger.info(
+                f"Job <{job_id}> stage=analyzing_context completed in {time.perf_counter() - stage_started:.2f}s"
+            )
             
             # ── Step 3: Build the AI prompt with real grounded context ────────
+            stage_started = time.perf_counter()
             prompt = PromptRegistry.construct_analysis_prompt(prompt_context, prefs)
+            logger.info(
+                f"Job <{job_id}> stage=prompt_build completed in {time.perf_counter() - stage_started:.2f}s"
+            )
             
             # ── Step 4: Run Gemini, inject real OHLCV chart data into output ──
+            db.table("reports").update({"status": "processing:generating_report"}).eq("id", job_id).execute()
+            stage_started = time.perf_counter()
             report_json = llm.generate_json(prompt, market_context=market_data)
+            # Preserve latest fetched headlines for UI sentiment context (no prompt/schema change).
+            if isinstance(report_json, dict):
+                report_json["marketNews"] = market_data.get("news", [])[:5]
+            logger.info(
+                f"Job <{job_id}> stage=generating_report completed in {time.perf_counter() - stage_started:.2f}s"
+            )
             
             # ── Step 5: Cache and persist ────────────────────────────────────
+            db.table("reports").update({"status": "processing:finalizing"}).eq("id", job_id).execute()
+            stage_started = time.perf_counter()
             cache_engine.store_report(symbol, prefs, report_json)
             
             db.table("reports").update({
                 "status": "completed",
                 "report_data": report_json
             }).eq("id", job_id).execute()
+            logger.info(
+                f"Job <{job_id}> stage=finalizing completed in {time.perf_counter() - stage_started:.2f}s"
+            )
+            logger.info(
+                f"Job <{job_id}> pipeline=completed total_elapsed={time.perf_counter() - pipeline_started:.2f}s"
+            )
 
         except ConnectionError as ce:
             # Symbol not found or yfinance failed
@@ -113,6 +144,9 @@ class ReportGenerationOrchestrator:
             }).eq("id", job_id).execute()
         except Exception as e:
             logger.error(f"Orchestrator pipeline failed for {job_id}: {e}")
+            logger.info(
+                f"Job <{job_id}> pipeline=failed total_elapsed={time.perf_counter() - pipeline_started:.2f}s"
+            )
             db.table("reports").update({
                 "status": "failed", "error": str(e)
             }).eq("id", job_id).execute()

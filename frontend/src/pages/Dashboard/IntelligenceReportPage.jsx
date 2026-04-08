@@ -108,9 +108,19 @@ const IntelligenceReportPage = () => {
                     setError(data.error || 'Generation failed. Please try again later.');
                     setIsGenerating(false);
                 } else {
-                    setLoadingStage(prev => 
-                        prev.includes('Synthesis') ? 'Finalizing Output JSON Format...' : 'Processing Multi-Agent Synthesis...'
-                    );
+                    // Update user-facing text based on database status string
+                    if (data.status && data.status.startsWith('processing:')) {
+                        const stage = data.status.split(':')[1];
+                        const stageMap = {
+                            'fetching_data': 'Retrieving Real-Time Market Flux...',
+                            'analyzing_context': 'Enriching AI Analytical Context...',
+                            'generating_report': 'Synthesizing Institutional Analysis...',
+                            'finalizing': 'Finalizing Output Report Format...'
+                        };
+                        setLoadingStage(stageMap[stage] || 'Analyzing Market Data...');
+                    } else {
+                        setLoadingStage('Initiating Analysis Pipeline...');
+                    }
                 }
             } catch (err) {
                 console.error("Polling error:", err);

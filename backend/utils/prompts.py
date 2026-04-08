@@ -264,7 +264,10 @@ Generate the final synthesis report as ONLY this exact JSON schema. No other tex
             # Format News
             news_items = context.get("news", [])
             if news_items:
-                news_text = "\n".join([f"- {n['date'][:10]} | {n['title']} : {n['summary']}" for n in news_items])
+                compact_news = news_items[:3]
+                news_text = "\n".join(
+                    [f"- {n['date'][:10]} | {n['title'][:100]} : {(n.get('summary') or '')[:120]}" for n in compact_news]
+                )
             else:
                 news_text = "No recent breaking news available. Rely on fundamentals."
 
@@ -314,7 +317,7 @@ Generate the final synthesis report as ONLY this exact JSON schema. No other tex
                 exchange=meta.get("exchange", fund.get("exchange", "N/A")),
                 country=meta.get("country", fund.get("country", "N/A")),
                 employees=meta.get("employees", fund.get("employees", "N/A")),
-                description=(meta.get("description") or fund.get("company_description", "N/A"))[:300],
+                description=(meta.get("description") or fund.get("company_description", "N/A"))[:180],
             )
             return cls.get_system_prompt() + "\n\n" + rendered_prompt
 

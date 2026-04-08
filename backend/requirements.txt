@@ -8,4 +8,5 @@ pandas
 groq
 
 google-generativeai
+openai
 pydantic

@@ -3,6 +3,7 @@ import datetime
 import logging
 import json
 from typing import Dict, Any, Optional
+import time
 
 import google.generativeai as genai
 from groq import Groq
@@ -18,35 +19,76 @@ class AIProviderManager:
       2. Groq Llama-3.3-70b  (Groq — fallback, 14,400 free req/day)
       3. Mock Report  (last resort — guarantees UI never crashes)
     """
-    GROQ_MODEL = "llama-3.3-70b-versatile"
-    GEMINI_MODEL = "gemini-flash-latest"
-    XAI_MODEL = "grok-2-1212"
+    GROQ_MODEL = os.getenv("GROQ_MODEL", "llama-3.1-8b-instant")
+    GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-flash-latest")
+    XAI_MODEL = os.getenv("XAI_MODEL", "grok-2-latest")
 
     def __init__(self):
         self.gemini_key = conf.gemini_api_key
         self.groq_key   = conf.groq_api_key
         # Detect if Groq key is actually an xAI key
         self.xai_key    = conf.xai_api_key or (self.groq_key if self.groq_key and self.groq_key.startswith("xai-") else None)
+        # Tune Gemini for low-latency report generation by default.
+        self.gemini_timeout_sec = int(os.getenv("GEMINI_TIMEOUT_SEC", "12"))
+        self.gemini_max_output_tokens = int(os.getenv("GEMINI_MAX_OUTPUT_TOKENS", "2048"))
+        self.gemini_retry_on_invalid_json = os.getenv("GEMINI_RETRY_ON_INVALID_JSON", "false").lower() in ("1", "true", "yes", "on")
+        self.gemini_max_retries = int(os.getenv("GEMINI_MAX_RETRIES", "3"))
+        self.gemini_cooldown_sec = int(os.getenv("GEMINI_COOLDOWN_SEC", "180"))
+        self.gemini_cooldown_until = 0.0
+        self.gemini_only = os.getenv("GEMINI_ONLY", "false").lower() in ("1", "true", "yes", "on")
         self.providers_ready = {"gemini": False, "groq": False, "xai": False}
+        self.gemini_candidates = []
+        self.groq_candidates = []
         self._configure_providers()
 
     def _configure_providers(self):
         # ── Gemini ───────────────────────────────────────────────────────────
         if self.gemini_key:
-            try:
-                genai.configure(api_key=self.gemini_key)
-                self.gemini_model = genai.GenerativeModel(self.GEMINI_MODEL)
-                self.providers_ready["gemini"] = True
-                logger.info(f"✅ Gemini provider ready ({self.GEMINI_MODEL})")
-            except Exception as e:
-                logger.error(f"Gemini init failed: {e}")
+            genai.configure(api_key=self.gemini_key)
+            # Some model aliases differ by account/SDK version. Try a compatible list.
+            candidates = [
+                self.GEMINI_MODEL,
+                "gemini-flash-latest",
+                "gemini-2.0-flash",
+                "gemini-1.5-flash-latest",
+                "gemini-1.5-flash-8b",
+                "gemini-3.1-flash-lite",
+                "gemini-3.1-flash-lite-preview",
+                "gemini-2.5-flash-lite",
+                "gemini-2.0-flash-lite",
+            ]
+            seen = set()
+            self.gemini_candidates = []
+            for model_name in candidates:
+                if not model_name or model_name in seen:
+                    continue
+                seen.add(model_name)
+                self.gemini_candidates.append(model_name)
+                try:
+                    self.gemini_model = genai.GenerativeModel(model_name)
+                    self.providers_ready["gemini"] = True
+                    self.GEMINI_MODEL = model_name
+                    logger.info(f"✅ Gemini provider ready ({model_name})")
+                    break
+                except Exception as e:
+                    logger.warning(f"Gemini model unavailable ({model_name}): {e}")
+            if not self.providers_ready["gemini"]:
+                logger.error("Gemini init failed: no compatible Gemini model available for current API key/account.")
 
         # ── Groq ─────────────────────────────────────────────────────────────
         if self.groq_key and not self.groq_key.startswith("xai-"):
             try:
                 self.groq_client = Groq(api_key=self.groq_key)
+                self.groq_candidates = []
+                for model_name in [
+                    self.GROQ_MODEL,
+                    "llama-3.1-8b-instant",
+                    "llama-3.3-70b-versatile",
+                ]:
+                    if model_name and model_name not in self.groq_candidates:
+                        self.groq_candidates.append(model_name)
                 self.providers_ready["groq"] = True
-                logger.info(f"✅ Groq provider ready ({self.GROQ_MODEL})")
+                logger.info(f"✅ Groq provider ready ({self.groq_candidates[0]})")
             except Exception as e:
                 logger.error(f"Groq init failed: {e}")
 
@@ -63,6 +105,25 @@ class AIProviderManager:
             except Exception as e:
                 logger.error(f"xAI init failed: {e}")
 
+    def _switch_to_next_gemini_model(self) -> bool:
+        """Rotate to next configured Gemini candidate after runtime model errors."""
+        if not self.gemini_candidates:
+            return False
+        current = self.GEMINI_MODEL
+        try:
+            current_idx = self.gemini_candidates.index(current)
+        except ValueError:
+            current_idx = -1
+        for next_name in self.gemini_candidates[current_idx + 1:]:
+            try:
+                self.gemini_model = genai.GenerativeModel(next_name)
+                self.GEMINI_MODEL = next_name
+                logger.warning(f"Switched Gemini runtime model to {next_name}")
+                return True
+            except Exception as e:
+                logger.warning(f"Gemini runtime switch failed ({next_name}): {e}")
+        return False
+
     # ─────────────────────────────────────────────────────────────────────────
     # Public interface
     # ─────────────────────────────────────────────────────────────────────────
@@ -71,12 +132,14 @@ class AIProviderManager:
         Attempts each provider in order:
           Gemini → Groq → xAI → Mock
         """
-        data = self._try_gemini(prompt)
-        
-        if data is None:
+        data = None
+        if self._gemini_available_now():
+            data = self._try_gemini(prompt)
+
+        if data is None and not self.gemini_only:
             data = self._try_groq(prompt)
             
-        if data is None:
+        if data is None and not self.gemini_only:
             data = self._try_xai(prompt, is_json=True)
             
         if data is None:
@@ -88,6 +151,17 @@ class AIProviderManager:
 
         self._inject_real_chart_data(data, market_context)
         return data
+
+    def _gemini_available_now(self) -> bool:
+        """Skip Gemini while cooldown is active after recent 429/timeout failures."""
+        if not self.providers_ready["gemini"]:
+            return False
+        now = time.time()
+        if now < self.gemini_cooldown_until:
+            remaining = int(self.gemini_cooldown_until - now)
+            logger.info(f"Skipping Gemini due to cooldown ({remaining}s remaining).")
+            return False
+        return True
 
     def generate_text(self, system_prompt: str, user_message: str, history: list = None) -> str:
         """
@@ -138,48 +212,206 @@ class AIProviderManager:
     def _try_gemini(self, prompt: str) -> Optional[dict]:
         if not self.providers_ready["gemini"]:
             return None
+        started = time.time()
         try:
             logger.info("🔵 Trying Gemini...")
-            response = self.gemini_model.generate_content(
-                prompt,
-                generation_config=genai.GenerationConfig(response_mime_type="application/json")
+            generation_config = genai.GenerationConfig(
+                response_mime_type="application/json",
+                temperature=0.0,
+                max_output_tokens=self.gemini_max_output_tokens,
             )
-            data = json.loads(response.text)
-            logger.info("✅ Gemini succeeded.")
+            if self.gemini_timeout_sec > 0:
+                response = self.gemini_model.generate_content(
+                    prompt,
+                    generation_config=generation_config,
+                    request_options={"timeout": self.gemini_timeout_sec},
+                )
+            else:
+                response = self.gemini_model.generate_content(
+                    prompt,
+                    generation_config=generation_config,
+                )
+
+            data = self._parse_json_response(self._extract_gemini_text(response))
+            logger.info(f"✅ Gemini succeeded in {time.time() - started:.2f}s.")
             return data
         except Exception as e:
             msg = str(e).lower()
             if "429" in msg or "quota" in msg:
                 logger.error("🔴 Gemini Rate Limit/Quota Reached (429) — triggering instant failover.")
+                self.gemini_cooldown_until = time.time() + self.gemini_cooldown_sec
+            elif "notfound" in msg or "model not found" in msg or "is not found for api version" in msg:
+                logger.warning(f"Gemini model unsupported at runtime ({self.GEMINI_MODEL}); rotating candidate list.")
+                if self._switch_to_next_gemini_model():
+                    try:
+                        retry_cfg = genai.GenerationConfig(
+                            response_mime_type="application/json",
+                            temperature=0.0,
+                            max_output_tokens=self.gemini_max_output_tokens,
+                        )
+                        if self.gemini_timeout_sec > 0:
+                            response = self.gemini_model.generate_content(
+                                prompt,
+                                generation_config=retry_cfg,
+                                request_options={"timeout": self.gemini_timeout_sec},
+                            )
+                        else:
+                            response = self.gemini_model.generate_content(
+                                prompt,
+                                generation_config=retry_cfg,
+                            )
+                        data = self._parse_json_response(self._extract_gemini_text(response))
+                        logger.info(f"✅ Gemini succeeded after runtime model switch in {time.time() - started:.2f}s.")
+                        return data
+                    except Exception as retry_err:
+                        logger.warning(f"Gemini runtime-switch retry failed ({type(retry_err).__name__}): {str(retry_err)[:120]} — trying fallbacks...")
+            elif "deadline" in msg or "timeout" in msg or "504" in msg:
+                logger.warning("Gemini timeout/deadline error from upstream — trying fallback providers.")
+                self.gemini_cooldown_until = time.time() + self.gemini_cooldown_sec
+                # Permanent reliability path: retry with SAME prompt and increasing timeout.
+                for attempt in range(1, max(self.gemini_max_retries, 1) + 1):
+                    try:
+                        retry_timeout = max(self.gemini_timeout_sec + (attempt * 10), 20)
+                        logger.warning(f"Gemini timeout recovery attempt {attempt}/{self.gemini_max_retries} (timeout={retry_timeout}s)")
+                        retry_response = self.gemini_model.generate_content(
+                            prompt,
+                            generation_config=genai.GenerationConfig(
+                                response_mime_type="application/json",
+                                temperature=0.0,
+                                max_output_tokens=self.gemini_max_output_tokens,
+                            ),
+                            request_options={"timeout": retry_timeout},
+                        )
+                        data = self._parse_json_response(self._extract_gemini_text(retry_response))
+                        logger.info(f"✅ Gemini timeout recovery succeeded in {time.time() - started:.2f}s.")
+                        return data
+                    except Exception as retry_err:
+                        logger.warning(f"Gemini timeout recovery failed ({type(retry_err).__name__}): {str(retry_err)[:120]}")
+            elif isinstance(e, json.JSONDecodeError) and self.gemini_retry_on_invalid_json:
+                logger.warning("Gemini returned malformed JSON — retrying Gemini once...")
+                try:
+                    boosted_tokens = min(8192, max(self.gemini_max_output_tokens + 1024, int(self.gemini_max_output_tokens * 1.75)))
+                    for attempt in range(1, max(self.gemini_max_retries, 1) + 1):
+                        retry_timeout = max(self.gemini_timeout_sec + (attempt * 5), 20)
+                        retry_response = self.gemini_model.generate_content(
+                            prompt,
+                            generation_config=genai.GenerationConfig(
+                                response_mime_type="application/json",
+                                temperature=0.0,
+                                max_output_tokens=boosted_tokens,
+                            ),
+                            request_options={"timeout": retry_timeout},
+                        )
+                        data = self._parse_json_response(self._extract_gemini_text(retry_response))
+                        logger.info(f"✅ Gemini JSON recovery succeeded in {time.time() - started:.2f}s (attempt {attempt}).")
+                        return data
+                except Exception as retry_err:
+                    logger.warning(f"Gemini retry failed ({type(retry_err).__name__}): {str(retry_err)[:120]} — trying fallbacks...")
+            elif isinstance(e, json.JSONDecodeError):
+                logger.warning("Gemini returned malformed JSON — retry disabled, trying fallback providers.")
             else:
                 logger.warning(f"Gemini failed ({type(e).__name__}): {str(e)[:120]} — trying fallbacks...")
             return None
 
+    def _extract_gemini_text(self, response: Any) -> str:
+        """Extract text safely from Gemini response variants."""
+        text = getattr(response, "text", None)
+        if text:
+            return text
+        candidates = getattr(response, "candidates", None) or []
+        for candidate in candidates:
+            content = getattr(candidate, "content", None)
+            parts = getattr(content, "parts", None) or []
+            chunk = []
+            for part in parts:
+                ptxt = getattr(part, "text", None)
+                if ptxt:
+                    chunk.append(ptxt)
+            if chunk:
+                return "\n".join(chunk)
+        return ""
+
+    def _parse_json_response(self, raw_text: str) -> dict:
+        """
+        Parses JSON defensively from LLM output:
+        - handles markdown code fences
+        - extracts first balanced JSON object if extra text exists
+        """
+        text = (raw_text or "").strip()
+        if not text:
+            raise json.JSONDecodeError("Empty model response text", raw_text or "", 0)
+        if text.startswith("```"):
+            if "```json" in text:
+                text = text.split("```json", 1)[1]
+            else:
+                text = text.split("```", 1)[1]
+            text = text.split("```", 1)[0].strip()
+
+        try:
+            return json.loads(text)
+        except json.JSONDecodeError:
+            pass
+
+        start = text.find("{")
+        if start == -1:
+            raise json.JSONDecodeError("No JSON object start found", text, 0)
+
+        depth = 0
+        in_string = False
+        escaped = False
+        end = -1
+        for i in range(start, len(text)):
+            ch = text[i]
+            if in_string:
+                if escaped:
+                    escaped = False
+                elif ch == "\\":
+                    escaped = True
+                elif ch == "\"":
+                    in_string = False
+                continue
+
+            if ch == "\"":
+                in_string = True
+            elif ch == "{":
+                depth += 1
+            elif ch == "}":
+                depth -= 1
+                if depth == 0:
+                    end = i + 1
+                    break
+
+        if end == -1:
+            raise json.JSONDecodeError("No balanced JSON object found", text, 0)
+
+        return json.loads(text[start:end])
+
     def _try_groq(self, prompt: str) -> Optional[dict]:
         if not self.providers_ready["groq"]:
             return None
-        try:
-            logger.info("🟡 Trying Groq (Llama-3.3-70b)...")
-            system_msg = (
-                "You are an elite institutional-grade financial analysis AI. Your ONLY output must be a single valid JSON object "
-                "matching the exact schema provided — no markdown fences, no explanation text."
-            )
-            response = self.groq_client.chat.completions.create(
-                model=self.GROQ_MODEL,
-                messages=[
-                    {"role": "system", "content": system_msg},
-                    {"role": "user", "content": prompt}
-                ],
-                response_format={"type": "json_object"},
-                temperature=0.2,
-            )
-            raw = response.choices[0].message.content
-            data = json.loads(raw)
-            logger.info("✅ Groq succeeded.")
-            return data
-        except Exception as e:
-            logger.warning(f"Groq failed: {str(e)[:120]} — trying remaining fallbacks...")
-            return None
+        system_msg = (
+            "You are an elite institutional-grade financial analysis AI. Your ONLY output must be a single valid JSON object "
+            "matching the exact schema provided — no markdown fences, no explanation text."
+        )
+        for model_name in (self.groq_candidates or [self.GROQ_MODEL]):
+            try:
+                logger.info(f"🟡 Trying Groq ({model_name})...")
+                response = self.groq_client.chat.completions.create(
+                    model=model_name,
+                    messages=[
+                        {"role": "system", "content": system_msg},
+                        {"role": "user", "content": prompt}
+                    ],
+                    response_format={"type": "json_object"},
+                    temperature=0.2,
+                )
+                raw = response.choices[0].message.content
+                data = json.loads(raw)
+                logger.info(f"✅ Groq succeeded ({model_name}).")
+                return data
+            except Exception as e:
+                logger.warning(f"Groq failed ({model_name}): {str(e)[:120]} — trying next Groq model if available...")
+        return None
 
     def _try_xai(self, prompt: str, is_json: bool = False) -> Optional[dict]:
         if not self.providers_ready["xai"]:
@@ -213,7 +445,12 @@ class AIProviderManager:
             
             return raw # String response
         except Exception as e:
-            logger.warning(f"xAI failed: {str(e)[:120]}")
+            err = str(e)
+            if "doesn't have any credits or licenses" in err.lower() or "does not have permission" in err.lower() or "403" in err:
+                # Avoid wasting time on subsequent jobs when account cannot call xAI.
+                self.providers_ready["xai"] = False
+                logger.error("xAI disabled for this process: account has no credits/licenses or lacks permissions.")
+            logger.warning(f"xAI failed: {err[:120]}")
             return None
 
 
@@ -394,6 +631,29 @@ class AIProviderManager:
         except Exception as e:
             logger.warning(f"Volatility patch skipped: {e}")
 
+        # ── 7. Schema Integrity: Ensure all required top-level keys exist ────────
+        required_keys = {
+            "header": {},
+            "snapshot": {"description": "", "domains": [], "keyMetrics": []},
+            "executiveSummary": {"status": [], "text": ""},
+            "priceBehavior": {"chartData": [], "interpretation": ""},
+            "volatility": {"value": 0, "level": "Medium"},
+            "technicalSignals": [],
+            "sentiment": {"score": 50, "text": ""},
+            "riskSignals": [],
+            "explainability": {"factors": [], "text": ""},
+            "industryOverview": {"title": "Industry Overview", "text": ""},
+            "financialAnalysis": {"title": "Financial Analysis", "text": ""},
+            "peerComparison": [],
+            "aiAlphaInsights": [],
+            "outlook": {"shortTerm": "Tactical analysis pending.", "longTerm": "Structural analysis pending."}
+        }
+        
+        for key, default in required_keys.items():
+            if key not in data or data[key] is None:
+                logger.warning(f"Schema Integrity: Missing/null key '{key}' in LLM response. Patching with default.")
+                data[key] = default
+
         logger.info("Verification patch complete — all narrative preserved, facts & logic corrected.")
         return data
 
@@ -401,8 +661,6 @@ class AIProviderManager:
 
     def _fallback_generate(self) -> Dict[str, Any]:
         logger.warning("All AI providers exhausted — serving mock report.")
-        import time
-        time.sleep(2)
         return {
             "header": {
                 "company": "InvestIQ Simulated Synthesis",

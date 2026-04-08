@@ -4,8 +4,11 @@ from dotenv import load_dotenv
 from dataclasses import dataclass
 from typing import Optional
 
-# Load environment variables from .env file
-load_dotenv()
+# Load environment variables from backend/.env explicitly.
+# This avoids accidentally reading frontend/.env or shell-level stale values.
+_BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+_ENV_PATH = os.path.join(_BASE_DIR, ".env")
+load_dotenv(dotenv_path=_ENV_PATH, override=True)
 
 logger = logging.getLogger(__name__)
 
