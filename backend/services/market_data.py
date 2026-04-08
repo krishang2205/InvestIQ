@@ -396,60 +396,6 @@ class MarketDataService:
                 })
         return results
 
-    def get_market_mood(self):
-        """
-        Calculates Market Mood Index based on India VIX and Nifty 50 Trend.
-        Returns: { score: 0-100, label: str, zone: str }
-        """
-        try:
-            # 1. Fetch India VIX
-            vix_ticker = yf.Ticker("^INDIAVIX")
-            try:
-                vix = vix_ticker.fast_info.last_price
-            except:
-                hist = vix_ticker.history(period="1d")
-                vix = hist['Close'].iloc[-1] if not hist.empty else 15.0 # Fallback average
-
-            # 2. Fetch Nifty 50 Trend (Price vs SMA50)
-            nifty = yf.Ticker("^NSEI")
-            hist = nifty.history(period="3mo") # Need enough data for SMA
-            
-            if hist.empty:
-                return {'score': 50, 'label': 'Neutral', 'zone': 'yellow'}
-
-            current_price = hist['Close'].iloc[-1]
-            sma_50 = hist['Close'].rolling(window=50).mean().iloc[-1]
-            
-            # 3. Calculate Score
-            vix_score = max(0, min(100, (30 - vix) / (30 - 10) * 100))
-            trend_score = 100 if current_price > sma_50 else 0
-            
-            final_score = (vix_score * 0.6) + (trend_score * 0.4)
-            final_score = round(final_score, 1)
-
-            # Determine Label
-            if final_score <= 25:
-                label, zone = "Extreme Fear", "red"
-            elif final_score <= 45:
-                label, zone = "Fear", "orange"
-            elif final_score <= 55:
-                label, zone = "Neutral", "yellow"
-            elif final_score <= 75:
-                label, zone = "Greed", "lightgreen"
-            else:
-                label, zone = "Extreme Greed", "green"
-
-            return {
-                'score': final_score,
-                'label': label,
-                'zone': zone,
-                'vix': round(vix, 2),
-                'timestamp': datetime.now().isoformat()
-            }
-
-        except Exception as e:
-            logger.error(f"Error calculating market mood: {e}")
-            return {'score': 50, 'label': 'Neutral', 'zone': 'yellow'}
 
     def get_top_movers(self, category='large_cap'):
         """
@@ -715,58 +661,89 @@ class MarketDataService:
     def get_market_mood(self) -> dict:
         """
         Calculates a dynamic Fear & Greed Index specifically calibrated for the Indian market.
-        Uses ^NSEI (Nifty 50) and ^INDIAVIX (India VIX).
+        Uses ^NSEI (Nifty 50) and ^INDIAVIX (India VIX) with robust fallbacks.
         """
         try:
-            # Fetch 3 months of data to calculate 50-SMA and 14-RSI
-            nifty_df = yf.download('^NSEI', period="3mo", interval="1d", progress=False)
-            vix_df = yf.download('^INDIAVIX', period="1mo", interval="1d", progress=False)
+            # 1. Fetch India VIX (Volatility)
+            try:
+                vix_ticker = yf.Ticker("^INDIAVIX")
+                vix_hist = vix_ticker.history(period="1mo")
+                if not vix_hist.empty:
+                    current_vix = float(vix_hist['Close'].iloc[-1])
+                else:
+                    current_vix = 15.0 # Neutral fallback
+            except Exception as e:
+                logger.warning(f"VIX fetch failed: {e}")
+                current_vix = 15.0
 
-            if nifty_df is None or nifty_df.empty or vix_df is None or vix_df.empty:
+            # 2. Fetch Nifty 50 (Momentum & RSI)
+            try:
+                nifty_ticker = yf.Ticker("^NSEI")
+                # 4 months padding ensures we have 50 business days for SMA
+                nifty_hist = nifty_ticker.history(period="4mo") 
+                if nifty_hist.empty:
+                    raise ValueError("Nifty history empty")
+                
+                # Flatten columns if multi-index (common in some yfinance environments)
+                if isinstance(nifty_hist.columns, pd.MultiIndex):
+                    nifty_hist.columns = nifty_hist.columns.get_level_values(0)
+                nifty_df = nifty_hist
+            except Exception as e:
+                logger.warning(f"Nifty fetch failed: {e}")
+                # Neutral fallback if Nifty is unreachable
                 return {"composite_score": 50.0, "zone": "Neutral", "metrics": {}}
 
-            # Clean and flatten columns if multi-index
-            if isinstance(nifty_df.columns, pd.MultiIndex):
-                nifty_df.columns = nifty_df.columns.get_level_values(0)
-            if isinstance(vix_df.columns, pd.MultiIndex):
-                vix_df.columns = vix_df.columns.get_level_values(0)
-
-            # 1. Volatility (VIX) scoring
-            current_vix = float(vix_df['Close'].iloc[-1])
-            # For VIX: Low (10-14) = Greed (high score), High (>22) = Fear (low score)
+            # 3. Volatility Scoring
             # Map [10, 25] to [100, 0]
             vix_score = max(0, min(100, 100 - ((current_vix - 10) / 15 * 100)))
-
             vix_status = "Neutral"
             if current_vix > 20: vix_status = "High Volatility (Fear)"
             elif current_vix < 13: vix_status = "Low Volatility (Greed)"
 
-            # 2. Market Momentum (Nifty vs 50-SMA)
+            # 4. Momentum (Nifty vs 50-SMA)
             current_nifty = float(nifty_df['Close'].iloc[-1])
-            sma_50 = float(nifty_df['Close'].rolling(window=50).mean().iloc[-1])
-            # If current is 5% above SMA -> 100 score. 5% below -> 0 score.
-            momentum_ratio = (current_nifty / sma_50) - 1
-            momentum_score = max(0, min(100, ((momentum_ratio + 0.05) / 0.10) * 100))
+            sma_50_series = nifty_df['Close'].rolling(window=50).mean()
             
-            mom_status = "Bullish" if current_nifty > sma_50 else "Bearish"
+            # Safe check for SMA availability
+            if not sma_50_series.empty and not pd.isna(sma_50_series.iloc[-1]):
+                sma_50 = float(sma_50_series.iloc[-1])
+            else:
+                sma_50 = current_nifty # Neutral momentum if no SMA
+            
+            momentum_ratio = (current_nifty / sma_50) - 1 if sma_50 else 0
+            momentum_score = max(0, min(100, ((momentum_ratio + 0.05) / 0.10) * 100))
+            mom_status = "Bullish" if current_nifty >= (sma_50 * 0.995) else "Bearish"
 
-            # 3. Relative Strength Index (RSI 14-day)
+            # 5. RSI (14-day calculation)
             delta = nifty_df['Close'].diff()
             gain = (delta.where(delta > 0, 0)).rolling(window=14).mean()
             loss = (-delta.where(delta < 0, 0)).rolling(window=14).mean()
-            rs = gain / loss
-            rsi = 100 - (100 / (1 + rs))
-            current_rsi = float(rsi.iloc[-1])
             
-            # RSI score correlates exactly to the index (0-100 scale anyway)
+            # Use last available calculation
+            if not gain.empty and not loss.empty:
+                last_gain = gain.iloc[-1]
+                last_loss = loss.iloc[-1]
+                
+                if pd.isna(last_gain) or pd.isna(last_loss) or (last_gain == 0 and last_loss == 0):
+                    current_rsi = 50.0
+                elif last_loss == 0:
+                    current_rsi = 100.0
+                else:
+                    rs = last_gain / last_loss
+                    current_rsi = 100 - (100 / (1 + rs))
+            else:
+                current_rsi = 50.0
+            
             rsi_score = current_rsi
             rsi_status = "Neutral"
             if current_rsi > 70: rsi_status = "Overbought"
             elif current_rsi < 30: rsi_status = "Oversold"
 
-            # Final Composite
+            # 6. Final Composite Calculation
             composite = round((vix_score + momentum_score + rsi_score) / 3, 2)
-            
+            if pd.isna(composite): composite = 50.0
+
+            # Determine Zone
             zone = "Neutral"
             if composite < 30: zone = "Extreme Fear"
             elif composite < 45: zone = "Fear"
@@ -781,22 +758,22 @@ class MarketDataService:
                     "vix": {
                         "value": round(current_vix, 2), 
                         "status": vix_status, 
-                        "description": "India VIX measures near-term volatility expectations."
+                        "description": "India VIX measures near-term volatility"
                     },
                     "momentum": {
                         "value": round(current_nifty, 2), 
                         "sma": round(sma_50, 2),
                         "status": mom_status, 
-                        "description": "Nifty 50 position relative to its 50-day Moving Average."
+                        "description": "Price relative to 50-day Moving Average"
                     },
                     "rsi": {
                         "value": round(current_rsi, 2), 
                         "status": rsi_status, 
-                        "description": "14-day Relative Strength Index (Momentum indicator)."
+                        "description": "14-day RSI (Overbought/Oversold indicator)"
                     }
                 }
             }
 
         except Exception as e:
-            logger.error(f"Error calculating market mood: {e}")
-            return {"composite_score": 50.0, "zone": "Neutral (Error)", "metrics": {}}
+            logger.error(f"Fatal error calculating market mood: {e}")
+            return {"composite_score": 50.0, "zone": "Neutral", "metrics": {}}

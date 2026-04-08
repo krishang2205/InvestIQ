@@ -55,3 +55,11 @@ def get_history():
         return jsonify(data)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+@market_bp.route('/api/market/stock/<symbol>')
+@cache.cached(timeout=3600)
+def get_stock_profile(symbol):
+    try:
+        data = market_data_service.get_instrument_profile(symbol)
+        return jsonify(data)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500

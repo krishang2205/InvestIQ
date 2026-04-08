@@ -210,7 +210,7 @@ const MarketMoodIndexPage = () => {
                                 }}>
                                     <div style={{ position: 'absolute', top: 0, left: '50%', transform: 'translateX(-50%)', width: '40%', height: '10px', background: up ? 'rgba(0,200,83,0.2)' : 'rgba(255,82,82,0.2)', filter: 'blur(10px)' }} />
                                     <span style={{ fontSize: '0.8rem', color: 'var(--color-secondary)', fontWeight: 600 }}>{idx.name}</span>
-                                    <div style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--color-text)', margin: '0.2rem 0 0.4rem 0' }}>{fmt(idx.value, 0)}</div>
+                                    <div style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--color-text)', margin: '0.2rem 0 0.4rem 0' }}>{fmt(idx.price, 0)}</div>
                                     <PctBadge v={idx.percentChange ?? 0} size={13} />
                                 </div>
                             );

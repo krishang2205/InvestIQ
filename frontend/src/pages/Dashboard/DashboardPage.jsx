@@ -9,6 +9,11 @@ import DashboardFooter from './components/layout/DashboardFooter';
 import Ticker from './components/layout/Ticker';
 
 const DashboardPage = () => {
+    const hour = new Date().getHours();
+    let greeting = "Good morning";
+    if (hour >= 12 && hour < 16) greeting = "Good afternoon";
+    if (hour >= 16) greeting = "Good evening";
+
     return (
         <div style={{
             height: '100%',
@@ -39,7 +44,7 @@ const DashboardPage = () => {
                         color: 'var(--color-text-primary)',
                         marginBottom: '0.5rem'
                     }}>
-                        Good evening, Investor :)
+                        {greeting}, Investor :)
                     </h1>
                     <p style={{ color: 'var(--color-text-secondary)', fontSize: '1rem' }}> {/* Reverted font size */}
                         Everything you need to invest in one place.

@@ -55,8 +55,21 @@ const api = {
             console.error("Error fetching news:", error);
             return null; // Return null so UI can handle empty state
         }
-    }
-    ,
+    },
+
+    /**
+     * Fetch Individual Stock Profile (Comparison Data)
+     */
+    getStockProfile: async (symbol) => {
+        try {
+            const response = await fetch(`${API_BASE_URL}/market/stock/${symbol}`);
+            if (!response.ok) throw new Error('Failed to fetch stock profile');
+            return await response.json();
+        } catch (error) {
+            console.error("Error fetching stock profile:", error);
+            return null;
+        }
+    },
 
     /**
      * Portfolio APIs
