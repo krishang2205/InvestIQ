@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: investiq
+    env: python
+    buildCommand: "npm install --prefix frontend && npm run build --prefix frontend && pip install -r backend/requirements.txt"
+    startCommand: "cd backend && gunicorn -c gunicorn_config.py app:app"
+    envVars:
+      - key: FLASK_ENV
+        value: production
+      - key: DB_TYPE
+        value: supabase
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_KEY
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: GROQ_API_KEY
+        sync: false
+      - key: NODE_VERSION
+        value: 20.x

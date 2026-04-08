@@ -7,7 +7,7 @@ import {
     AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, LineChart, Line
 } from 'recharts';
 
-const API = 'http://localhost:5001';
+import { API_BASE_URL } from '../../services/api';
 
 /* ── small helpers ──────────────────────────────────────────── */
 const fmt = (n, digits = 2) =>
@@ -76,11 +76,11 @@ const MarketMoodIndexPage = () => {
         setLoading(true);
         try {
             const [idxR, movR, moodR, newsR, histR] = await Promise.allSettled([
-                fetch(`${API}/api/market/indices`).then(r => r.json()),
-                fetch(`${API}/api/market/movers?category=${moversTab}`).then(r => r.json()),
-                fetch(`${API}/api/market/mood`).then(r => r.json()),
-                fetch(`${API}/api/market/news`).then(r => r.json()),
-                fetch(`${API}/api/market/history?symbol=^NSEI&period=1mo`).then(r => r.json()),
+                fetch(`${API_BASE_URL}/market/indices`).then(r => r.json()),
+                fetch(`${API_BASE_URL}/market/movers?category=${moversTab}`).then(r => r.json()),
+                fetch(`${API_BASE_URL}/market/mood`).then(r => r.json()),
+                fetch(`${API_BASE_URL}/market/news`).then(r => r.json()),
+                fetch(`${API_BASE_URL}/market/history?symbol=^NSEI&period=1mo`).then(r => r.json()),
             ]);
 
             if (idxR.status === 'fulfilled') {

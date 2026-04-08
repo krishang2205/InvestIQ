@@ -36,15 +36,15 @@ const PortfolioSectorAlloc = ({ data }) => {
                 Sector Exposure
             </h3>
 
-            <div style={{ flex: 1, minHeight: '200px', position: 'relative' }}>
+            <div style={{ flex: 1, minHeight: '220px' }}>
                 <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
                         <Pie
                             data={chartData}
                             cx="50%"
                             cy="50%"
-                            innerRadius={60}
-                            outerRadius={80}
+                            innerRadius={65}
+                            outerRadius={85}
                             paddingAngle={5}
                             dataKey="value"
                             stroke="none"
@@ -60,18 +60,6 @@ const PortfolioSectorAlloc = ({ data }) => {
                         />
                     </PieChart>
                 </ResponsiveContainer>
-
-                {/* Center Text (Donut Hole) */}
-                <div style={{
-                    position: 'absolute',
-                    top: '50%',
-                    left: '50%',
-                    transform: 'translate(-50%, -50%)',
-                    textAlign: 'center',
-                    pointerEvents: 'none'
-                }}>
-                    <div style={{ fontSize: '0.75rem', color: '#9ca3af' }}>Sectors</div>
-                </div>
             </div>
 
             {/* Custom Legend */}

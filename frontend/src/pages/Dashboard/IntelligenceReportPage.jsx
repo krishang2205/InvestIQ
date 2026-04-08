@@ -4,6 +4,7 @@ import StockSearch from './components/StockSearch';
 import ReportScope from './components/ReportScope';
 import AnalysisPreferences from './components/AnalysisPreferences';
 import ReportView from './components/ReportView';
+import api from '../../services/api';
 
 const IntelligenceReportPage = () => {
     const [selectedStock, setSelectedStock] = useState(null);
@@ -32,8 +33,7 @@ const IntelligenceReportPage = () => {
 
     const fetchHistory = async () => {
         try {
-            const res = await fetch('http://localhost:5001/api/v2/reports/history');
-            const data = await res.json();
+            const data = await api.getReportHistory();
             if (data.status === 'success') {
                 setHistory(data.data);
             }
@@ -61,12 +61,7 @@ const IntelligenceReportPage = () => {
                 user_id: "00000000-0000-0000-0000-000000000000" 
             };
 
-            const res = await fetch('http://localhost:5001/api/v2/reports/generate', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            });
-            const data = await res.json();
+            const data = await api.generateReport(payload);
 
             if (data.error) {
                 throw new Error(data.error);
@@ -95,8 +90,7 @@ const IntelligenceReportPage = () => {
             }
 
             try {
-                const res = await fetch(`http://localhost:5001/api/v2/reports/status/${jobId}`);
-                const data = await res.json();
+                const data = await api.getReportStatus(jobId);
 
                 if (data.status === 'completed') {
                     clearInterval(pollIntervalRef.current);

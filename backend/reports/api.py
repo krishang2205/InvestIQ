@@ -73,6 +73,29 @@ def get_job_status_v2(job_id):
         logger.error(f"Error checking status for {job_id}: {e}")
         return jsonify({"error": "Database retrieval exception"}), 500
 
+def _find_report(job_id):
+    """Look up a report from MOCK_REPORTS_DB (fallback) or real Supabase DB."""
+    from reports.dependencies import MOCK_REPORTS_DB
+    
+    # Check in-memory first (works when using MockDbClient)
+    report = MOCK_REPORTS_DB.get(job_id)
+    if report and report.get("status") == "completed":
+        return report
+    
+    # Check real database
+    try:
+        db = report_di.get_db_client()
+        res = db.table("reports").select("*").eq("id", job_id).execute()
+        if res.data and len(res.data) > 0:
+            record = res.data[0]
+            # Also cache in memory for subsequent chat messages in the same session
+            MOCK_REPORTS_DB[job_id] = record
+            return record
+    except Exception:
+        pass
+    
+    return None
+
 @reports_v2_bp.route('/chat', methods=['POST'])
 def chat_with_report():
     payload = request.get_json()
@@ -83,10 +106,9 @@ def chat_with_report():
     if not job_id or not message:
         return jsonify({"error": "Missing job_id or message"}), 400
 
-    from reports.dependencies import report_di, MOCK_REPORTS_DB
     from services.chat_service import ChatService
     
-    report = MOCK_REPORTS_DB.get(job_id)
+    report = _find_report(job_id)
     if not report or report.get("status") != "completed":
         return jsonify({"error": "Report not found or not ready"}), 404
 
@@ -107,10 +129,9 @@ def simulate_catalyst():
     if not job_id or not catalyst:
         return jsonify({"error": "Missing job_id or catalyst"}), 400
 
-    from reports.dependencies import report_di, MOCK_REPORTS_DB
     from services.chat_service import ChatService
     
-    report = MOCK_REPORTS_DB.get(job_id)
+    report = _find_report(job_id)
     if not report or report.get("status") != "completed":
         return jsonify({"error": "Report not found or not ready"}), 404
 
@@ -121,3 +142,4 @@ def simulate_catalyst():
     except Exception as e:
         logger.error(f"Simulation error: {e}")
         return jsonify({"error": str(e)}), 500
+

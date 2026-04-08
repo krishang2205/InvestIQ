@@ -226,7 +226,10 @@ const StockMoversWidget = () => {
             </div>
 
             <div style={{ marginTop: '0.75rem', textAlign: 'center', fontSize: '0.85rem', color: 'var(--color-primary)', cursor: 'pointer', fontWeight: '600', paddingTop: '0.75rem', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
-                View all market movers
+                <div style={{ marginBottom: '0.5rem' }}>View all market movers</div>
+                <div style={{ fontSize: '0.7rem', color: 'var(--color-text-secondary)', fontWeight: '400' }}>
+                    Logos provided by <a href="https://allinvestview.com" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--color-accent)', textDecoration: 'none' }}>AllInvestView</a>
+                </div>
             </div>
         </div>
     );

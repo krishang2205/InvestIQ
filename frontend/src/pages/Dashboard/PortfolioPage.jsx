@@ -5,6 +5,7 @@ import PortfolioEmptyState from './components/portfolio/PortfolioEmptyState';
 import PortfolioDrillDown from './components/portfolio/PortfolioDrillDown';
 import AddTransactionModal from './components/portfolio/AddTransactionModal';
 import PortfolioChatBot from './components/portfolio/PortfolioChatBot';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useCallback, useEffect, useState } from 'react';
 import api from '../../services/api';
 import { Plus, Sparkles } from 'lucide-react';
@@ -86,9 +87,14 @@ const PortfolioPage = () => {
     }, [refresh]);
 
     return (
-        <div style={{ padding: '1.5rem', minHeight: '100vh', backgroundColor: 'var(--color-bg)', color: 'var(--color-primary)', fontFamily: 'var(--font-family-base)' }} className="animate-in fade-in duration-500">
+        <div style={{ padding: '1.5rem', minHeight: '100vh', backgroundColor: 'var(--color-bg)', color: 'var(--color-primary)', fontFamily: 'var(--font-family-base)' }}>
             {/* Header Section */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+            <motion.div 
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.5 }}
+                style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}
+            >
                 <div>
                     <h1 style={{ fontSize: '1.5rem', fontWeight: 'bold', letterSpacing: '-0.025em', color: 'var(--color-primary)', margin: 0 }}>Portfolio</h1>
                     <p style={{ fontSize: '0.875rem', color: 'var(--color-secondary)', marginTop: '0.25rem' }}>Track your performance and risk metrics.</p>
@@ -126,8 +132,7 @@ const PortfolioPage = () => {
                         Add Investment
                     </button>
                 )}
-
-            </div>
+            </motion.div>
 
             {error && (
                 <div style={{ marginBottom: '1rem', padding: '0.75rem 1rem', borderRadius: '0.75rem', border: '1px solid rgba(244, 63, 94, 0.3)', background: 'rgba(244, 63, 94, 0.08)', color: '#fecaca' }}>
@@ -174,23 +179,39 @@ const PortfolioPage = () => {
             ) : (
                 <>
                     {/* Section B: Hero Row */}
-                    <div style={{ marginBottom: '1.5rem', cursor: 'pointer' }} onClick={() => setViewMode('detailed')}>
+                    <motion.div 
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.6, delay: 0.1 }}
+                        style={{ marginBottom: '1.5rem', cursor: 'pointer' }} 
+                        onClick={() => setViewMode('detailed')}
+                    >
                         <PortfolioHero summary={summary} holdings={holdings} intelligence={intel} />
-                    </div>
+                    </motion.div>
 
                     {/* Section C: Allocation & Rebalancing */}
-                    <div style={{ marginBottom: '1.5rem' }}>
+                    <motion.div 
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.6, delay: 0.2 }}
+                        style={{ marginBottom: '1.5rem' }}
+                    >
                         <PortfolioAllocation holdings={holdings} intelligence={intel} />
-                    </div>
+                    </motion.div>
 
                     {/* Section D: Intelligence Row (Moved to bottom) */}
-                    <div style={{ marginBottom: '1.5rem' }}>
+                    <motion.div 
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.6, delay: 0.3 }}
+                        style={{ marginBottom: '1.5rem' }}
+                    >
                         <PortfolioIntelligence 
                             intelligence={intel} 
                             holdings={holdings} 
                             onViewDetailed={() => setViewMode('detailed')} 
                         />
-                    </div>
+                    </motion.div>
                 </>
             )}
 

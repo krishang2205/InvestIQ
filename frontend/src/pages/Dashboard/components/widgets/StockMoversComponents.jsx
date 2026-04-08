@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Building2 } from 'lucide-react';
 
+import api from '../../../../services/api';
+
 export const StockRow = ({ stock, index, activeTab, LogoComponent }) => {
     const isGain = stock.change >= 0;
     const color = isGain ? '#00C853' : '#FF4D4D';
@@ -57,61 +59,47 @@ export const StockRow = ({ stock, index, activeTab, LogoComponent }) => {
     );
 };
 
-export const StockLogo = ({ symbol, logoUrl }) => {
-    const [imgSource, setImgSource] = useState(null);
+// Logo Component with Fallback
+export const StockLogo = ({ symbol, name, logoUrl, size = 32 }) => {
     const [hasError, setHasError] = useState(false);
-
-    // Clean symbol
-    const cleanSymbol = useMemo(() => symbol.replace('.NS', '').replace('.BO', ''), [symbol]);
-
-    // Determine initial source
-    useEffect(() => {
-        // 1. TRUST THE BACKEND. If we have a logoUrl (unavatar with clearbit), use it.
-        if (logoUrl) {
-            setImgSource(logoUrl);
-        } else {
-            // 2. Default fallback without causing 404
-            setImgSource(`https://ui-avatars.com/api/?name=${cleanSymbol}&background=random&color=fff&size=128`);
-        }
-        setHasError(false);
-    }, [logoUrl, cleanSymbol]);
-
+    
     const handleError = () => {
-        // Drop the faulty google s2 fallback as it throws 404s
-        if (imgSource && !imgSource.includes('ui-avatars.com')) {
-            setImgSource(`https://ui-avatars.com/api/?name=${cleanSymbol}&background=random&color=fff&size=128`);
-        } else {
-            // Truly exhausted options
-            setHasError(true);
-        }
+        setHasError(true);
     };
 
-    if (hasError) {
+    if (hasError || !logoUrl) {
         return (
-            <div style={{
-                width: '100%', height: '100%', borderRadius: '8px',
-                backgroundColor: 'rgba(255,255,255,0.03)',
-                color: 'rgba(255,255,255,0.2)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center'
-            }}>
-                <Building2 size={16} />
+            <div 
+                style={{ 
+                    width: size, 
+                    height: size, 
+                    borderRadius: '8px', 
+                    background: 'rgba(255,255,255,0.05)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexShrink: 0,
+                    border: '1px solid rgba(255,255,255,0.1)'
+                }}
+            >
+                <Building2 size={size * 0.5} color="rgba(255,255,255,0.2)" />
             </div>
         );
     }
 
     return (
-        <img
-            src={imgSource}
-            alt={symbol}
+        <img 
+            src={logoUrl} 
+            alt={name}
             onError={handleError}
-            loading="lazy"
             style={{ 
-                width: '100%', 
-                height: '100%', 
-                borderRadius: '8px', 
-                objectFit: 'contain', 
-                backgroundColor: 'rgba(255,255,255,0.02)',
-                padding: '2px' // slight padding for logos
+                width: size, 
+                height: size, 
+                borderRadius: '8px',
+                objectFit: 'contain',
+                flexShrink: 0,
+                background: 'rgba(255, 255, 255, 0.9)',
+                padding: '2px'
             }}
         />
     );

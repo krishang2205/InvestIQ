@@ -1,6 +1,6 @@
-const API_BASE_URL =
+export const API_BASE_URL =
     (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_API_BASE_URL) ||
-    'http://localhost:5001/api';
+    (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.PROD ? '/api' : 'http://localhost:5001/api');
 
 const api = {
     /**
@@ -54,6 +54,19 @@ const api = {
         } catch (error) {
             console.error("Error fetching news:", error);
             return null; // Return null so UI can handle empty state
+        }
+    },
+
+    /**
+     * Resolve AI logo from backend
+     */
+    resolveLogo: async (symbol) => {
+        try {
+            const response = await fetch(`${API_BASE_URL}/market/logo/${symbol}`);
+            if (!response.ok) throw new Error('Failed to fetch logo');
+            return await response.json();
+        } catch (error) {
+            return null;
         }
     },
 
@@ -178,6 +191,28 @@ const api = {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ score, total })
         });
+        return await response.json();
+    },
+
+    /**
+     * Reports API (V2)
+     */
+    generateReport: async (payload) => {
+        const response = await fetch(`${API_BASE_URL}/v2/reports/generate`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        return await response.json();
+    },
+    
+    getReportStatus: async (jobId) => {
+        const response = await fetch(`${API_BASE_URL}/v2/reports/status/${jobId}`);
+        return await response.json();
+    },
+
+    getReportHistory: async () => {
+        const response = await fetch(`${API_BASE_URL}/v2/reports/history`);
         return await response.json();
     },
 };

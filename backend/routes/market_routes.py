@@ -1,9 +1,11 @@
 from flask import Blueprint, jsonify, request
 from services.market_data import MarketDataService
+from services.logo_resolver import LogoResolverService
 from flask_caching import Cache
 
 market_bp = Blueprint('market', __name__)
 market_data_service = MarketDataService()
+logo_resolver_service = LogoResolverService()
 
 cache = Cache()
 
@@ -61,5 +63,17 @@ def get_stock_profile(symbol):
     try:
         data = market_data_service.get_instrument_profile(symbol)
         return jsonify(data)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@market_bp.route('/api/market/logo/<ticker>')
+@cache.cached(timeout=86400) # Cache for 1 day
+def resolve_logo(ticker):
+    try:
+        domain = logo_resolver_service.resolve_ticker_to_domain(ticker)
+        if domain:
+            return jsonify({"domain": domain, "url": f"https://cdn.tickerlogos.com/{domain}"})
+        else:
+            return jsonify({"error": "Could not resolve domain for ticker"}), 404
     except Exception as e:
         return jsonify({"error": str(e)}), 500

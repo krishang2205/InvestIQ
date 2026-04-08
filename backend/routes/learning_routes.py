@@ -1,10 +1,10 @@
 from flask import Blueprint, jsonify, request
-from db.sqlite_store import SqliteStore
+from db.store import get_store
 import os
 import re
 
 learning_bp = Blueprint('learning', __name__, url_prefix='/api/learning')
-db = SqliteStore()
+db = get_store()
 
 # Helper to get current user_id
 def get_current_user():
@@ -67,42 +67,43 @@ def seed_data():
     print(">>> CLEARED OLD DATA")
 
     # 2. DEFINITIVE 20-MODULE PROFESSIONAL TRACK (HIGHLY PERMISSIVE IDS)
-    lessons = [
-    # Module 1: Core Fundamentals
-    {"id": "lesson-1", "title": "Stock Market Fundamentals", "description": "How companies go public and how shares are traded.", "video_url": "https://www.youtube.com/embed/p7HKvqRI_Bo", "duration": "05:12", "order_index": 1, "difficulty": "Beginner"},
-    {"id": "lesson-2", "title": "Bulls, Bears & Market Cycles", "description": "Understanding the psychology behind market movements.", "video_url": "https://www.youtube.com/embed/aewFn8E5Vm4", "duration": "07:44", "order_index": 2, "difficulty": "Beginner"},
-    {"id": "lesson-3", "title": "Price and Market Cap", "description": "Calculating the total value of a public company.", "video_url": "https://www.youtube.com/embed/Qjz90llPLi0", "duration": "04:30", "order_index": 3, "difficulty": "Beginner"},
-    {"id": "lesson-4", "title": "Stocks vs Bonds", "description": "Equity vs Debt: which one suits your portfolio strategy?", "video_url": "https://www.youtube.com/embed/W3_qob_q3oU", "duration": "06:20", "order_index": 4, "difficulty": "Beginner"},
-
-    # Module 2: Financial Analysis
-    {"id": "lesson-5", "title": "The Balance Sheet Guide", "description": "Assets, Liabilities, and Equity explained professionally.", "video_url": "https://www.youtube.com/embed/_VS4ni14JHs", "duration": "14:15", "order_index": 5, "difficulty": "Intermediate"},
-    {"id": "lesson-6", "title": "Income Statement Deep-Dive", "description": "Analyzing revenue, margins, and bottom-line profit.", "video_url": "https://www.youtube.com/embed/lkCI26OBNnQ", "duration": "12:40", "order_index": 6, "difficulty": "Intermediate"},
-    {"id": "lesson-7", "title": "Mechanism of Short Selling", "description": "How professional traders profit from downward price action.", "video_url": "https://www.youtube.com/embed/AVXW95MyD54", "duration": "05:15", "order_index": 7, "difficulty": "Intermediate"},
-    {"id": "lesson-8", "title": "Call and Put Options", "description": "Introduction to leveraged derivative instruments.", "video_url": "https://www.youtube.com/embed/_72kuJ9WuX8", "duration": "09:30", "order_index": 8, "difficulty": "Intermediate"},
-
-    # Module 3: Technical Mastery
-    {"id": "lesson-9", "title": "Stock Dilution Factors", "description": "Understanding how share issuance affects your ownership value.", "video_url": "https://www.youtube.com/embed/yBWPxUY_VrM", "duration": "08:30", "order_index": 9, "difficulty": "Advanced"},
-    {"id": "lesson-10", "title": "Global Macro Factors", "description": "How interest rates and inflation drive the broad market.", "video_url": "https://www.youtube.com/embed/RmZPZd3s4VI", "duration": "30:00", "order_index": 10, "difficulty": "Advanced"},
-    {"id": "lesson-11", "title": "Earnings & EPS Analysis", "description": "Calculating profitability metrics for stock comparison.", "video_url": "https://www.youtube.com/embed/VF9Fi3iZTzI", "duration": "08:05", "order_index": 11, "difficulty": "Advanced"},
-    {"id": "lesson-12", "title": "Mutual Funds & Indices", "description": "Broad market exposure vs individual stock picking.", "video_url": "https://www.youtube.com/embed/FrjPj98csxw", "duration": "06:45", "order_index": 12, "difficulty": "Advanced"},
-
-    # Module 4: Execution (Buy/Sell)
-    {"id": "lesson-13", "title": "How to Buy Your First Stock", "description": "Mastering the mechanics of terminal trade execution.", "video_url": "https://www.youtube.com/embed/eN7Z0dplYcM", "duration": "07:20", "order_index": 13, "difficulty": "Intermediate"},
-    {"id": "lesson-14", "title": "When to Sell: Profit Targets", "description": "Developing an exit strategy to lock in capital gains.", "video_url": "https://www.youtube.com/embed/jGabQmZmjlg", "duration": "08:50", "order_index": 14, "difficulty": "Beginner"},
-    {"id": "lesson-15", "title": "The Art of Stop-Loss", "description": "Essential risk protocols for capital preservation.", "video_url": "https://www.youtube.com/embed/k52ePjHqK88", "duration": "09:15", "order_index": 15, "difficulty": "Intermediate"},
-    {"id": "lesson-16", "title": "Diversification Strategy", "description": "Reducing risk by optimizing asset allocation.", "video_url": "https://www.youtube.com/embed/qY-xgy_kl78", "duration": "06:40", "order_index": 16, "difficulty": "Beginner"},
-
-    # Module 5: Strategy & Risk
-    {"id": "lesson-17", "title": "VIX & Volatility Mastery", "description": "Using market fear indices to time your strategies.", "video_url": "https://www.youtube.com/embed/t8y4yx4fs4w", "duration": "11:30", "order_index": 17, "difficulty": "Advanced"},
-    {"id": "lesson-18", "title": "Income Statement Intro", "description": "High-level overview of corporate revenue reporting.", "video_url": "https://www.youtube.com/embed/x6qdKGnWE0w", "duration": "10:15", "order_index": 18, "difficulty": "Advanced"},
-    {"id": "lesson-19", "title": "Balance Sheet Deep-Dive", "description": "Analyzing liabilities and longterm equity growth.", "video_url": "https://www.youtube.com/embed/fB_8BhLSuEM", "duration": "08:45", "order_index": 19, "difficulty": "Intermediate"},
-    {"id": "lesson-20", "title": "Golden Rules of Investing", "description": "Final principles for generational wealth building.", "video_url": "https://www.youtube.com/embed/xnWlim0QaJo", "duration": "14:20", "order_index": 20, "difficulty": "Master"}
-]
+    import uuid
+    lessons = []
+    raw_lessons = [
+        # Module 1: Core Fundamentals
+        {"title": "Stock Market Fundamentals", "description": "How companies go public and how shares are traded.", "video_url": "https://www.youtube.com/embed/p7HKvqRI_Bo", "duration": "05:12", "order_index": 1, "difficulty": "Beginner"},
+        {"title": "Bulls, Bears & Market Cycles", "description": "Understanding the psychology behind market movements.", "video_url": "https://www.youtube.com/embed/aewFn8E5Vm4", "duration": "07:44", "order_index": 2, "difficulty": "Beginner"},
+        {"title": "Price and Market Cap", "description": "Calculating the total value of a public company.", "video_url": "https://www.youtube.com/embed/Qjz90llPLi0", "duration": "04:30", "order_index": 3, "difficulty": "Beginner"},
+        {"title": "Stocks vs Bonds", "description": "Equity vs Debt: which one suits your portfolio strategy?", "video_url": "https://www.youtube.com/embed/W3_qob_q3oU", "duration": "06:20", "order_index": 4, "difficulty": "Beginner"},
+        # Module 2: Financial Analysis
+        {"title": "The Balance Sheet Guide", "description": "Assets, Liabilities, and Equity explained professionally.", "video_url": "https://www.youtube.com/embed/_VS4ni14JHs", "duration": "14:15", "order_index": 5, "difficulty": "Intermediate"},
+        {"title": "Income Statement Deep-Dive", "description": "Analyzing revenue, margins, and bottom-line profit.", "video_url": "https://www.youtube.com/embed/lkCI26OBNnQ", "duration": "12:40", "order_index": 6, "difficulty": "Intermediate"},
+        {"title": "Mechanism of Short Selling", "description": "How professional traders profit from downward price action.", "video_url": "https://www.youtube.com/embed/AVXW95MyD54", "duration": "05:15", "order_index": 7, "difficulty": "Intermediate"},
+        {"title": "Call and Put Options", "description": "Introduction to leveraged derivative instruments.", "video_url": "https://www.youtube.com/embed/_72kuJ9WuX8", "duration": "09:30", "order_index": 8, "difficulty": "Intermediate"},
+        # Module 3: Technical Mastery
+        {"title": "Stock Dilution Factors", "description": "Understanding how share issuance affects your ownership value.", "video_url": "https://www.youtube.com/embed/yBWPxUY_VrM", "duration": "08:30", "order_index": 9, "difficulty": "Advanced"},
+        {"title": "Global Macro Factors", "description": "How interest rates and inflation drive the broad market.", "video_url": "https://www.youtube.com/embed/RmZPZd3s4VI", "duration": "30:00", "order_index": 10, "difficulty": "Advanced"},
+        {"title": "Earnings & EPS Analysis", "description": "Calculating profitability metrics for stock comparison.", "video_url": "https://www.youtube.com/embed/VF9Fi3iZTzI", "duration": "08:05", "order_index": 11, "difficulty": "Advanced"},
+        {"title": "Mutual Funds & Indices", "description": "Broad market exposure vs individual stock picking.", "video_url": "https://www.youtube.com/embed/FrjPj98csxw", "duration": "06:45", "order_index": 12, "difficulty": "Advanced"},
+        # Module 4: Execution (Buy/Sell)
+        {"title": "How to Buy Your First Stock", "description": "Mastering the mechanics of terminal trade execution.", "video_url": "https://www.youtube.com/embed/eN7Z0dplYcM", "duration": "07:20", "order_index": 13, "difficulty": "Intermediate"},
+        {"title": "When to Sell: Profit Targets", "description": "Developing an exit strategy to lock in capital gains.", "video_url": "https://www.youtube.com/embed/jGabQmZmjlg", "duration": "08:50", "order_index": 14, "difficulty": "Beginner"},
+        {"title": "The Art of Stop-Loss", "description": "Essential risk protocols for capital preservation.", "video_url": "https://www.youtube.com/embed/k52ePjHqK88", "duration": "09:15", "order_index": 15, "difficulty": "Intermediate"},
+        {"title": "Diversification Strategy", "description": "Reducing risk by optimizing asset allocation.", "video_url": "https://www.youtube.com/embed/qY-xgy_kl78", "duration": "06:40", "order_index": 16, "difficulty": "Beginner"},
+        # Module 5: Strategy & Risk
+        {"title": "VIX & Volatility Mastery", "description": "Using market fear indices to time your strategies.", "video_url": "https://www.youtube.com/embed/t8y4yx4fs4w", "duration": "11:30", "order_index": 17, "difficulty": "Advanced"},
+        {"title": "Income Statement Intro", "description": "High-level overview of corporate revenue reporting.", "video_url": "https://www.youtube.com/embed/x6qdKGnWE0w", "duration": "10:15", "order_index": 18, "difficulty": "Advanced"},
+        {"title": "Balance Sheet Deep-Dive", "description": "Analyzing liabilities and longterm equity growth.", "video_url": "https://www.youtube.com/embed/fB_8BhLSuEM", "duration": "08:45", "order_index": 19, "difficulty": "Intermediate"},
+        {"title": "Golden Rules of Investing", "description": "Final principles for generational wealth building.", "video_url": "https://www.youtube.com/embed/xnWlim0QaJo", "duration": "14:20", "order_index": 20, "difficulty": "Master"}
+    ]
+    for l in raw_lessons:
+        l["id"] = str(uuid.uuid4())
+        lessons.append(l)
     
     # 3. ROBUST THUMBNAIL PARSING (Strips IDs safely)
     for l in lessons:
         raw_id = l["video_url"].split("/")[-1]
-        v_id = re.split(r'[?&]', raw_id)[0]  # Strip parameters
+        v_id = re.split(r'[?\u0026]', raw_id)[0]  # Strip parameters
         # Use the standard YT image domain for better compatibility (i.ytimg.com)
         # removing the cache buster ?v=... which YT servers often reject
         l["thumbnail_url"] = f"https://i.ytimg.com/vi/{v_id}/hqdefault.jpg" 
@@ -143,5 +144,20 @@ def manual_reset():
     seed_data()
     return jsonify({"status": "Curriculum reset successfully"})
 
-# RUN SEED ON RESTART
-seed_data()
+# ONLY SEED IF LESSONS TABLE IS EMPTY (avoids ~100 HTTP requests on every restart)
+def _seed_if_needed():
+    try:
+        user_id = get_current_user()
+        existing = db.list_lessons(user_id)
+        if not existing or len(existing) == 0:
+            print(">>> No lessons found in database, seeding initial data...")
+            seed_data()
+        else:
+            print(f">>> {len(existing)} lessons already in database, skipping seed.")
+    except Exception as e:
+        print(f">>> Seed check failed: {e}, attempting seed...")
+        seed_data()
+
+# Only run in the reloader child process (not the parent) to avoid double-execution
+if os.environ.get("WERKZEUG_RUN_MAIN") == "true" or os.environ.get("FLASK_ENV") == "production":
+    _seed_if_needed()

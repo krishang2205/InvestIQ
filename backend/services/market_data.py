@@ -2,6 +2,8 @@ import yfinance as yf
 import pandas as pd
 import logging
 from datetime import datetime, timedelta
+import concurrent.futures
+from services.logo_resolver import LogoResolverService
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -14,6 +16,7 @@ class MarketDataService:
     """
     
     def __init__(self):
+        self.logo_resolver = LogoResolverService()
         # Using Yahoo Finance Tickers for Indian Markets
         self.indices_tickers = {
             'NIFTY 50': '^NSEI',
@@ -376,24 +379,34 @@ class MarketDataService:
 
     def get_indices(self):
         """
-        Fetches data for all configured indices.
+        Fetches data for all configured indices in parallel.
         Returns a list of dictionaries with index data.
         """
         results = []
-        for name, symbol in self.indices_tickers.items():
-            data = self._get_ticker_data(symbol)
-            if data:
-                results.append({
-                    'name': name,
-                    'symbol': symbol,
-                    'price': data['price'],
-                    'change': data['change'],
-                    'percentChange': data['percentChange']
-                })
-            else:
-                results.append({
-                    'name': name, 'symbol': symbol, 'price': 0, 'change': 0, 'percentChange': 0, 'error': True
-                })
+        with concurrent.futures.ThreadPoolExecutor(max_workers=len(self.indices_tickers)) as executor:
+            future_to_name = {executor.submit(self._get_ticker_data, symbol): name for name, symbol in self.indices_tickers.items()}
+            for future in concurrent.futures.as_completed(future_to_name):
+                name = future_to_name[future]
+                symbol = self.indices_tickers[name]
+                try:
+                    data = future.result()
+                    if data:
+                        results.append({
+                            'name': name,
+                            'symbol': symbol,
+                            'price': data['price'],
+                            'change': data['change'],
+                            'percentChange': data['percentChange']
+                        })
+                    else:
+                        results.append({
+                            'name': name, 'symbol': symbol, 'price': 0, 'change': 0, 'percentChange': 0, 'error': True
+                        })
+                except Exception as e:
+                    logger.error(f"Error fetching index {name}: {e}")
+                    results.append({
+                        'name': name, 'symbol': symbol, 'price': 0, 'change': 0, 'percentChange': 0, 'error': True
+                    })
         return results
 
 
@@ -424,7 +437,7 @@ class MarketDataService:
                     if symbol not in batch_data.columns.levels[0]:
                         continue
                         
-                    stats = batch_data[symbol]
+                    stats = batch_data[symbol].dropna()
                     if stats.empty: 
                         continue
                     
@@ -448,17 +461,8 @@ class MarketDataService:
                     is_52w_low = current_price <= (fifty_two_week_low * 1.02)
 
                     # Logo URL (Prioritize High-Quality Corporate Logos)
-                    website_domain = self.ticker_websites.get(symbol)
-                    if not website_domain:
-                         # Fallback simple guess for untracked stocks
-                         website_domain = f"{symbol.split('.')[0].lower()}.com"
-                    
-                    # Using a more robust logo service (Unavatar with Clearbit fallback)
-                    # This reduces 404s and handles DNS resolution failures better
-                    logo_url = f"https://unavatar.io/clearbit/{website_domain}"
-                    # We can't easily check for 404 here, but we can provide the URL. 
-                    # Browsers handle broken images better than console errors if we use a reliable service.
-                    # As a fallback, we keep the google favicon in mind, but Clearbit is better for Dashboard aesthetics.
+                    domain = self.logo_resolver.resolve_ticker_to_domain(symbol)
+                    logo_url = f"https://cdn.tickerlogos.com/{domain}" if domain else ""
 
                     processed_data.append({
                         'symbol': symbol,
@@ -509,7 +513,7 @@ class MarketDataService:
 
     def get_news(self):
         """
-        Fetches market news using yfinance.
+        Fetches market news using yfinance in parallel.
         Fetches from multiple major tickers to get a good mix of Macro and Corporate news.
         """
         try:
@@ -518,28 +522,21 @@ class MarketDataService:
             all_news = []
             seen_titles = set()
 
-            for symbol in tickers:
+            def fetch_symbol_news(symbol):
+                items = []
                 try:
                     ticker = yf.Ticker(symbol)
                     news = ticker.news
                     for item in news:
-                        # Handle nested 'content' structure if present
                         news_item = item.get('content', item)
                         title = news_item.get('title')
                         
-                        if title in seen_titles:
-                            continue
-                        seen_titles.add(title)
-                        
-                        # Link: Check clickThroughUrl object or link field
                         link_data = news_item.get('clickThroughUrl')
                         link = link_data.get('url') if isinstance(link_data, dict) else news_item.get('link')
                         
-                        # Publisher: Check provider object or publisher field
                         provider_data = news_item.get('provider')
                         publisher = provider_data.get('displayName') if isinstance(provider_data, dict) else news_item.get('publisher')
                         
-                        # Time Parsing
                         relative_time = "Just now"
                         pub_date = news_item.get('pubDate')
                         ts = news_item.get('providerPublishTime')
@@ -547,31 +544,26 @@ class MarketDataService:
                         
                         if pub_date:
                             try:
-                                # Handle ISO format "2024-02-19T13:00:00Z"
                                 dt_object = datetime.fromisoformat(pub_date.replace('Z', '+00:00'))
                                 relative_time = dt_object.strftime("%H:%M")
                                 timestamp = dt_object.timestamp()
-                            except:
-                                pass
+                            except: pass
                         elif ts:
                             try:
                                 dt_object = datetime.fromtimestamp(ts)
                                 relative_time = dt_object.strftime("%H:%M")
                                 timestamp = ts
-                            except:
-                                pass
+                            except: pass
                         
-                        # Type Inference
-                        category = 'News' # Default
-                        title_lower = title.lower()
-                        summary_lower = news_item.get('summary', '').lower()
+                        category = 'News'
+                        title_lower = title.lower() if title else ""
                         
                         if any(x in title_lower for x in ['inflation', 'rbi', 'gdp', 'sensex', 'nifty', 'repo rate', 'deficit', 'economy', 'market', 'trade', 'forex', 'rupee', 'bonds', 'rate']):
                             category = 'Macro'
                         elif any(x in title_lower for x in ['results', 'q1', 'q2', 'q3', 'q4', 'profit', 'revenue', 'dividend', 'earnings', 'quarter', 'ebitda', 'margin', 'sales', 'buyback', 'split', 'bonus', 'acquisition', 'merger', 'stake']):
                             category = 'Earnings'
                         
-                        all_news.append({
+                        items.append({
                             'title': title,
                             'summary': news_item.get('summary', ''),
                             'link': link,
@@ -582,7 +574,16 @@ class MarketDataService:
                         })
                 except Exception as e:
                     logger.error(f"Error fetching news for {symbol}: {e}")
-                    continue
+                return items
+
+            with concurrent.futures.ThreadPoolExecutor(max_workers=len(tickers)) as executor:
+                futures = [executor.submit(fetch_symbol_news, sym) for sym in tickers]
+                for future in concurrent.futures.as_completed(futures):
+                    for article in future.result():
+                        title = article.get('title')
+                        if title and title not in seen_titles:
+                            seen_titles.add(title)
+                            all_news.append(article)
 
             # Sort by timestamp descending (newest first)
             all_news.sort(key=lambda x: x['timestamp'], reverse=True)

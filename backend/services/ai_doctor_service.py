@@ -23,14 +23,14 @@ class PortfolioDoctorService:
         """
         holdings = portfolio_report.get("holdings", []) or []
         total_pnl = float(portfolio_report.get("total_pnl", 0) or 0)
-        total_invested = float(portfolio_report.get("total_invested", 0) or 0)
+        total_invested = float(portfolio_report.get("total_invested_value", 0) or 0)
         total_current = float(portfolio_report.get("total_current_value", 0) or 0)
         
         # 1. Metric Extraction
         position_count = len(holdings)
         resilience = (stress_test or {}).get("resilience_score", 100)
         alpha_score = (alpha_divergence or {}).get("score", 100)
-        tax_frict = (tax_friction or {}).get("friction_percentage", 0)
+        tax_frict = (tax_friction or {}).get("friction_ratio_percent", 0)
         net_tax_gain = (tax_friction or {}).get("net_capital_gain", 0)
         avg_pe = (fundamentals or {}).get("avg_pe", 0)
         beta = (fundamentals or {}).get("beta", 1.0)
@@ -187,19 +187,59 @@ class PortfolioDoctorService:
 
     def handle_portfolio_chat(self, message: str, history: List[Dict[str, str]], portfolio_context: Dict[str, Any]) -> str:
         """
-        Refined AI logic for portfolio chat:
-        - Persona: Indian Stock Market Researcher & Retail Investment Strategist.
-        - Scope: Strictly limited to Indian equities and portfolio structural health.
-        - Compliance: Explicitly non-SEBI registered disclaimer.
+        AI-powered portfolio chat using the same provider cascade as reports.
+        Falls back to keyword-based responses if all AI providers are down.
         """
-        msg = message.lower()
+        from services.provider_manager import AIProviderManager
+        
         num_holdings = portfolio_context.get("holdings_count", 0)
         pnl = portfolio_context.get("total_pnl", 0)
+        pnl_pct = portfolio_context.get("total_pnl_percent", 0)
+        total_value = portfolio_context.get("total_value", 0)
+        total_invested = portfolio_context.get("total_invested", 0)
+        holdings = portfolio_context.get("holdings", [])
         
-        # Standard disclaimer prefix or suffix for compliance
-        disclaimer = "\n\n*Note: I am an AI researcher, not a SEBI-registered advisor. This is for educational/analytical purposes only.*"
+        # Build a concise portfolio summary for the AI
+        holdings_summary = ""
+        if isinstance(holdings, list):
+            for h in holdings[:10]:  # Max 10 to save tokens
+                name = h.get("name") or h.get("ticker", "?")
+                ticker = h.get("ticker", "?")
+                weight = h.get("weight", 0)
+                h_pnl = h.get("pnl_percent", 0)
+                holdings_summary += f"- {name} ({ticker}): {weight:.1f}% weight, PnL {h_pnl:.1f}%\n"
+        
+        system_prompt = f"""You are KIMS — an expert Indian Stock Market Researcher and Portfolio Intelligence AI for InvestIQ.
 
-        # Scope Check
+PORTFOLIO CONTEXT:
+- Total Holdings: {num_holdings} positions
+- Total Invested: ₹{self._fmt(total_invested)}
+- Current Value: ₹{self._fmt(total_value)}
+- Total P&L: ₹{self._fmt(pnl)} ({pnl_pct:.1f}%)
+- Holdings:
+{holdings_summary}
+
+RULES:
+1. You ONLY discuss Indian equities, portfolio analysis, and financial markets (NSE/BSE).
+2. Be specific about the user's actual holdings when answering.
+3. Provide actionable insights with data-backed reasoning.
+4. Keep responses concise (2-3 paragraphs max).
+5. Use ₹ for currency, reference Indian market indices (Nifty, Sensex).
+6. End every response with: "*Note: I am an AI researcher, not a SEBI-registered advisor. This is for educational/analytical purposes only.*"
+7. If asked about non-market topics, politely redirect to portfolio analysis."""
+
+        try:
+            llm = AIProviderManager()
+            response = llm.generate_text(system_prompt, message, history)
+            if response and "trouble connecting" not in response:
+                return response
+        except Exception as e:
+            pass  # Fall through to keyword fallback
+        
+        # Fallback: keyword-based responses if AI is unavailable
+        msg = message.lower()
+        disclaimer = "\n\n*Note: I am an AI researcher, not a SEBI-registered advisor. This is for educational/analytical purposes only.*"
+        
         non_market_keywords = ["weather", "movie", "news", "food", "recipe", "politics"]
         if any(word in msg for word in non_market_keywords) and not any(m in msg for m in ["stock", "market", "finance"]):
             return "As your KIMS Portfolio Researcher, I only analyze market-related data. Let's stick to dissecting your ₹ holdings or structural risk metrics." + disclaimer

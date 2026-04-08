@@ -1,4 +1,5 @@
 import logging
+import os
 from typing import Optional
 from config.settings import conf
 from services.provider_manager import AIProviderManager
@@ -7,7 +8,7 @@ from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
-# --- In-Memory Mock Database for simplified local testing ---
+# --- In-Memory Mock Database (fallback for local dev without Supabase) ---
 MOCK_REPORTS_DB = {}
 
 class MockResponse:
@@ -88,7 +89,7 @@ class MockDbClient:
 class ReportContainer:
     """
     Dependency Injection Container for the Intelligent Reporting Module.
-    Ensures that services are instantiated as singletons lazily.
+    Uses real Supabase client when DB_TYPE=supabase, otherwise falls back to mock.
     """
     _instance = None
     
@@ -99,8 +100,25 @@ class ReportContainer:
         return cls._instance
 
     def _initialize_services(self):
-        logger.info("Initializing Intelligence Report Container (MOCK DB Mode)...")
-        self._db_client = MockDbClient()
+        db_type = os.environ.get("DB_TYPE", "sqlite").lower()
+        
+        if db_type == "supabase":
+            try:
+                from supabase import create_client
+                url = os.environ.get("SUPABASE_URL")
+                key = os.environ.get("SUPABASE_KEY")
+                if url and key:
+                    self._db_client = create_client(url, key)
+                    logger.info("Initializing Intelligence Report Container (Supabase DB Mode)...")
+                else:
+                    logger.warning("SUPABASE_URL/KEY missing, falling back to Mock DB.")
+                    self._db_client = MockDbClient()
+            except Exception as e:
+                logger.error(f"Failed to create Supabase client for reports: {e}. Falling back to Mock DB.")
+                self._db_client = MockDbClient()
+        else:
+            logger.info("Initializing Intelligence Report Container (MOCK DB Mode)...")
+            self._db_client = MockDbClient()
         
         try:
             self._llm_manager = AIProviderManager()
@@ -120,3 +138,4 @@ class ReportContainer:
 
 # Global DI container for the module
 report_di = ReportContainer()
+

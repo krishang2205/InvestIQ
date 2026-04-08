@@ -3,13 +3,12 @@ from services.portfolio_service import PortfolioService
 from services.portfolio_intelligence import PortfolioIntelligence
 from services.ai_doctor_service import PortfolioDoctorService
 from datetime import datetime
-from db.sqlite_store import SqliteStore
-
+from db.store import get_store
 portfolio_bp = Blueprint('portfolio', __name__, url_prefix='/api/portfolio')
 portfolio_service = PortfolioService()
 portfolio_intel = PortfolioIntelligence(portfolio_service)
 portfolio_doctor = PortfolioDoctorService(portfolio_intel)
-store = SqliteStore()
+store = get_store()
 
 @portfolio_bp.route('/summary', methods=['GET'])
 def get_portfolio_summary():
@@ -65,6 +64,11 @@ def get_portfolio_holdings():
         # 3. Calculate Unrealized PnL
         report = portfolio_service.calculate_unrealized_pnl(holdings, current_prices)
         
+        # Batch-preload all instruments in ONE query (10 HTTP calls → 1)
+        all_syms = [h.get("ticker") for h in report["holdings"]]
+        if hasattr(store, 'preload_instruments_batch'):
+            store.preload_instruments_batch(all_syms)
+        
         # Enrich with cached instrument metadata (name/sector/marketCap bucket)
         enriched = []
         for h in report["holdings"]:
@@ -118,6 +122,11 @@ def get_portfolio_bootstrap():
             "currency": "INR",
             "last_updated": datetime.now().isoformat(),
         }
+
+        # Batch-preload all instruments in ONE query
+        all_boot_syms = [h.get("ticker") for h in report["holdings"]]
+        if hasattr(store, 'preload_instruments_batch'):
+            store.preload_instruments_batch(all_boot_syms)
 
         enriched = []
         for h in report["holdings"]:
@@ -231,6 +240,11 @@ def get_portfolio_intelligence():
         current_prices = portfolio_service.get_live_prices(symbols)
         report = portfolio_service.calculate_unrealized_pnl(holdings, current_prices)
         
+        # Batch-preload all instruments in ONE query
+        all_intel_syms = [h.get("ticker") for h in report["holdings"]]
+        if hasattr(store, 'preload_instruments_batch'):
+            store.preload_instruments_batch(all_intel_syms)
+
         # Enrich Holdings with Fundamental Data
         enriched_holdings = []
         for h in report["holdings"]:

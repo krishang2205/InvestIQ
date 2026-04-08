@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { MessageSquare, Send, X, Sparkles, Zap, ChevronRight, Loader2 } from 'lucide-react';
+import { API_BASE_URL } from '../../../../services/api';
 
-const PortfolioChatBot = ({ isOpen, onClose, holdings, intelligence }) => {
+const PortfolioChatBot = ({ isOpen, onClose, holdings, intelligence, summary, xirr }) => {
     const [activeTab, setActiveTab] = useState('chat'); // 'chat' or 'simulate'
     const [messages, setMessages] = useState([
         { role: 'assistant', content: `Namaste. I am KIMS AI—your Indian Market Strategist.\n\nYour **1st Structural Diagnosis is FREE**. Subsequent deep-dives into your ${holdings?.length || 0} holdings and unlimited Macro Simulations are reserved for **InvestIQ Premium** members. How shall we utilize your free credits to dissect your NSE/BSE exposure today?\n\n*Note: Analytical researcher only. Not SEBI-registered.*` }
@@ -22,13 +23,25 @@ const PortfolioChatBot = ({ isOpen, onClose, holdings, intelligence }) => {
     }, [messages, isTyping]);
 
     const getPortfolioContext = () => {
+        // Return the full portfolio snapshot: summary, xirr, intelligence, and detailed holdings.
         return {
-            holdings_count: holdings?.length || 0,
-            total_current_value: intelligence?.total_current_value || 0,
-            total_invested: intelligence?.total_invested || 0,
-            total_pnl: intelligence?.total_pnl || 0,
-            resilience_score: intelligence?.resilience_score || 0,
-            alpha_score: intelligence?.alpha_score || 0
+            // Basic portfolio metrics
+            summary: summary || {},
+            xirr: xirr,
+            // All intelligence fields
+            ...intelligence,
+            // Detailed holdings (limit to 20 for token economy)
+            holdings: (holdings || []).slice(0, 20).map(h => ({
+                ticker: h.ticker,
+                name: h.name,
+                weight: h.weight,
+                pnl_percent: h.pnl_percent,
+                qty: h.qty,
+                avgPrice: h.avgPrice,
+                ltp: h.ltp,
+                sector: h.sector,
+                ...h,
+            })),
         };
     };
 
@@ -41,7 +54,7 @@ const PortfolioChatBot = ({ isOpen, onClose, holdings, intelligence }) => {
         setIsTyping(true);
 
         try {
-            const res = await fetch('http://localhost:5001/api/portfolio/chat', {
+            const res = await fetch(`${API_BASE_URL}/portfolio/chat`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -69,7 +82,7 @@ const PortfolioChatBot = ({ isOpen, onClose, holdings, intelligence }) => {
         setActiveTab('simulate');
 
         try {
-            const res = await fetch('http://localhost:5001/api/portfolio/simulate', {
+            const res = await fetch(`${API_BASE_URL}/portfolio/simulate`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({

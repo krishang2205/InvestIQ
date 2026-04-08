@@ -212,6 +212,7 @@ class FinancialDataAdapter:
                 logger.warning(f"Empty price history for {symbol}, using fallback.")
                 return []
 
+            hist = hist.dropna(subset=['Close', 'Open', 'High', 'Low'])
             chart_data = []
             for date_idx, row in hist.iterrows():
                 date_str = date_idx.strftime("%b %d, %Y") if hasattr(date_idx, 'strftime') else str(date_idx)[:10]
@@ -239,6 +240,7 @@ class FinancialDataAdapter:
                 logger.warning(f"Empty intraday history for {symbol}, using fallback.")
                 return []
 
+            hist = hist.dropna(subset=['Close'])
             intraday_data = []
             for date_idx, row in hist.iterrows():
                 time_str = date_idx.strftime("%I:%M %p") if hasattr(date_idx, 'strftime') else str(date_idx)[11:16]
@@ -269,6 +271,9 @@ class FinancialDataAdapter:
             variance = sum((r - mean) ** 2 for r in returns) / len(returns)
             std_dev = variance ** 0.5
             annualised = std_dev * (252 ** 0.5)
+            import math
+            if math.isnan(annualised):
+                return 0.0
             return round(annualised * 100, 2)  # As a percentage
         except Exception:
             return 0.0

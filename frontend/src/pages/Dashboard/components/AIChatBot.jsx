@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { MessageSquare, Send, X, Minimize2, Sparkles, Zap, ShieldAlert, ChevronRight, Info, Loader2 } from 'lucide-react';
+import { API_BASE_URL } from '../../../services/api';
 
 const AIChatBot = ({ isOpen, onClose, reportData, jobId }) => {
     const [activeTab, setActiveTab] = useState('chat'); // 'chat' or 'simulate'
@@ -30,7 +31,7 @@ const AIChatBot = ({ isOpen, onClose, reportData, jobId }) => {
         setIsTyping(true);
 
         try {
-            const res = await fetch('http://localhost:5001/api/v2/reports/chat', {
+            const res = await fetch(`${API_BASE_URL}/v2/reports/chat`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -58,7 +59,7 @@ const AIChatBot = ({ isOpen, onClose, reportData, jobId }) => {
         setActiveTab('simulate');
 
         try {
-            const res = await fetch('http://localhost:5001/api/v2/reports/simulate', {
+            const res = await fetch(`${API_BASE_URL}/v2/reports/simulate`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({

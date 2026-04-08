@@ -186,22 +186,26 @@ class AIProviderManager:
             except Exception as e:
                 logger.warning(f"Gemini text gen failed: {e}")
 
-        # Try Groq as fallback
+        # Try Groq as fallback (try all candidate models)
         if self.providers_ready["groq"]:
-            try:
-                messages = [{"role": "system", "content": system_prompt}]
-                if history:
-                    messages.extend(history)
-                messages.append({"role": "user", "content": user_message})
-                
-                response = self.groq_client.chat.completions.create(
-                    model=self.GROQ_MODEL,
-                    messages=messages,
-                    temperature=0.7,
-                )
-                return response.choices[0].message.content
-            except Exception as e:
-                logger.warning(f"Groq text gen failed: {e}")
+            for model_name in (self.groq_candidates or [self.GROQ_MODEL]):
+                try:
+                    # Truncate system prompt to ~4000 chars to fit smaller models
+                    truncated_prompt = system_prompt[:4000] if len(system_prompt) > 4000 else system_prompt
+                    messages = [{"role": "system", "content": truncated_prompt}]
+                    if history:
+                        # Only keep last 4 messages to save tokens
+                        messages.extend(history[-4:])
+                    messages.append({"role": "user", "content": user_message})
+                    
+                    response = self.groq_client.chat.completions.create(
+                        model=model_name,
+                        messages=messages,
+                        temperature=0.7,
+                    )
+                    return response.choices[0].message.content
+                except Exception as e:
+                    logger.warning(f"Groq text gen failed ({model_name}): {e}")
 
         # Final fallback
         return "I'm sorry, I'm having trouble connecting to my brain right now. Please try again in a moment."
