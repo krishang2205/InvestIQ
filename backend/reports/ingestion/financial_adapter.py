@@ -70,133 +70,133 @@ class FinancialDataAdapter:
                 def _get_info():
                     return ticker.info
                 
-            def _get_history():
-                return ticker.history(period="2y", interval="1d", auto_adjust=True)
+                def _get_history():
+                    return ticker.history(period="2y", interval="1d", auto_adjust=True)
+                    
+                def _get_intraday():
+                    return ticker.history(period="1d", interval="5m", auto_adjust=True)
+                    
+                def _get_news():
+                    try:
+                        return ticker.news or []
+                    except:
+                        return []
+
+                logger.info(f"Parallelizing data fetching for {ticker_symbol}...")
+                with ThreadPoolExecutor(max_workers=4) as executor:
+                    future_info = executor.submit(_get_info)
+                    future_hist = executor.submit(_get_history)
+                    future_intra = executor.submit(_get_intraday)
+                    future_news = executor.submit(_get_news)
+                    
+                    info = future_info.result()
+                    hist_df = future_hist.result()
+                    intra_df = future_intra.result()
+                    raw_news = future_news.result()
+
+                # Validate ticker returned actual data (not empty dict)
+                if not info or (info.get("regularMarketPrice") is None and info.get("currentPrice") is None):
+                    logger.warning(f"yfinance returned empty info for {ticker_symbol}. Symbol may be delisted or invalid.")
+                    raise ValueError(f"No market data found for symbol: {ticker_symbol}")
+
+                # ── Core Price Data ──────────────────────────────────────────────
+                current_price = (
+                    info.get("currentPrice") or
+                    info.get("regularMarketPrice") or
+                    info.get("previousClose") or 0.0
+                )
+                prev_close = info.get("previousClose") or info.get("regularMarketPreviousClose") or current_price
+                price_change_pct = ((current_price - prev_close) / prev_close * 100) if prev_close else 0.0
+
+                # ── Fundamental Metrics ──────────────────────────────────────────
+                fundamentals = {
+                    "pe_ratio": info.get("trailingPE") or info.get("forwardPE"),
+                    "forward_pe": info.get("forwardPE"),
+                    "pb_ratio": info.get("priceToBook"),
+                    "market_cap_billions": round((info.get("marketCap") or 0) / 1e9, 2),
+                    "revenue_ttm_billions": round((info.get("totalRevenue") or 0) / 1e9, 2),
+                    "net_income_billions": round((info.get("netIncomeToCommon") or 0) / 1e9, 2),
+                    "earnings_per_share": info.get("trailingEps") or info.get("forwardEps"),
+                    "dividend_yield": round(info.get("dividendYield") or 0, 2),
+                    "roe": round((info.get("returnOnEquity") or 0) * 100, 2),
+                    "roa": round((info.get("returnOnAssets") or 0) * 100, 2),
+                    "profit_margin": round((info.get("profitMargins") or 0) * 100, 2),
+                    "debt_to_equity": info.get("debtToEquity"),
+                    "free_cashflow_billions": round((info.get("freeCashflow") or 0) / 1e9, 2),
+                    "beta": info.get("beta"),
+                }
+
+                # ── 52-Week Range ────────────────────────────────────────────────
+                week_52_high = info.get("fiftyTwoWeekHigh") or info.get("yearHigh") or (current_price * 1.2)
+                week_52_low  = info.get("fiftyTwoWeekLow")  or info.get("yearLow")  or (current_price * 0.8)
+                fifty_day_avg = info.get("fiftyDayAverage") or current_price
+                two_hundred_day_avg = info.get("twoHundredDayAverage") or current_price
+
+                # ── Live 2-Year OHLCV History for Chart ─────────────────────────
+                chart_data = self._parse_history(hist_df, ticker_symbol)
                 
-            def _get_intraday():
-                return ticker.history(period="1d", interval="5m", auto_adjust=True)
-                
-            def _get_news():
-                try:
-                    return ticker.news or []
-                except:
-                    return []
+                # ── Live 1-Day Intraday History for 1D Chart ────────────────────
+                intraday_data = self._parse_intraday(intra_df, ticker_symbol)
 
-            logger.info(f"Parallelizing data fetching for {ticker_symbol}...")
-            with ThreadPoolExecutor(max_workers=4) as executor:
-                future_info = executor.submit(_get_info)
-                future_hist = executor.submit(_get_history)
-                future_intra = executor.submit(_get_intraday)
-                future_news = executor.submit(_get_news)
-                
-                info = future_info.result()
-                hist_df = future_hist.result()
-                intra_df = future_intra.result()
-                raw_news = future_news.result()
+                # ── Recent News ──────────────────────────────────────────────────
+                recent_news = []
+                if raw_news:
+                    for n in raw_news[:5]:
+                        content = n.get("content") or n
+                        title = content.get("title")
+                        if title:
+                            recent_news.append({
+                                "title": title,
+                                "date": content.get("pubDate", ""),
+                                "summary": content.get("summary", "")[:200]
+                            })
 
-            # Validate ticker returned actual data (not empty dict)
-            if not info or (info.get("regularMarketPrice") is None and info.get("currentPrice") is None):
-                logger.warning(f"yfinance returned empty info for {ticker_symbol}. Symbol may be delisted or invalid.")
-                raise ValueError(f"No market data found for symbol: {ticker_symbol}")
+                # ── Company Metadata ─────────────────────────────────────────────
+                officers = info.get("companyOfficers", [])
+                ceo_name = "N/A"
+                if officers:
+                    for off in officers:
+                        title = str(off.get("title", "")).lower()
+                        if "ceo" in title or "chief executive" in title:
+                            ceo_name = off.get("name", "N/A")
+                            break
+                    if ceo_name == "N/A":
+                        ceo_name = officers[0].get("name", "N/A")
 
-            # ── Core Price Data ──────────────────────────────────────────────
-            current_price = (
-                info.get("currentPrice") or
-                info.get("regularMarketPrice") or
-                info.get("previousClose") or 0.0
-            )
-            prev_close = info.get("previousClose") or info.get("regularMarketPreviousClose") or current_price
-            price_change_pct = ((current_price - prev_close) / prev_close * 100) if prev_close else 0.0
+                company_meta = {
+                    "name": info.get("longName") or info.get("shortName") or symbol,
+                    "ceo": ceo_name,
+                    "sector": info.get("sector") or "Unknown",
+                    "industry": info.get("industry") or "Unknown",
+                    "exchange": info.get("exchange") or info.get("fullExchangeName") or "Unknown",
+                    "country": info.get("country") or "Unknown",
+                    "currency": info.get("currency") or "USD",
+                    "website": info.get("website"),
+                    "employees": info.get("fullTimeEmployees"),
+                    "description": info.get("longBusinessSummary", "")[:500] if info.get("longBusinessSummary") else "",
+                }
 
-            # ── Fundamental Metrics ──────────────────────────────────────────
-            fundamentals = {
-                "pe_ratio": info.get("trailingPE") or info.get("forwardPE"),
-                "forward_pe": info.get("forwardPE"),
-                "pb_ratio": info.get("priceToBook"),
-                "market_cap_billions": round((info.get("marketCap") or 0) / 1e9, 2),
-                "revenue_ttm_billions": round((info.get("totalRevenue") or 0) / 1e9, 2),
-                "net_income_billions": round((info.get("netIncomeToCommon") or 0) / 1e9, 2),
-                "earnings_per_share": info.get("trailingEps") or info.get("forwardEps"),
-                "dividend_yield": round(info.get("dividendYield") or 0, 2),
-                "roe": round((info.get("returnOnEquity") or 0) * 100, 2),
-                "roa": round((info.get("returnOnAssets") or 0) * 100, 2),
-                "profit_margin": round((info.get("profitMargins") or 0) * 100, 2),
-                "debt_to_equity": info.get("debtToEquity"),
-                "free_cashflow_billions": round((info.get("freeCashflow") or 0) / 1e9, 2),
-                "beta": info.get("beta"),
-            }
+                elapsed = time.time() - start_time
+                logger.info(f"Live data fetch for {ticker_symbol} completed in {elapsed:.2f}s | Price: {current_price} {company_meta['currency']}")
 
-            # ── 52-Week Range ────────────────────────────────────────────────
-            week_52_high = info.get("fiftyTwoWeekHigh") or info.get("yearHigh") or (current_price * 1.2)
-            week_52_low  = info.get("fiftyTwoWeekLow")  or info.get("yearLow")  or (current_price * 0.8)
-            fifty_day_avg = info.get("fiftyDayAverage") or current_price
-            two_hundred_day_avg = info.get("twoHundredDayAverage") or current_price
-
-            # ── Live 2-Year OHLCV History for Chart ─────────────────────────
-            chart_data = self._parse_history(hist_df, ticker_symbol)
-            
-            # ── Live 1-Day Intraday History for 1D Chart ────────────────────
-            intraday_data = self._parse_intraday(intra_df, ticker_symbol)
-
-            # ── Recent News ──────────────────────────────────────────────────
-            recent_news = []
-            if raw_news:
-                for n in raw_news[:5]:
-                    content = n.get("content") or n
-                    title = content.get("title")
-                    if title:
-                        recent_news.append({
-                            "title": title,
-                            "date": content.get("pubDate", ""),
-                            "summary": content.get("summary", "")[:200]
-                        })
-
-            # ── Company Metadata ─────────────────────────────────────────────
-            officers = info.get("companyOfficers", [])
-            ceo_name = "N/A"
-            if officers:
-                for off in officers:
-                    title = str(off.get("title", "")).lower()
-                    if "ceo" in title or "chief executive" in title:
-                        ceo_name = off.get("name", "N/A")
-                        break
-                if ceo_name == "N/A":
-                    ceo_name = officers[0].get("name", "N/A")
-
-            company_meta = {
-                "name": info.get("longName") or info.get("shortName") or symbol,
-                "ceo": ceo_name,
-                "sector": info.get("sector") or "Unknown",
-                "industry": info.get("industry") or "Unknown",
-                "exchange": info.get("exchange") or info.get("fullExchangeName") or "Unknown",
-                "country": info.get("country") or "Unknown",
-                "currency": info.get("currency") or "USD",
-                "website": info.get("website"),
-                "employees": info.get("fullTimeEmployees"),
-                "description": info.get("longBusinessSummary", "")[:500] if info.get("longBusinessSummary") else "",
-            }
-
-            elapsed = time.time() - start_time
-            logger.info(f"Live data fetch for {ticker_symbol} completed in {elapsed:.2f}s | Price: {current_price} {company_meta['currency']}")
-
-            return {
-                "symbol": ticker_symbol,
-                "display_symbol": symbol,
-                "current_price": current_price,
-                "prev_close": prev_close,
-                "price_change_pct": round(price_change_pct, 2),
-                "fifty_two_week_high": week_52_high,
-                "fifty_two_week_low": week_52_low,
-                "fifty_day_avg": fifty_day_avg,
-                "two_hundred_day_avg": two_hundred_day_avg,
-                "fundamentals": fundamentals,
-                "company_meta": company_meta,
-                "chart_data": chart_data,         # Real OHLCV for chart injection
-                "intraday_data": intraday_data,   # Real tick-by-tick for 1D chart
-                "news": recent_news,              # Top 5 latest news articles
-                "sentiment_score": 0.0,            # Placeholder; overridden by AI
-                "volatility": self._compute_volatility(chart_data),
-            }
+                return {
+                    "symbol": ticker_symbol,
+                    "display_symbol": symbol,
+                    "current_price": current_price,
+                    "prev_close": prev_close,
+                    "price_change_pct": round(price_change_pct, 2),
+                    "fifty_two_week_high": week_52_high,
+                    "fifty_two_week_low": week_52_low,
+                    "fifty_day_avg": fifty_day_avg,
+                    "two_hundred_day_avg": two_hundred_day_avg,
+                    "fundamentals": fundamentals,
+                    "company_meta": company_meta,
+                    "chart_data": chart_data,         # Real OHLCV for chart injection
+                    "intraday_data": intraday_data,   # Real tick-by-tick for 1D chart
+                    "news": recent_news,              # Top 5 latest news articles
+                    "sentiment_score": 0.0,            # Placeholder; overridden by AI
+                    "volatility": self._compute_volatility(chart_data),
+                }
 
             except Exception as e:
                 if "429" in str(e) and attempt < max_retries - 1:
