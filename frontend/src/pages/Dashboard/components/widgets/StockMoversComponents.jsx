@@ -66,21 +66,20 @@ export const StockLogo = ({ symbol, logoUrl }) => {
 
     // Determine initial source
     useEffect(() => {
-        // 1. TRUST THE BACKEND. If we have a logoUrl (Google S2 with verified domain), use it.
-        // It proved to be reliable for ONGC, UPL etc.
+        // 1. TRUST THE BACKEND. If we have a logoUrl (unavatar with clearbit), use it.
         if (logoUrl) {
             setImgSource(logoUrl);
         } else {
-            // 2. Default guess using Google S2
-            setImgSource(`https://www.google.com/s2/favicons?domain=${cleanSymbol.toLowerCase()}.com&sz=128`);
+            // 2. Default fallback without causing 404
+            setImgSource(`https://ui-avatars.com/api/?name=${cleanSymbol}&background=random&color=fff&size=128`);
         }
         setHasError(false);
     }, [logoUrl, cleanSymbol]);
 
     const handleError = () => {
-        // If primary fails, try Google S2 as a secondary fallback
-        if (imgSource && !imgSource.includes('google.com/s2')) {
-            setImgSource(`https://www.google.com/s2/favicons?domain=${cleanSymbol.toLowerCase()}.com&sz=128`);
+        // Drop the faulty google s2 fallback as it throws 404s
+        if (imgSource && !imgSource.includes('ui-avatars.com')) {
+            setImgSource(`https://ui-avatars.com/api/?name=${cleanSymbol}&background=random&color=fff&size=128`);
         } else {
             // Truly exhausted options
             setHasError(true);

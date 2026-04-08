@@ -43,3 +43,23 @@ def get_news():
         return jsonify(data)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+@market_bp.route('/api/market/history')
+@cache.cached(timeout=300, query_string=True)
+def get_history():
+    try:
+        symbol = request.args.get('symbol', '^NSEI')
+        period = request.args.get('period', '1mo')
+        interval = request.args.get('interval', '1d')
+        data = market_data_service.get_index_history(symbol, period, interval)
+        return jsonify(data)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+@market_bp.route('/api/market/stock/<symbol>')
+@cache.cached(timeout=3600)
+def get_stock_profile(symbol):
+    try:
+        data = market_data_service.get_instrument_profile(symbol)
+        return jsonify(data)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500

@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
-import { ArrowLeft, Download, Info, AlertTriangle, ChevronRight, MessageSquare, Sparkles, Zap, ShieldAlert } from 'lucide-react';
+import { ArrowLeft, Download, Info, AlertTriangle, ChevronRight, MessageSquare, Sparkles, Zap, ShieldAlert, X, Scale, ArrowRightLeft, TrendingUp, BarChart3 } from 'lucide-react';
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
 import AIChatBot from './AIChatBot';
+import StockSearch from './StockSearch';
+import api from '../../../services/api';
 const reportStyles = `
   .rv-root { max-width: 1200px; margin: 0 auto; padding: 0 1.5rem 8rem 1.5rem; }
   .rv-header { display: flex; justify-content: space-between; align-items: center; padding: 1rem 0; border-bottom: 1px solid var(--glass-border); margin-bottom: 2rem; }
@@ -83,6 +85,34 @@ const reportStyles = `
 const ReportView = ({ data, onBack, jobId }) => {
     const [activeTab, setActiveTab] = useState('1Y');
     const [isChatOpen, setIsChatOpen] = useState(false);
+    const [isCompareOpen, setIsCompareOpen] = useState(false);
+    const [compareStock, setCompareStock] = useState(null);
+    const [isCompareLoading, setIsCompareLoading] = useState(false);
+    const [compareError, setCompareError] = useState(null);
+
+    const handleViewOutlook = () => {
+        const element = document.getElementById('strategic-outlook');
+        if (element) {
+            element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    };
+
+    const handleSelectCompare = async (stock) => {
+        setIsCompareLoading(true);
+        setCompareError(null);
+        try {
+            const profile = await api.getStockProfile(stock.symbol || stock.name);
+            if (profile) {
+                setCompareStock(profile);
+            } else {
+                setCompareError("Failed to fetch data for comparison");
+            }
+        } catch (err) {
+            setCompareError("Error connecting to data engine");
+        } finally {
+            setIsCompareLoading(false);
+        }
+    };
 
     const handleDownloadPDF = () => {
         const originalTitle = document.title;
@@ -616,14 +646,17 @@ const ReportView = ({ data, onBack, jobId }) => {
             </div>
 
             {/* 12. STRATEGIC OUTLOOK (New Section) */}
-            <div className="rv-outlook-grid">
-                <div style={{ padding: '1.5rem', background: 'rgba(59, 130, 246, 0.1)', borderRadius: '12px', border: '1px solid rgba(59, 130, 246, 0.2)' }}>
-                    <span style={{ fontSize: '0.75rem', fontWeight: 700, letterSpacing: '1px', color: '#60a5fa', textTransform: 'uppercase', display: 'block', marginBottom: '0.5rem' }}>Tactical View (0-3 Months)</span>
-                    <p style={{ fontSize: '0.9rem', lineHeight: '1.6' }}>{data.outlook?.shortTerm || 'Short-term outlook is being processed.'}</p>
-                </div>
-                <div style={{ padding: '1.5rem', background: 'rgba(16, 185, 129, 0.1)', borderRadius: '12px', border: '1px solid rgba(16, 185, 129, 0.2)' }}>
-                    <span style={{ fontSize: '0.75rem', fontWeight: 700, letterSpacing: '1px', color: '#34d399', textTransform: 'uppercase', display: 'block', marginBottom: '0.5rem' }}>Structural View (12+ Months)</span>
-                    <p style={{ fontSize: '0.9rem', lineHeight: '1.6' }}>{data.outlook?.longTerm || 'Long-term structural analysis is being processed.'}</p>
+            <div style={{ marginBottom: '2.5rem' }}>
+                <h3 id="strategic-outlook" style={{ fontSize: '1.25rem', marginBottom: '1rem', borderLeft: '4px solid var(--color-accent)', paddingLeft: '0.75rem', scrollMarginTop: '100px' }}>Strategic Outlook</h3>
+                <div className="rv-outlook-grid">
+                    <div style={{ padding: '1.5rem', background: 'rgba(59, 130, 246, 0.1)', borderRadius: '12px', border: '1px solid rgba(59, 130, 246, 0.2)' }}>
+                        <span style={{ fontSize: '0.75rem', fontWeight: 700, letterSpacing: '1px', color: '#60a5fa', textTransform: 'uppercase', display: 'block', marginBottom: '0.5rem' }}>Tactical View (0-3 Months)</span>
+                        <p style={{ fontSize: '0.9rem', lineHeight: '1.6' }}>{data.outlook?.shortTerm || 'Short-term outlook is being processed.'}</p>
+                    </div>
+                    <div style={{ padding: '1.5rem', background: 'rgba(16, 185, 129, 0.1)', borderRadius: '12px', border: '1px solid rgba(16, 185, 129, 0.2)' }}>
+                        <span style={{ fontSize: '0.75rem', fontWeight: 700, letterSpacing: '1px', color: '#34d399', textTransform: 'uppercase', display: 'block', marginBottom: '0.5rem' }}>Structural View (12+ Months)</span>
+                        <p style={{ fontSize: '0.9rem', lineHeight: '1.6' }}>{data.outlook?.longTerm || 'Long-term structural analysis is being processed.'}</p>
+                    </div>
                 </div>
             </div>
 
@@ -641,13 +674,14 @@ const ReportView = ({ data, onBack, jobId }) => {
                 display: 'flex', justifyContent: 'flex-end', gap: '1rem',
                 zIndex: 100
             }}>
-                <button style={{ padding: '0.5rem 1rem', background: 'transparent', border: '1px solid var(--color-secondary)', color: 'var(--color-text)', borderRadius: '8px', cursor: 'pointer' }}>
+                <button 
+                    onClick={() => setIsCompareOpen(true)}
+                    style={{ padding: '0.5rem 1rem', background: 'transparent', border: '1px solid var(--color-secondary)', color: 'var(--color-text)', borderRadius: '8px', cursor: 'pointer' }}>
                     Compare
                 </button>
-                <button onClick={handleDownloadPDF} style={{ padding: '0.5rem 1rem', background: 'transparent', border: '1px solid var(--color-secondary)', color: 'var(--color-text)', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <Download size={16} /> PDF
-                </button>
-                <button style={{
+                <button 
+                    onClick={handleViewOutlook}
+                    style={{
                     padding: '0.5rem 1.5rem', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--glass-border)',
                     color: 'var(--color-primary)', borderRadius: '8px', fontWeight: 600, cursor: 'pointer',
                     display: 'flex', alignItems: 'center', gap: '0.5rem'
@@ -782,6 +816,131 @@ const ReportView = ({ data, onBack, jobId }) => {
                 reportData={data} 
                 jobId={jobId} 
             />
+
+            {/* --- COMPARISON MODAL --- */}
+            {isCompareOpen && (
+                <div style={{
+                    position: 'fixed', inset: 0, zIndex: 1000,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    backgroundColor: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(12px)',
+                    padding: '2rem'
+                }}>
+                    <div style={{
+                        width: '100%', maxWidth: '900px', maxHeight: '90vh',
+                        background: 'rgba(20, 20, 25, 0.95)', border: '1px solid var(--glass-border)',
+                        borderRadius: '24px', overflow: 'hidden', display: 'flex', flexDirection: 'column',
+                        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)'
+                    }} className="animate-fade-in">
+                        {/* Modal Header */}
+                        <div style={{ padding: '1.5rem 2rem', borderBottom: '1px solid var(--glass-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                                <div style={{ padding: '0.5rem', background: 'var(--color-accent-glow)', borderRadius: '12px', color: 'var(--color-accent)' }}>
+                                    <Scale size={24} />
+                                </div>
+                                <div>
+                                    <h2 style={{ fontSize: '1.25rem', fontWeight: 700, margin: 0 }}>Stock Comparison</h2>
+                                    <p style={{ fontSize: '0.75rem', color: 'var(--color-secondary)', margin: 0 }}>Side-by-side metric analysis</p>
+                                </div>
+                            </div>
+                            <button onClick={() => { setIsCompareOpen(false); setCompareStock(null); }} style={{ background: 'none', border: 'none', color: 'var(--color-secondary)', cursor: 'pointer', padding: '0.5rem' }}>
+                                <X size={24} />
+                            </button>
+                        </div>
+
+                        {/* Modal Body */}
+                        <div style={{ padding: '2rem', overflowY: 'auto', flex: 1 }}>
+                            {!compareStock ? (
+                                <div style={{ textAlign: 'center', padding: '2rem 0' }}>
+                                    <div style={{ marginBottom: '2rem', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                                        <div style={{ width: '60px', height: '60px', borderRadius: '50%', background: 'rgba(255,255,255,0.03)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1rem' }}>
+                                            <ArrowRightLeft size={30} color="var(--color-secondary)" />
+                                        </div>
+                                        <h3 style={{ fontSize: '1.1rem', marginBottom: '0.5rem' }}>Comparing {data.header.symbol} with...</h3>
+                                        <p style={{ color: 'var(--color-secondary)', fontSize: '0.85rem' }}>Search for another stock to begin comparison</p>
+                                    </div>
+                                    <StockSearch onSelect={handleSelectCompare} />
+                                    {isCompareLoading && (
+                                        <div style={{ marginTop: '2rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.75rem' }}>
+                                            <div className="animate-spin" style={{ width: '1.5rem', height: '1.5rem', border: '2px solid var(--color-accent)', borderTopColor: 'transparent', borderRadius: '50%' }}></div>
+                                            <span style={{ fontSize: '0.9rem', color: 'var(--color-accent)' }}>Fetching Deep Metrics...</span>
+                                        </div>
+                                    )}
+                                    {compareError && <p style={{ color: '#ef4444', marginTop: '1rem', fontSize: '0.85rem' }}>{compareError}</p>}
+                                </div>
+                            ) : (
+                                <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                                    <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr 1fr', gap: '1px', background: 'var(--glass-border)', borderRadius: '16px', overflow: 'hidden', border: '1px solid var(--glass-border)' }}>
+                                        {/* Table Header */}
+                                        <div style={{ background: 'rgba(255,255,255,0.03)', padding: '1.25rem 1.5rem', fontWeight: 600, fontSize: '0.75rem', color: 'var(--color-secondary)', textTransform: 'uppercase', letterSpacing: '1px' }}>METRIC</div>
+                                        <div style={{ background: 'rgba(209, 199, 157, 0.08)', padding: '1.25rem 1.5rem', textAlign: 'center' }}>
+                                            <span style={{ display: 'block', fontWeight: 800, color: 'var(--color-accent)', fontSize: '1rem' }}>{data.header.symbol}</span>
+                                            <span style={{ fontSize: '0.65rem', color: 'var(--color-secondary)' }}>PRIMARY</span>
+                                        </div>
+                                        <div style={{ background: 'rgba(255,255,255,0.05)', padding: '1.25rem 1.5rem', textAlign: 'center', position: 'relative' }}>
+                                            <button 
+                                                onClick={() => setCompareStock(null)}
+                                                style={{ position: 'absolute', top: '5px', right: '5px', background: 'none', border: 'none', color: 'var(--color-secondary)', cursor: 'pointer', fontSize: '0.6rem' }}
+                                            >Change</button>
+                                            <span style={{ display: 'block', fontWeight: 800, color: '#fff', fontSize: '1rem' }}>{compareStock.symbol}</span>
+                                            <span style={{ fontSize: '0.65rem', color: 'var(--color-secondary)' }}>COMPARISON</span>
+                                        </div>
+
+                                        {/* Row: Price */}
+                                        <div style={{ background: 'rgba(21, 21, 26, 0.4)', padding: '1rem 1.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                            <TrendingUp size={16} color="var(--color-secondary)" /> <span style={{ fontSize: '0.9rem' }}>Market Price</span>
+                                        </div>
+                                        <div style={{ background: 'rgba(21, 21, 26, 0.4)', padding: '1rem 1.5rem', textAlign: 'center', fontWeight: 700, fontSize: '1rem' }}>
+                                            ₹{data.priceBehavior?.chartData?.slice(-1)[0]?.price?.toLocaleString() || 'N/A'}
+                                        </div>
+                                        <div style={{ background: 'rgba(21, 21, 26, 0.4)', padding: '1rem 1.5rem', textAlign: 'center', fontWeight: 700, fontSize: '1rem' }}>
+                                            ₹{compareStock.price?.toLocaleString()}
+                                        </div>
+
+                                        {/* Row: P/E Ratio */}
+                                        <div style={{ background: 'rgba(21, 21, 26, 0.4)', padding: '1rem 1.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                            <BarChart3 size={16} color="var(--color-secondary)" /> <span style={{ fontSize: '0.9rem' }}>P/E Ratio</span>
+                                        </div>
+                                        <div style={{ background: 'rgba(21, 21, 26, 0.4)', padding: '1rem 1.5rem', textAlign: 'center', fontSize: '0.95rem' }}>
+                                            {data.snapshot.keyMetrics?.find(m => m.label.includes('P/E'))?.value || 'N/A'}
+                                        </div>
+                                        <div style={{ background: 'rgba(21, 21, 26, 0.4)', padding: '1rem 1.5rem', textAlign: 'center', fontSize: '0.95rem', color: 'var(--color-primary)' }}>
+                                            {compareStock.trailingPE ? compareStock.trailingPE.toFixed(2) : 'N/A'}
+                                        </div>
+
+                                        {/* Row: Market Cap */}
+                                        <div style={{ background: 'rgba(21, 21, 26, 0.4)', padding: '1rem 1.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                            <Zap size={16} color="var(--color-secondary)" /> <span style={{ fontSize: '0.9rem' }}>Market Cap</span>
+                                        </div>
+                                        <div style={{ background: 'rgba(21, 21, 26, 0.4)', padding: '1rem 1.5rem', textAlign: 'center', fontSize: '0.95rem' }}>
+                                            {data.snapshot.keyMetrics?.find(m => m.label.includes('Market Cap'))?.value || 'N/A'}
+                                        </div>
+                                        <div style={{ background: 'rgba(21, 21, 26, 0.4)', padding: '1rem 1.5rem', textAlign: 'center', fontSize: '0.95rem' }}>
+                                            {compareStock.marketCap} Cap
+                                        </div>
+
+                                        {/* Row: Sector */}
+                                        <div style={{ background: 'rgba(21, 21, 26, 0.4)', padding: '1rem 1.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                            <MessageSquare size={16} color="var(--color-secondary)" /> <span style={{ fontSize: '0.9rem' }}>Sector</span>
+                                        </div>
+                                        <div style={{ background: 'rgba(21, 21, 26, 0.4)', padding: '1rem 1.5rem', textAlign: 'center', fontSize: '0.85rem', color: 'var(--color-secondary)' }}>
+                                            {data.header.sector}
+                                        </div>
+                                        <div style={{ background: 'rgba(21, 21, 26, 0.4)', padding: '1rem 1.5rem', textAlign: 'center', fontSize: '0.85rem', color: 'var(--color-secondary)' }}>
+                                            {compareStock.sector}
+                                        </div>
+                                    </div>
+
+                                    <div style={{ marginTop: '2rem', textAlign: 'center' }}>
+                                        <p style={{ fontSize: '0.8rem', color: 'var(--color-secondary)', fontStyle: 'italic' }}>
+                                            High-conviction data synthesized via real-time yfinance metrics.
+                                        </p>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
         </>
     );
