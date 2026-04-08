@@ -39,8 +39,8 @@ app = Flask(__name__,
 
 # Enable CORS: restrictive in production, open in dev
 if os.environ.get("FLASK_ENV") == "production":
-    # Replace with your actual production domain when known
-    CORS(app, resources={r"/api/*": {"origins": "*"}}) 
+    # Allow all origins for API endpoints to support Vercel/Render split deployment
+    CORS(app, resources={r"/api/*": {"origins": "*"}, r"/v2/*": {"origins": "*"}}) 
 else:
     CORS(app)
 
