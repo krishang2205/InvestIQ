@@ -11,3 +11,5 @@ google-generativeai
 openai
 pydantic
 gunicorn
+requests-cache
+requests-ratelimiter

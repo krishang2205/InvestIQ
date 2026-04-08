@@ -1,13 +1,38 @@
 import logging
 import time
 import datetime
+import os
 from concurrent.futures import ThreadPoolExecutor
 from typing import Dict, Any
 
 import yfinance as yf
 import pandas as pd
+import requests
+from requests_cache import CacheMixin, SQLiteCache
+from requests_ratelimiter import LimiterMixin, MemoryQueueBucket
+from pyrate_limiter import Limiter, RequestRate, Duration
 
 logger = logging.getLogger(__name__)
+
+# --- SESSION CONFIGURATION ---
+# 1. Rate Limiting: 2 requests per second to be conservative
+# 2. Caching: Use a persistent SQLite cache in backend/data
+class CachedLimiterSession(CacheMixin, LimiterMixin, requests.Session):
+    pass
+
+# Ensure data directory exists
+_BACKEND_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+_DATA_DIR = os.path.join(os.path.dirname(_BACKEND_DIR), 'backend', 'data')
+if not os.path.exists(_DATA_DIR):
+    os.makedirs(_DATA_DIR, exist_ok=True)
+
+_SESSION = CachedLimiterSession(
+    limiter=Limiter(RequestRate(2, Duration.SECOND)),  # 2 per second
+    bucket_class=MemoryQueueBucket,
+    backend=SQLiteCache(os.path.join(_DATA_DIR, 'yfinance_cache.sqlite'), expire_after=3600), # 1 hour cache
+)
+_SESSION.headers['User-agent'] = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+# -----------------------------
 
 
 class FinancialDataAdapter:
@@ -34,11 +59,16 @@ class FinancialDataAdapter:
         ticker_symbol = self._resolve_symbol(symbol)
         logger.info(f"Fetching live market data for {ticker_symbol} via yfinance...")
 
-        try:
-            ticker = yf.Ticker(ticker_symbol)
-            
-            def _get_info():
-                return ticker.info
+        max_retries = 3
+        retry_delay = 2 # seconds
+        
+        for attempt in range(max_retries):
+            try:
+                # Use the global cached/limited session
+                ticker = yf.Ticker(ticker_symbol, session=_SESSION)
+                
+                def _get_info():
+                    return ticker.info
                 
             def _get_history():
                 return ticker.history(period="2y", interval="1d", auto_adjust=True)
@@ -168,12 +198,15 @@ class FinancialDataAdapter:
                 "volatility": self._compute_volatility(chart_data),
             }
 
-        except ValueError as ve:
-            logger.error(f"Symbol resolution failed for {ticker_symbol}: {ve}")
-            raise ConnectionError(f"Symbol not found: {ve}")
-        except Exception as e:
-            logger.error(f"yfinance data fetch failed for {ticker_symbol}: {e}")
-            raise ConnectionError(f"Failed to fetch live market data for {ticker_symbol}: {e}")
+            except Exception as e:
+                if "429" in str(e) and attempt < max_retries - 1:
+                    logger.warning(f"Rate limited (429) for {ticker_symbol}. Retrying in {retry_delay}s... (Attempt {attempt+1}/{max_retries})")
+                    time.sleep(retry_delay)
+                    retry_delay *= 2 # Exponential backoff
+                    continue
+                    
+                logger.error(f"yfinance data fetch failed for {ticker_symbol}: {e}")
+                raise ConnectionError(f"Failed to fetch live market data for {ticker_symbol}: {e}")
 
     # ────────────────────────────────────────────────────────────────────────────
     # Helpers
