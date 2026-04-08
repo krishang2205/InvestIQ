@@ -7,31 +7,23 @@ from typing import Dict, Any
 
 import yfinance as yf
 import pandas as pd
-import requests
-from requests_cache import CacheMixin, SQLiteCache
-from requests_ratelimiter import LimiterMixin, MemoryQueueBucket
-from pyrate_limiter import Limiter, RequestRate, Duration
+from requests_cache import CachedSession
 
 logger = logging.getLogger(__name__)
 
 # --- SESSION CONFIGURATION ---
-# 1. Rate Limiting: 2 requests per second to be conservative
-# 2. Caching: Use a persistent SQLite cache in backend/data
-class CachedLimiterSession(CacheMixin, LimiterMixin, requests.Session):
-    pass
-
-# Ensure data directory exists
+# Cached session: stores Yahoo Finance responses for 1 hour to avoid rate limits.
+# No extra rate-limiter dependency needed — we use a simple sleep-based throttle.
 _BACKEND_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-_DATA_DIR = os.path.join(os.path.dirname(_BACKEND_DIR), 'backend', 'data')
-if not os.path.exists(_DATA_DIR):
-    os.makedirs(_DATA_DIR, exist_ok=True)
+_DATA_DIR = os.path.join(os.path.dirname(_BACKEND_DIR), 'data')
+os.makedirs(_DATA_DIR, exist_ok=True)
 
-_SESSION = CachedLimiterSession(
-    limiter=Limiter(RequestRate(2, Duration.SECOND)),  # 2 per second
-    bucket_class=MemoryQueueBucket,
-    backend=SQLiteCache(os.path.join(_DATA_DIR, 'yfinance_cache.sqlite'), expire_after=3600), # 1 hour cache
+_SESSION = CachedSession(
+    cache_name=os.path.join(_DATA_DIR, 'yfinance_cache'),
+    backend='sqlite',
+    expire_after=3600,  # 1 hour cache
 )
-_SESSION.headers['User-agent'] = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+_SESSION.headers['User-agent'] = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
 # -----------------------------
 
 
