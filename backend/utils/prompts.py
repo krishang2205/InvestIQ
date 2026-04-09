@@ -90,7 +90,7 @@ deep, specific, quantitative analysis grounded ONLY in the real numbers and news
 {preferences_text}
 
 [OUTPUT REQUIREMENTS — STRICTLY ENFORCED]
-- Every text field MUST be 3+ detailed sentences strictly anchored to the REAL NUMBERS above.
+- Every text field MUST be 4+ detailed sentences strictly anchored to the REAL NUMBERS above.
 - PROHIBITION: Do NOT use phrases like "data is not available" or "is currently not available".
 - companyProfile.ceo MUST be exactly "{ceo}" (verified).
 - companyProfile.founded, headquarters, employees must be accurate for {symbol}.
@@ -128,7 +128,7 @@ Generate the final synthesis report as ONLY this exact JSON schema. No other tex
             "activityLevel": "High|Medium|Low",
             "netBuyingPercent": 12,
             "sharesTradedLast30Days": 2500000,
-            "analysis": "act as well experinced inverstor ,and give3-sentence insider trading pattern analysis"
+            "analysis": "Act as a well-experienced investor and provide a 4-sentence insider trading pattern analysis."
         }},
         "supplyChainRisk": {{
             "criticalDependencies": [
@@ -148,7 +148,7 @@ Generate the final synthesis report as ONLY this exact JSON schema. No other tex
             "webTrafficGrowth": 18,
             "employeeMoraleScore": 71,
             "githubRepoActivity": 15,
-            "summary": "3-sentence alt data analysis. NOTE: If industry is Banking/Non-Tech, githubRepoActivity MUST be very low (e.g. 0-15) and text must explain why open-source metrics do not apply."
+            "summary": "Provide a 4-sentence alternative data analysis. NOTE: If industry is Banking/Non-Tech, githubRepoActivity MUST be very low (e.g. 0-15) and text must explain why open-source metrics do not apply."
         }}
     }},
     "snapshot": {{

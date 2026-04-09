@@ -46,9 +46,12 @@ supabase/
 # Databases
 *.sqlite3
 backend/data/*.sqlite3
+backend/data/*.sqlite
+*.sqlite
 
 # Cache and Temp
 .pytest_cache/
 **/ .pytest_cache/
 tmp/
 production-backend-sim/
+scratch/

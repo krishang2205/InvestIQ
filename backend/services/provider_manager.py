@@ -30,7 +30,7 @@ class AIProviderManager:
         self.xai_key    = conf.xai_api_key or (self.groq_key if self.groq_key and self.groq_key.startswith("xai-") else None)
         # Tune Gemini for low-latency report generation by default.
         self.gemini_timeout_sec = int(os.getenv("GEMINI_TIMEOUT_SEC", "12"))
-        self.gemini_max_output_tokens = int(os.getenv("GEMINI_MAX_OUTPUT_TOKENS", "2048"))
+        self.gemini_max_output_tokens = int(os.getenv("GEMINI_MAX_OUTPUT_TOKENS", "4096"))
         self.gemini_retry_on_invalid_json = os.getenv("GEMINI_RETRY_ON_INVALID_JSON", "false").lower() in ("1", "true", "yes", "on")
         self.gemini_max_retries = int(os.getenv("GEMINI_MAX_RETRIES", "3"))
         self.gemini_cooldown_sec = int(os.getenv("GEMINI_COOLDOWN_SEC", "180"))
@@ -242,8 +242,24 @@ class AIProviderManager:
         except Exception as e:
             msg = str(e).lower()
             if "429" in msg or "quota" in msg:
-                logger.error("🔴 Gemini Rate Limit/Quota Reached (429) — triggering instant failover.")
-                self.gemini_cooldown_until = time.time() + self.gemini_cooldown_sec
+                logger.warning("🔴 Gemini Rate Limit (429) hit. Retrying once in 2s...")
+                time.sleep(2)
+                try:
+                    retry_response = self.gemini_model.generate_content(
+                        prompt,
+                        generation_config=genai.GenerationConfig(
+                            response_mime_type="application/json",
+                            temperature=0.0,
+                            max_output_tokens=self.gemini_max_output_tokens,
+                        ),
+                        request_options={"timeout": self.gemini_timeout_sec + 5},
+                    )
+                    data = self._parse_json_response(self._extract_gemini_text(retry_response))
+                    logger.info(f"✅ Gemini recovered from 429 on retry in {time.time() - started:.2f}s.")
+                    return data
+                except Exception as retry_e:
+                    logger.error(f"🔴 Gemini retry failed after 429: {retry_e}")
+                    self.gemini_cooldown_until = time.time() + self.gemini_cooldown_sec
             elif "notfound" in msg or "model not found" in msg or "is not found for api version" in msg:
                 logger.warning(f"Gemini model unsupported at runtime ({self.GEMINI_MODEL}); rotating candidate list.")
                 if self._switch_to_next_gemini_model():
@@ -408,6 +424,7 @@ class AIProviderManager:
                     ],
                     response_format={"type": "json_object"},
                     temperature=0.2,
+                    max_tokens=self.gemini_max_output_tokens,
                 )
                 raw = response.choices[0].message.content
                 data = json.loads(raw)
@@ -606,20 +623,21 @@ class AIProviderManager:
                 if meta.get("sector"): data["companyProfile"]["sector"] = meta["sector"]
                 if meta.get("industry"): data["companyProfile"]["industry"] = meta["industry"]
 
-            if "riskFactors" in data:
+            if "riskSignals" in data:
                 # ── 5a. Remove risk contradictions (Dividends/Debt) ─────────────
                 if div_raw and div_raw > 0:
-                    data["riskFactors"] = [r for r in data["riskFactors"] if "lack of dividend" not in r.lower() and "no dividend" not in r.lower()]
+                    data["riskSignals"] = [r for r in data["riskSignals"] if not any(x in (r.get("text", "") if isinstance(r, dict) else str(r)).lower() for x in ["lack of dividend", "no dividend"])]
                 
-                if de_ratio and de_ratio < 20: # Higher threshold for safety
-                    data["riskFactors"] = [r for r in data["riskFactors"] if "high debt" not in r.lower()]
+                de_ratio = fund.get("debt_to_equity")
+                if de_ratio is not None and float(de_ratio) < 20: # Higher threshold for safety
+                    data["riskSignals"] = [r for r in data["riskSignals"] if "high debt" not in (r.get("text", "") if isinstance(r, dict) else str(r)).lower()]
 
                 # ── 5b. Purge generic 'filler' risks for blue-chips ─────────────
                 # If it's a large cap (> 500B INR), certain generic risks are likely hallucinations
                 mcap_inr = fund.get("market_cap_billions", 0)
-                if mcap_inr > 500:
+                if mcap_inr and float(mcap_inr) > 500:
                     generic_fillers = ["lack of transparency", "financial reporting", "difficult for investors to assess"]
-                    data["riskFactors"] = [r for r in data["riskFactors"] if not any(f in r.lower() for f in generic_fillers)]
+                    data["riskSignals"] = [r for r in data["riskSignals"] if not any(f in (r.get("text", "") if isinstance(r, dict) else str(r)).lower() for f in generic_fillers)]
         except Exception as e:
             logger.warning(f"Logic consistency patch failed: {e}")
 
