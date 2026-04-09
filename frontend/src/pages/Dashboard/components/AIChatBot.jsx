@@ -5,13 +5,13 @@ import { API_BASE_URL } from '../../../services/api';
 const AIChatBot = ({ isOpen, onClose, reportData, jobId }) => {
     const [activeTab, setActiveTab] = useState('chat'); // 'chat' or 'simulate'
     const [messages, setMessages] = useState([
-        { role: 'assistant', content: `I am KIMS AI—your bridge from complexity to conviction. Engineered by Darji, Jingar, and Dixit, I've synthesized the intelligence for ${reportData?.header?.company}. How shall we navigate the catalysts today?` }
+        { role: 'assistant', content: `I am KIMS AI—your bridge from complexity to conviction. Engineered by Darji, Jingar, and Dixit, Panchal, I've synthesized the intelligence for ${reportData?.header?.company}. How shall we navigate the catalysts today?` }
     ]);
     const [inputValue, setInputValue] = useState('');
     const [isTyping, setIsTyping] = useState(false);
     const [simulationResult, setSimulationResult] = useState(null);
     const [isSimulating, setIsSimulating] = useState(false);
-    
+
     const messagesEndRef = useRef(null);
 
     const scrollToBottom = () => {
@@ -119,21 +119,21 @@ const AIChatBot = ({ isOpen, onClose, reportData, jobId }) => {
                     </div>
                     <div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                            <h4 style={{ 
-                                fontSize: '1rem', 
-                                fontWeight: 800, 
+                            <h4 style={{
+                                fontSize: '1rem',
+                                fontWeight: 800,
                                 margin: 0,
                                 background: 'linear-gradient(90deg, #fff 0%, var(--color-accent) 100%)',
                                 WebkitBackgroundClip: 'text',
                                 WebkitTextFillColor: 'transparent',
                                 letterSpacing: '0.5px'
                             }}>KIMS AI</h4>
-                            <span className="shimmer" style={{ 
-                                fontSize: '0.6rem', 
-                                padding: '2px 6px', 
-                                background: 'var(--color-accent)', 
-                                color: 'var(--color-bg)', 
-                                borderRadius: '4px', 
+                            <span className="shimmer" style={{
+                                fontSize: '0.6rem',
+                                padding: '2px 6px',
+                                background: 'var(--color-accent)',
+                                color: 'var(--color-bg)',
+                                borderRadius: '4px',
                                 fontWeight: 800,
                                 letterSpacing: '1px',
                                 textShadow: '0 0 5px rgba(0,0,0,0.3)'
@@ -155,7 +155,7 @@ const AIChatBot = ({ isOpen, onClose, reportData, jobId }) => {
                 borderBottom: '1px solid var(--glass-border)',
                 background: 'rgba(255,255,255,0.02)'
             }}>
-                <button 
+                <button
                     onClick={() => setActiveTab('chat')}
                     style={{
                         flex: 1,
@@ -174,7 +174,7 @@ const AIChatBot = ({ isOpen, onClose, reportData, jobId }) => {
                 >
                     <MessageSquare size={14} /> Chat
                 </button>
-                <button 
+                <button
                     onClick={() => setActiveTab('simulate')}
                     style={{
                         flex: 1,
@@ -208,31 +208,31 @@ const AIChatBot = ({ isOpen, onClose, reportData, jobId }) => {
                                 flexDirection: 'column',
                                 alignItems: msg.role === 'user' ? 'flex-end' : 'flex-start'
                             }}>
-                                    <div style={{
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: '0.4rem',
-                                        marginBottom: '0.25rem'
-                                    }}>
-                                        <span style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--color-accent)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                                            {msg.role === 'assistant' ? 'KIMS AI' : 'You'}
-                                        </span>
-                                        {msg.role === 'assistant' && (
-                                            <div style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: '#4ade80', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '6px', color: '#fff' }}>✓</div>
-                                        )}
-                                    </div>
-                                    <div style={{
-                                        padding: '0.875rem 1rem',
-                                        borderRadius: msg.role === 'user' ? '16px 16px 4px 16px' : '16px 16px 16px 4px',
-                                        backgroundColor: msg.role === 'user' ? 'var(--color-accent)' : 'rgba(255,255,255,0.05)',
-                                        color: msg.role === 'user' ? 'var(--color-bg)' : 'var(--color-primary)',
-                                        fontSize: '0.9rem',
-                                        lineHeight: '1.5',
-                                        border: msg.role === 'user' ? 'none' : '1px solid var(--glass-border)',
-                                        boxShadow: msg.role === 'assistant' ? '0 4px 15px rgba(0,0,0,0.2)' : 'none'
-                                    }}>
-                                        {msg.content}
-                                    </div>
+                                <div style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '0.4rem',
+                                    marginBottom: '0.25rem'
+                                }}>
+                                    <span style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--color-accent)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                                        {msg.role === 'assistant' ? 'KIMS AI' : 'You'}
+                                    </span>
+                                    {msg.role === 'assistant' && (
+                                        <div style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: '#4ade80', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '6px', color: '#fff' }}>✓</div>
+                                    )}
+                                </div>
+                                <div style={{
+                                    padding: '0.875rem 1rem',
+                                    borderRadius: msg.role === 'user' ? '16px 16px 4px 16px' : '16px 16px 16px 4px',
+                                    backgroundColor: msg.role === 'user' ? 'var(--color-accent)' : 'rgba(255,255,255,0.05)',
+                                    color: msg.role === 'user' ? 'var(--color-bg)' : 'var(--color-primary)',
+                                    fontSize: '0.9rem',
+                                    lineHeight: '1.5',
+                                    border: msg.role === 'user' ? 'none' : '1px solid var(--glass-border)',
+                                    boxShadow: msg.role === 'assistant' ? '0 4px 15px rgba(0,0,0,0.2)' : 'none'
+                                }}>
+                                    {msg.content}
+                                </div>
                             </div>
                         ))}
                         {isTyping && (
@@ -291,34 +291,34 @@ const AIChatBot = ({ isOpen, onClose, reportData, jobId }) => {
             {/* Input Footer (Chat only) */}
             {activeTab === 'chat' && (
                 <div style={{ padding: '1rem', borderTop: '1px solid var(--glass-border)', background: 'rgba(0,0,0,0.2)' }}>
-                    <div style={{ 
-                        display: 'flex', 
-                        background: 'rgba(255,255,255,0.03)', 
-                        borderRadius: '16px', 
-                        padding: '0.5rem', 
+                    <div style={{
+                        display: 'flex',
+                        background: 'rgba(255,255,255,0.03)',
+                        borderRadius: '16px',
+                        padding: '0.5rem',
                         border: '1px solid var(--glass-border)',
                         boxShadow: 'inset 0 2px 10px rgba(0,0,0,0.2)',
                         transition: 'all 0.3s'
                     }}>
-                        <input 
-                            type="text" 
-                            value={inputValue} 
-                            onChange={(e) => setInputValue(e.target.value)} 
+                        <input
+                            type="text"
+                            value={inputValue}
+                            onChange={(e) => setInputValue(e.target.value)}
                             onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
-                            placeholder="Type reaching the Alpha..." 
-                            style={{ flex: 1, background: 'transparent', border: 'none', color: '#fff', padding: '0.5rem 0.8rem', outline: 'none', fontSize: '0.9rem' }} 
+                            placeholder="Type reaching the Alpha..."
+                            style={{ flex: 1, background: 'transparent', border: 'none', color: '#fff', padding: '0.5rem 0.8rem', outline: 'none', fontSize: '0.9rem' }}
                         />
-                        <button 
-                            onClick={handleSendMessage} 
-                            style={{ 
-                                width: '40px', 
-                                height: '40px', 
-                                borderRadius: '12px', 
-                                backgroundColor: 'var(--color-accent)', 
-                                color: 'var(--color-bg)', 
-                                display: 'flex', 
-                                alignItems: 'center', 
-                                justifyContent: 'center', 
+                        <button
+                            onClick={handleSendMessage}
+                            style={{
+                                width: '40px',
+                                height: '40px',
+                                borderRadius: '12px',
+                                backgroundColor: 'var(--color-accent)',
+                                color: 'var(--color-bg)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
                                 cursor: 'pointer',
                                 boxShadow: '0 4px 10px var(--color-accent-glow)',
                                 transition: 'transform 0.2s'
