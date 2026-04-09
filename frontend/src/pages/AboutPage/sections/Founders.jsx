@@ -16,6 +16,12 @@ const founders = [
     },
     {
         name: "Mohit Dixit",
+        role: "Co-Founder & CFO",
+        bio: "Strategic financial leader managing our fiscal roadmap and ensuring the economic integrity of our advanced AI platform.",
+        image: ""
+    },
+    {
+        name: "Sakshi Panchal",
         role: "Co-Founder & COO",
         bio: "Operations strategist ensuring our product delivers tangible value and seamless experiences.",
         image: ""

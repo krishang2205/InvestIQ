@@ -5,7 +5,8 @@ import ScrollReveal from '../../../components/ui/ScrollReveal';
 const founders = [
     { name: "Krishang Darji", role: "Co-Founder & CEO" },
     { name: "Ishan Jingar", role: "Co-Founder & CTO" },
-    { name: "Mohit Dixit", role: "Co-Founder & COO" }
+    { name: "Mohit Dixit", role: "Co-Founder & CFO" },
+    { name: "Sakshi Panchal", role: "Co-Founder & COO" }
 ];
 
 const Vision = () => {
