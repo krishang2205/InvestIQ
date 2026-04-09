@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { FileText, Sparkles, Download, Loader2, AlertTriangle } from 'lucide-react';
+import { FileText, Sparkles, Download, Loader2, AlertTriangle, Trash2 } from 'lucide-react';
 import StockSearch from './components/StockSearch';
 import ReportScope from './components/ReportScope';
 import AnalysisPreferences from './components/AnalysisPreferences';
 import ReportView from './components/ReportView';
 import api from '../../services/api';
+
+const USER_ID = "local-user";
 
 const IntelligenceReportPage = () => {
     const [selectedStock, setSelectedStock] = useState(null);
@@ -33,7 +35,7 @@ const IntelligenceReportPage = () => {
 
     const fetchHistory = async () => {
         try {
-            const data = await api.getReportHistory();
+            const data = await api.getReportHistory(USER_ID);
             if (data.status === 'success') {
                 setHistory(data.data);
             }
@@ -58,7 +60,7 @@ const IntelligenceReportPage = () => {
             const payload = { 
                 symbol: selectedStock.symbol || selectedStock.name, 
                 preferences,
-                user_id: "00000000-0000-0000-0000-000000000000" 
+                user_id: USER_ID 
             };
 
             const data = await api.generateReport(payload);
@@ -133,6 +135,23 @@ const IntelligenceReportPage = () => {
         if (item.report_data) {
             setReportData(item.report_data);
             setActiveJobId(item.id);
+        }
+    };
+
+    const handleDeleteReport = async (e, jobId) => {
+        e.stopPropagation();
+        if (!window.confirm("Are you sure you want to delete this report?")) return;
+
+        try {
+            const res = await api.deleteReport(jobId);
+            if (res.status === 'success') {
+                fetchHistory();
+            } else {
+                alert("Failed to delete report: " + (res.error || "Unknown error"));
+            }
+        } catch (err) {
+            console.error("Delete error:", err);
+            alert("An error occurred while deleting the report.");
         }
     };
 
@@ -284,20 +303,48 @@ const IntelligenceReportPage = () => {
                                     <p style={{ fontSize: '0.875rem', color: 'var(--color-secondary)' }}>Status: {item.status.toUpperCase()}</p>
                                 </div>
                             </div>
-                            {item.status === 'completed' && (
-                                <button onClick={() => loadHistoricalReport(item)} style={{
-                                    background: 'none',
-                                    color: 'var(--color-accent)',
-                                    padding: '0.5rem',
-                                    borderRadius: '8px',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '0.5rem',
-                                    cursor: 'pointer'
-                                }}>
-                                    View Report
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                {item.status === 'completed' && (
+                                    <button onClick={() => loadHistoricalReport(item)} style={{
+                                        background: 'rgba(209, 199, 157, 0.1)',
+                                        color: 'var(--color-accent)',
+                                        padding: '0.5rem 1rem',
+                                        borderRadius: '8px',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '0.5rem',
+                                        fontWeight: 500,
+                                        cursor: 'pointer',
+                                        border: '1px solid rgba(209, 199, 157, 0.2)'
+                                    }}>
+                                        View Report
+                                    </button>
+                                )}
+                                <button
+                                    onClick={(e) => handleDeleteReport(e, item.id)}
+                                    title="Delete Report"
+                                    style={{
+                                        background: 'rgba(239, 68, 68, 0.1)',
+                                        color: 'var(--color-risk-high)',
+                                        padding: '0.6rem',
+                                        borderRadius: '8px',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        cursor: 'pointer',
+                                        border: '1px solid rgba(239, 68, 68, 0.2)',
+                                        transition: 'all 0.2s'
+                                    }}
+                                    onMouseOver={(e) => {
+                                        e.currentTarget.style.background = 'rgba(239, 68, 68, 0.2)';
+                                    }}
+                                    onMouseOut={(e) => {
+                                        e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)';
+                                    }}
+                                >
+                                    <Trash2 size={18} />
                                 </button>
-                            )}
+                            </div>
                         </div>
                     )) : (
                         <p style={{ color: 'var(--color-secondary)', textAlign: 'center' }}>No historical reports found.</p>

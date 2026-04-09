@@ -47,11 +47,33 @@ def generate_report_v2():
 
 @reports_v2_bp.route('/history', methods=['GET'])
 def get_report_history():
+    user_id = request.args.get("user_id")
     db = report_di.get_db_client()
     try:
-        res = db.table("reports").select("*").order("created_at", desc=True).limit(10).execute()
+        query = db.table("reports").select("*")
+        if user_id:
+            query = query.eq("user_id", user_id)
+        
+        res = query.order("created_at", desc=True).limit(20).execute()
         return jsonify({"status": "success", "data": res.data}), 200
     except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@reports_v2_bp.route('/<job_id>', methods=['DELETE'])
+def delete_report(job_id):
+    db = report_di.get_db_client()
+    try:
+        # We perform a delete based on the primary key (id/job_id)
+        res = db.table("reports").delete().eq("id", job_id).execute()
+        
+        # Also ensure it's cleared from the in-memory mock if present
+        from reports.dependencies import MOCK_REPORTS_DB
+        if job_id in MOCK_REPORTS_DB:
+            del MOCK_REPORTS_DB[job_id]
+            
+        return jsonify({"status": "success", "message": f"Report {job_id} deleted."}), 200
+    except Exception as e:
+        logger.error(f"Error deleting report {job_id}: {e}")
         return jsonify({"error": str(e)}), 500
 
 @reports_v2_bp.route('/status/<job_id>', methods=['GET'])

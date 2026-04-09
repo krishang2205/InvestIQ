@@ -35,6 +35,10 @@ class MockTable:
         self._payload = payload
         return self
 
+    def delete(self):
+        self._current_op = 'delete'
+        return self
+
     def select(self, cols):
         self._current_op = 'select'
         return self
@@ -69,12 +73,22 @@ class MockTable:
                 MOCK_REPORTS_DB[self._where_val].update(self._payload)
             return MockResponse(data=[self._payload])
 
+        elif self._current_op == 'delete':
+            if self._where_col == 'id' and self._where_val in MOCK_REPORTS_DB:
+                del MOCK_REPORTS_DB[self._where_val]
+                return MockResponse(data=[{"id": self._where_val}])
+            return MockResponse(data=[])
+
         elif self._current_op == 'select':
             if self._where_col == 'id':
                 val = MOCK_REPORTS_DB.get(self._where_val)
                 return MockResponse(data=[val] if val else [])
             else:
                 data_list = list(MOCK_REPORTS_DB.values())
+                # Filter by provided column if any
+                if self._where_col:
+                    data_list = [d for d in data_list if d.get(self._where_col) == self._where_val]
+                
                 data_list.sort(key=lambda x: x.get('created_at', ''), reverse=True)
                 if self._limit:
                     data_list = data_list[:self._limit]

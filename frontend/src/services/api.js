@@ -211,8 +211,16 @@ const api = {
         return await response.json();
     },
 
-    getReportHistory: async () => {
-        const response = await fetch(`${API_BASE_URL}/v2/reports/history`);
+    getReportHistory: async (userId) => {
+        const url = userId ? `${API_BASE_URL}/v2/reports/history?user_id=${userId}` : `${API_BASE_URL}/v2/reports/history`;
+        const response = await fetch(url);
+        return await response.json();
+    },
+
+    deleteReport: async (jobId) => {
+        const response = await fetch(`${API_BASE_URL}/v2/reports/${jobId}`, {
+            method: 'DELETE'
+        });
         return await response.json();
     },
 };
