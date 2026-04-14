@@ -261,3 +261,10 @@
 .animating {
     animation: fadeIn 0.5s ease-out forwards;
 }
+
+@media (max-width: 768px) {
+    .section { padding: 4rem 1rem; }
+    .mainHeading { font-size: 2rem; }
+    .title { font-size: 2rem; }
+    .tabs { flex-wrap: wrap; justify-content: center; }
+}

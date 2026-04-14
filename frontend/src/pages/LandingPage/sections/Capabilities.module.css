@@ -145,3 +145,8 @@
 .learnMore:hover {
     transform: translateX(4px);
 }
+
+@media (max-width: 768px) {
+    .section { padding: 4rem 1rem; }
+    .heading { font-size: 2rem; }
+}

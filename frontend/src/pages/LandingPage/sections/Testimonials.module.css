@@ -70,3 +70,8 @@
     line-height: 1.6;
     font-size: 1rem;
 }
+
+@media (max-width: 768px) {
+    .section { padding: 4rem 1rem; }
+    .heading { font-size: 2rem; }
+}

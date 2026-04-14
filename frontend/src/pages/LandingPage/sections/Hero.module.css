@@ -421,3 +421,14 @@
         text-align: center;
     }
 }
+
+@media (max-width: 768px) {
+    .ctaGroup {
+        flex-direction: column;
+        width: 100%;
+    }
+    .button {
+        width: 100%;
+        text-align: center;
+    }
+}

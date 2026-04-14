@@ -1,18 +1,34 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { MessageSquare, Send, X, Sparkles, Zap, ChevronRight, Loader2 } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
 import { API_BASE_URL } from '../../../../services/api';
 
 const PortfolioChatBot = ({ isOpen, onClose, holdings, intelligence, summary, xirr }) => {
     const [activeTab, setActiveTab] = useState('chat'); // 'chat' or 'simulate'
-    const [messages, setMessages] = useState([
-        { role: 'assistant', content: `Namaste. I am KIMS AI—your Indian Market Strategist.\n\nYour **1st Structural Diagnosis is FREE**. Subsequent deep-dives into your ${holdings?.length || 0} holdings and unlimited Macro Simulations are reserved for **InvestIQ Premium** members. How shall we utilize your free credits to dissect your NSE/BSE exposure today?\n\n*Note: Analytical researcher only. Not SEBI-registered.*` }
-    ]);
+    const [messages, setMessages] = useState([]);
+    const [welcomeSet, setWelcomeSet] = useState(false);
     const [inputValue, setInputValue] = useState('');
     const [isTyping, setIsTyping] = useState(false);
     const [simulationResult, setSimulationResult] = useState(null);
     const [isSimulating, setIsSimulating] = useState(false);
     
     const messagesEndRef = useRef(null);
+
+    useEffect(() => {
+        if (isOpen && holdings?.length > 0 && !welcomeSet) {
+            setMessages([{ 
+                role: 'assistant', 
+                content: `Namaste! I am KIMS AI. I've analyzed your **${holdings.length} holdings** and am ready to discuss catalysts or structural improvements. How can I help today?` 
+            }]);
+            setWelcomeSet(true);
+        } else if (isOpen && (!holdings || holdings.length === 0) && !welcomeSet) {
+            setMessages([{ 
+                role: 'assistant', 
+                content: "Namaste! I am KIMS AI. I'm ready to help you analyze your portfolio. It looks like you haven't added any holdings yet—how can I assist you in getting started?" 
+            }]);
+            setWelcomeSet(true);
+        }
+    }, [isOpen, holdings, welcomeSet]);
 
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -258,7 +274,14 @@ const PortfolioChatBot = ({ isOpen, onClose, holdings, intelligence, summary, xi
                                         border: msg.role === 'user' ? 'none' : '1px solid var(--glass-border)',
                                         boxShadow: msg.role === 'assistant' ? '0 4px 15px rgba(0,0,0,0.2)' : 'none'
                                     }}>
-                                        {msg.content}
+                                        <ReactMarkdown components={{
+                                            p: ({node, ...props}) => <p style={{ margin: 0, marginBottom: props.last ? 0 : '0.5rem' }} {...props} />,
+                                            ul: ({node, ...props}) => <ul style={{ paddingLeft: '1.2rem', margin: '0.5rem 0' }} {...props} />,
+                                            ol: ({node, ...props}) => <ol style={{ paddingLeft: '1.2rem', margin: '0.5rem 0' }} {...props} />,
+                                            li: ({node, ...props}) => <li style={{ marginBottom: '0.25rem' }} {...props} />,
+                                        }}>
+                                            {msg.content}
+                                        </ReactMarkdown>
                                     </div>
                             </div>
                         ))}

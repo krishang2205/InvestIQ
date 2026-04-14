@@ -61,3 +61,8 @@
     line-height: 1.5;
     font-size: 0.9375rem;
 }
+
+@media (max-width: 768px) {
+    .section { padding: 4rem 1rem; }
+    .heading { font-size: 2rem; }
+}

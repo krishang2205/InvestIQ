@@ -180,3 +180,8 @@
     display: flex;
     align-items: flex-end;
 }
+
+@media (max-width: 768px) {
+    .section { padding: 4rem 1rem; }
+    .heading { font-size: 2rem; }
+}

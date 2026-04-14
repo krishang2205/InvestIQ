@@ -1,18 +1,28 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { MessageSquare, Send, X, Minimize2, Sparkles, Zap, ShieldAlert, ChevronRight, Info, Loader2 } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
 import { API_BASE_URL } from '../../../services/api';
 
 const AIChatBot = ({ isOpen, onClose, reportData, jobId }) => {
     const [activeTab, setActiveTab] = useState('chat'); // 'chat' or 'simulate'
-    const [messages, setMessages] = useState([
-        { role: 'assistant', content: `I am KIMS AI—your bridge from complexity to conviction. Engineered by Darji, Jingar, and Dixit, Panchal, I've synthesized the intelligence for ${reportData?.header?.company}. How shall we navigate the catalysts today?` }
-    ]);
+    const [messages, setMessages] = useState([]);
+    const [welcomeSet, setWelcomeSet] = useState(false);
     const [inputValue, setInputValue] = useState('');
     const [isTyping, setIsTyping] = useState(false);
     const [simulationResult, setSimulationResult] = useState(null);
     const [isSimulating, setIsSimulating] = useState(false);
 
     const messagesEndRef = useRef(null);
+
+    useEffect(() => {
+        if (isOpen && reportData && !welcomeSet) {
+            setMessages([{ 
+                role: 'assistant', 
+                content: `I am KIMS AI—analyzing catalysts for **${reportData?.header?.company || 'this stock'}**. How shall we navigate the analysis today?` 
+            }]);
+            setWelcomeSet(true);
+        }
+    }, [isOpen, reportData, welcomeSet]);
 
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -231,7 +241,14 @@ const AIChatBot = ({ isOpen, onClose, reportData, jobId }) => {
                                     border: msg.role === 'user' ? 'none' : '1px solid var(--glass-border)',
                                     boxShadow: msg.role === 'assistant' ? '0 4px 15px rgba(0,0,0,0.2)' : 'none'
                                 }}>
-                                    {msg.content}
+                                    <ReactMarkdown components={{
+                                        p: ({node, ...props}) => <p style={{ margin: 0, marginBottom: props.last ? 0 : '0.5rem' }} {...props} />,
+                                        ul: ({node, ...props}) => <ul style={{ paddingLeft: '1.2rem', margin: '0.5rem 0' }} {...props} />,
+                                        ol: ({node, ...props}) => <ol style={{ paddingLeft: '1.2rem', margin: '0.5rem 0' }} {...props} />,
+                                        li: ({node, ...props}) => <li style={{ marginBottom: '0.25rem' }} {...props} />,
+                                    }}>
+                                        {msg.content}
+                                    </ReactMarkdown>
                                 </div>
                             </div>
                         ))}
