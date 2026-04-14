@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { Menu, X } from 'lucide-react';
 import styles from './Header.module.css';
 
 const Header = () => {
@@ -17,8 +18,11 @@ const Header = () => {
         return () => window.removeEventListener('scroll', handleScroll);
     }, []);
 
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
     const handleNavClick = (e, id) => {
         e.preventDefault();
+        setIsMobileMenuOpen(false);
         if (location.pathname === '/') {
             document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
         } else {
@@ -50,11 +54,35 @@ const Header = () => {
                 </div>
 
                 <div className={styles.rightSection}>
-                    <button className={styles.authButton} onClick={() => openAuthModal('login')}>
+                    <button className={`${styles.authButton} ${styles.desktopOnly}`} onClick={() => openAuthModal('login')}>
                         Sign In / Sign Up
+                    </button>
+                    <button 
+                        className={styles.mobileMenuBtn} 
+                        onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                    >
+                        {isMobileMenuOpen ? <X size={24} color="white" /> : <Menu size={24} color="white" />}
                     </button>
                 </div>
             </div>
+
+            {/* Mobile Navigation Dropdown */}
+            {isMobileMenuOpen && (
+                <div className={styles.mobileNav}>
+                    <Link to="/" className={styles.mobileLink} onClick={() => setIsMobileMenuOpen(false)}>Product</Link>
+                    <Link to="/about" className={styles.mobileLink} onClick={() => setIsMobileMenuOpen(false)}>About Us</Link>
+                    <a href="#features" className={styles.mobileLink} onClick={(e) => handleNavClick(e, 'features')}>Features</a>
+                    <a href="#testimonials" className={styles.mobileLink} onClick={(e) => handleNavClick(e, 'testimonials')}>Reviews</a>
+                    <a href="#pricing" className={styles.mobileLink} onClick={(e) => handleNavClick(e, 'pricing')}>Pricing</a>
+                    
+                    <button className={styles.mobileAuthButton} onClick={() => {
+                        setIsMobileMenuOpen(false);
+                        openAuthModal('login');
+                    }}>
+                        Sign In / Sign Up
+                    </button>
+                </div>
+            )}
         </header>
     );
 };

@@ -94,3 +94,10 @@
         align-items: center;
     }
 }
+
+@media (max-width: 768px) {
+    .footer {
+        padding: 4rem 1rem 2rem;
+    }
+    .grid { gap: 2rem; margin-bottom: 3rem; }
+}
