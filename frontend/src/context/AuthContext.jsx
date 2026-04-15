@@ -59,13 +59,26 @@ export const AuthProvider = ({ children }) => {
     };
 
     const signInWithGoogle = async () => {
-        const { error } = await supabase.auth.signInWithOAuth({
-            provider: 'google',
-            options: {
-                redirectTo: window.location.origin
-            }
-        });
-        if (error) throw error;
+        try {
+            // Ensure origin is clean of trailing slashes for strict redirection matching
+            const redirectUrl = window.location.origin.replace(/\/$/, "");
+            console.log("Supabase Auth Redirect Debug - Origin:", redirectUrl);
+            
+            const { error } = await supabase.auth.signInWithOAuth({
+                provider: 'google',
+                options: {
+                    redirectTo: redirectUrl,
+                    queryParams: {
+                        prompt: 'select_account',
+                        access_type: 'offline',
+                    }
+                }
+            });
+            if (error) throw error;
+        } catch (error) {
+            console.error("Google Sign-In Error:", error);
+            throw error;
+        }
     };
 
     const loginWithMagicLink = async (email) => {
