@@ -3,7 +3,7 @@ import { NavLink } from 'react-router-dom';
 import { LayoutDashboard, PieChart, Activity, Settings, LogOut, FileText, Zap, GraduationCap } from 'lucide-react';
 import { useAuth } from '../../../context/AuthContext';
 
-const Sidebar = () => {
+const Sidebar = ({ isOpen, onClose }) => {
     const { signOut } = useAuth();
 
     const navItems = [
@@ -17,7 +17,7 @@ const Sidebar = () => {
     ];
 
     return (
-        <aside className="glass-panel" style={{
+        <aside className="glass-panel sidebar-container" style={{
             width: 'var(--sidebar-width)',
             height: '100vh',
             position: 'fixed',
@@ -26,9 +26,10 @@ const Sidebar = () => {
             display: 'flex',
             flexDirection: 'column',
             padding: '2rem 1.5rem',
-            zIndex: 50
+            zIndex: 50,
+            transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
         }}>
-            <div style={{ marginBottom: '3rem', paddingLeft: '0.5rem' }}>
+            <div style={{ marginBottom: '3rem', paddingLeft: '0.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <h1 className="text-gradient-gold" style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>InvestIQ</h1>
             </div>
 
@@ -37,6 +38,7 @@ const Sidebar = () => {
                     <NavLink
                         key={item.path}
                         to={item.path}
+                        onClick={() => window.innerWidth <= 1024 && onClose()}
                         style={({ isActive }) => ({
                             display: 'flex',
                             alignItems: 'center',
@@ -71,6 +73,20 @@ const Sidebar = () => {
                 <LogOut size={20} style={{ marginRight: '0.75rem' }} />
                 Sign Out
             </button>
+
+            <style>{`
+                @media (max-width: 1024px) {
+                    .sidebar-container {
+                        transform: ${isOpen ? 'translateX(0)' : 'translateX(-100%)'};
+                        box-shadow: ${isOpen ? '20px 0 25px -5px rgba(0, 0, 0, 0.3)' : 'none'};
+                    }
+                }
+                @media (min-width: 1025px) {
+                    .sidebar-container {
+                        transform: translateX(0) !important;
+                    }
+                }
+            `}</style>
         </aside>
     );
 };
